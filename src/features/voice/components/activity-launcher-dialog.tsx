@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Play, Palette, Crown, ScreenShare, Check, Sparkles, X, Dices, HelpCircle, Gamepad2, Bot } from 'lucide-react';
+import { Search, Play, Palette, Crown, ScreenShare, Check, Sparkles, X, Dices, HelpCircle, Gamepad2, Bot, Rocket } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -91,23 +91,27 @@ export function ActivityLauncherDialog({
         <DialogContent
           size="md"
           showCloseButton={false}
-          className="p-0 bg-background border border-border text-foreground overflow-hidden shadow-2xl rounded-2xl flex flex-col max-h-[82vh] h-[520px] focus:outline-none"
+          className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-2xl p-0 bg-background border border-border text-foreground overflow-hidden shadow-2xl rounded-2xl flex flex-col max-h-[85vh] h-[580px] focus:outline-none"
         >
           <DialogTitle className="sr-only">{t('Aktivitas')}</DialogTitle>
           <DialogDescription className="sr-only">{t('Jelajahi dan jalankan aktivitas dalam panggilan suara ini.')}</DialogDescription>
 
-          {/* Top Search Bar & Close button */}
-          <div className="px-3.5 sm:px-4 pt-3.5 pb-2 shrink-0">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1 min-w-0">
-                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={appSearchQuery}
-                  onChange={(e) => setAppSearchQuery(e.target.value)}
-                  placeholder={t('Cari aktivitas, game, atau bot...')}
-                  className="w-full h-9 bg-muted/50 border border-border focus:border-border focus:ring-1 focus:ring-ring rounded-lg pl-9 pr-3 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors"
-                />
+          {/* Top Header: Title, Search Bar & Category Filter Pills */}
+          <div className="p-4 pb-3 border-b border-border/60 shrink-0 space-y-3 bg-card/40">
+            {/* Title & Close Button Row */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="size-8 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shrink-0 shadow-xs">
+                  <Rocket className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-bold text-foreground leading-tight">
+                    {t('Aktivitas')}
+                  </h2>
+                  <p className="text-[11px] text-muted-foreground leading-none mt-0.5">
+                    {t('Jelajahi dan jalankan aktivitas bersama di panggilan ini')}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
@@ -120,15 +124,37 @@ export function ActivityLauncherDialog({
               </button>
             </div>
 
+            {/* Search Input Row */}
+            <div className="relative w-full">
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={appSearchQuery}
+                onChange={(e) => setAppSearchQuery(e.target.value)}
+                placeholder={t('Cari aktivitas, game, atau bot...')}
+                className="w-full h-9 bg-muted/50 border border-border focus:border-primary/60 focus:ring-1 focus:ring-primary/40 rounded-lg pl-9 pr-8 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors"
+              />
+              {appSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setAppSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer transition-colors"
+                  title={t('Hapus')}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
             {/* Category Filter Pills */}
-            <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
               <button
                 type="button"
                 onClick={() => setSelectedCategory('all')}
                 className={cn(
-                  'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                  'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
                   selectedCategory === 'all'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
@@ -138,9 +164,9 @@ export function ActivityLauncherDialog({
                 type="button"
                 onClick={() => setSelectedCategory('game')}
                 className={cn(
-                  'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                  'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
                   selectedCategory === 'game'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
@@ -150,9 +176,9 @@ export function ActivityLauncherDialog({
                 type="button"
                 onClick={() => setSelectedCategory('entertainment')}
                 className={cn(
-                  'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                  'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
                   selectedCategory === 'entertainment'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
@@ -162,9 +188,9 @@ export function ActivityLauncherDialog({
                 type="button"
                 onClick={() => setSelectedCategory('productivity')}
                 className={cn(
-                  'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                  'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
                   selectedCategory === 'productivity'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
@@ -175,9 +201,9 @@ export function ActivityLauncherDialog({
                   type="button"
                   onClick={() => setSelectedCategory('colony')}
                   className={cn(
-                    'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                    'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
                     selectedCategory === 'colony'
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
                       : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >
@@ -186,8 +212,9 @@ export function ActivityLauncherDialog({
               )}
             </div>
 
+            {/* Active App Indicator Banner (if any) */}
             {activeAppId !== null && (
-              <div className="mt-2.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-between text-xs">
+              <div className="px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-between text-xs">
                 <span className="text-[11px] text-primary font-semibold flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   {t('Aktif')}: <strong className="text-foreground">{currentActiveApp?.title || activeAppId}</strong>
@@ -204,12 +231,12 @@ export function ActivityLauncherDialog({
           </div>
 
           {/* Modal Scrollable Body */}
-          <div className="flex-1 overflow-y-auto px-3.5 sm:px-4 pb-3.5 space-y-3.5 max-md:scrollbar-none custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 max-md:scrollbar-none custom-scrollbar min-h-0">
             {/* 1. Recents Row */}
             {!appSearchQuery && selectedCategory === 'all' && (
               <div>
-                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('Terbaru')}</h3>
-                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2.5">{t('Terbaru')}</h3>
+                <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-1">
                   {appList.map((app) => {
                     const IconComp = app.icon || Gamepad2;
                     return (
@@ -219,7 +246,7 @@ export function ActivityLauncherDialog({
                             <button
                               type="button"
                               onClick={() => onLaunchApp(app.id)}
-                              className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm group shrink-0"
+                              className="w-12 h-12 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm group shrink-0"
                               title={app.title}
                             >
                               <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shadow-xs", app.iconBg || "bg-primary/20")}>
@@ -239,14 +266,14 @@ export function ActivityLauncherDialog({
             {/* Installed Colony Apps & Bots Section (If Any) */}
             {(selectedCategory === 'all' || selectedCategory === 'colony') && filteredColonyApps.length > 0 && (
               <div>
-                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center justify-between">
+                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2.5 flex items-center justify-between">
                   <span>Colony Installed Apps & Bots</span>
                   <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/20">
                     {filteredColonyApps.length} Terpasang
                   </Badge>
                 </h3>
 
-                <div className="grid grid-cols-2 gap-2.5 pb-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-1">
                   {filteredColonyApps.map((bot) => (
                     <div
                       key={bot.id}
@@ -284,85 +311,93 @@ export function ActivityLauncherDialog({
 
             {/* 2. Activities (2 Columns Grid matching Discord) */}
             <div>
-              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2.5">
                 {appSearchQuery ? t('Hasil Pencarian') : t('Aktivitas')}
               </h3>
 
-              <div className="grid grid-cols-2 gap-2.5 pb-1">
-                {filteredApps.map((app) => {
-                  const IconComp = app.icon || Gamepad2;
-                  return (
-                  <div
-                    key={app.id}
-                    onClick={() => onLaunchApp(app.id)}
-                    className={cn(
-                      'rounded-xl border overflow-hidden transition-all duration-200 cursor-pointer group flex flex-col shadow-xs',
-                      activeAppId === app.id
-                        ? 'border-primary ring-2 ring-primary/40 bg-card'
-                        : 'border-border/60 bg-card hover:border-border hover:bg-muted/60',
-                    )}
-                  >
-                    {/* Graphical Top Banner with PROMOTED pill */}
-                    <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
-                      {app.bannerImage ? (
-                        <img
-                          src={app.bannerImage}
-                          alt={app.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div
-                          className={cn(
-                            'w-full h-full p-2.5 flex flex-col justify-between relative overflow-hidden bg-gradient-to-br',
-                            app.bannerGradient,
-                          )}
-                        >
-                          <IconComp className="w-8 h-8 text-white/30" />
-                        </div>
-                      )}
-
-                      {/* Ambient Gradient Overlay for text contrast */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
-
-                      {/* Promoted Pill Badge on Top-Right */}
-                      {app.isPromoted && (
-                        <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-[3px] text-[8px] font-black tracking-wider text-black bg-white uppercase shadow-xs select-none">
-                          PROMOTED
-                        </span>
-                      )}
-
-                      {/* Center Banner Title Overlay */}
-                      <div className="absolute bottom-1.5 left-2 right-2 z-10 pointer-events-none">
-                        <span className="text-xs sm:text-sm font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide truncate block">
-                          {app.bannerTitle || app.title}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Card Bottom Meta: Logo on Right */}
-                    <div className="p-2.5 bg-card group-hover:bg-muted/70 transition-colors flex items-center justify-between gap-2.5 min-w-0">
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-xs font-bold text-foreground group-hover:text-foreground truncate leading-snug">
-                          {app.title}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
-                          {app.tagline || app.description}
-                        </span>
-                      </div>
+              {filteredApps.length === 0 ? (
+                <div className="py-12 flex flex-col items-center justify-center text-center text-muted-foreground">
+                  <Search className="w-8 h-8 mb-2 opacity-30" />
+                  <p className="text-xs sm:text-sm font-semibold">{t('Tidak ada aktivitas ditemukan')}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{t('Coba gunakan kata kunci pencarian yang lain')}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pb-1">
+                  {filteredApps.map((app) => {
+                    const IconComp = app.icon || Gamepad2;
+                    return (
                       <div
+                        key={app.id}
+                        onClick={() => onLaunchApp(app.id)}
                         className={cn(
-                          'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform',
-                          app.iconBg,
+                          'rounded-xl border overflow-hidden transition-all duration-200 cursor-pointer group flex flex-col shadow-xs',
+                          activeAppId === app.id
+                            ? 'border-primary ring-2 ring-primary/40 bg-card'
+                            : 'border-border/60 bg-card hover:border-border hover:bg-muted/60',
                         )}
                       >
-                        <IconComp className={cn("w-4 h-4", app.iconColor || "text-white")} />
+                        {/* Graphical Top Banner with PROMOTED pill */}
+                        <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
+                          {app.bannerImage ? (
+                            <img
+                              src={app.bannerImage}
+                              alt={app.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div
+                              className={cn(
+                                'w-full h-full p-2.5 flex flex-col justify-between relative overflow-hidden bg-gradient-to-br',
+                                app.bannerGradient,
+                              )}
+                            >
+                              <IconComp className="w-8 h-8 text-white/30" />
+                            </div>
+                          )}
+
+                          {/* Ambient Gradient Overlay for text contrast */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
+
+                          {/* Promoted Pill Badge on Top-Right */}
+                          {app.isPromoted && (
+                            <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-[3px] text-[8px] font-black tracking-wider text-black bg-white uppercase shadow-xs select-none">
+                              PROMOTED
+                            </span>
+                          )}
+
+                          {/* Center Banner Title Overlay */}
+                          <div className="absolute bottom-1.5 left-2 right-2 z-10 pointer-events-none">
+                            <span className="text-xs sm:text-sm font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wide truncate block">
+                              {app.bannerTitle || app.title}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Card Bottom Meta: Logo on Right */}
+                        <div className="p-3 bg-card group-hover:bg-muted/70 transition-colors flex items-center justify-between gap-2.5 min-w-0">
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-xs font-bold text-foreground group-hover:text-foreground truncate leading-snug">
+                              {app.title}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
+                              {app.tagline || app.description}
+                            </span>
+                          </div>
+                          <div
+                            className={cn(
+                              'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform',
+                              app.iconBg,
+                            )}
+                          >
+                            <IconComp className={cn("w-4 h-4", app.iconColor || "text-white")} />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
