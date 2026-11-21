@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { uploadMediaToR2 } from '@/lib/upload';
 import {
   ChevronDown,
   Pencil,
@@ -247,6 +248,13 @@ export function EditProfileDialog({
         } else {
           onSuccess(e.target?.result as string);
         }
+
+        // Upload to Cloudflare R2 and upgrade url if available
+        uploadMediaToR2(file).then((remote) => {
+          if (remote.isRemote && remote.url) {
+            onSuccess(remote.url);
+          }
+        });
       };
       img.src = e.target?.result as string;
     };

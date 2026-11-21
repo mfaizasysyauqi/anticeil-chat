@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { uploadMediaToR2 } from '@/lib/upload';
 
 // ─── Tier-based file size limits ───
 export const FREE_TIER_LIMIT = 25 * 1024 * 1024;    // 25 MB
@@ -155,16 +156,28 @@ export function processFileInput(
   // Record for rate limiting
   recordUpload();
 
-  // 4. Process file — always use data URL so it survives page refresh.
-  // (blob: URLs from createObjectURL are ephemeral and die on refresh)
+  // 4. Process file — optimistic local display + background Cloudflare R2 upload
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
+    const localDataUrl = reader.result as string;
+    // Stage immediately for instant feedback
     onSuccess({
       type: category,
-      url: reader.result as string,
+      url: localDataUrl,
       name: file.name,
       size: formatSize(file.size),
     });
+
+    // Upload to Cloudflare R2 via backend bridge
+    const remote = await uploadMediaToR2(file);
+    if (remote.isRemote && remote.url) {
+      onSuccess({
+        type: category,
+        url: remote.url,
+        name: file.name,
+        size: formatSize(file.size),
+      });
+    }
   };
   reader.readAsDataURL(file);
 }
