@@ -385,23 +385,33 @@ export function GiftInventorySubtab() {
       {/* Modal: Purchase Gift via Midtrans Snap */}
       <Dialog open={isPurchaseGiftOpen} onOpenChange={setIsPurchaseGiftOpen}>
         <DialogContent
+          showCloseButton={false}
           className="p-0 max-w-lg overflow-hidden bg-card border border-border rounded-2xl shadow-2xl z-[80]"
           overlayClassName="z-[80]"
         >
-          <div className="p-5 pr-12 border-b border-border/60 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="size-8 rounded-lg bg-sidebar-primary/20 border border-sidebar-primary/40 flex items-center justify-center text-sidebar-primary">
+          <div className="p-5 border-b border-border/60 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="size-8 rounded-lg bg-sidebar-primary/20 border border-sidebar-primary/40 flex items-center justify-center text-sidebar-primary shrink-0">
                 <Gift className="w-4 h-4" />
               </div>
-              <div>
-                <DialogTitle className="text-sm font-bold text-foreground">
+              <div className="min-w-0">
+                <DialogTitle className="text-sm font-bold text-foreground truncate">
                   {t('Beli Hadiah Langganan (Midtrans)')}
                 </DialogTitle>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[11px] text-muted-foreground line-clamp-1">
                   {t('Pilih paket hadiah untuk teman Anda. Kode voucher otomatis dibuat setelah pembayaran.')}
                 </p>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsPurchaseGiftOpen(false)}
+              className="size-8 flex items-center justify-center rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer shrink-0"
+              title={t('Tutup (ESC)')}
+              aria-label={t('Tutup')}
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
           <div className="p-5 space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
@@ -441,14 +451,6 @@ export function GiftInventorySubtab() {
 
           <div className="p-4 border-t border-border/60 bg-muted/20 flex items-center justify-between text-[11px] text-muted-foreground">
             <span>🔒 Didukung oleh Midtrans Sandbox QRIS & Bank Transfer</span>
-            <Button
-              size="sm"
-              variant="tealSecondary"
-              onClick={() => setIsPurchaseGiftOpen(false)}
-              className="h-7 text-xs"
-            >
-              {t('Tutup')}
-            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -650,17 +650,6 @@ export function FamilyCenterTab({ onBack }: FamilyCenterTabProps) {
               </button>
             </div>
           </div>
-
-          <DialogFooter className="sm:justify-center">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowQrModal(false)}
-              className="text-xs h-8 px-4 font-semibold"
-            >
-              {t('Tutup')}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

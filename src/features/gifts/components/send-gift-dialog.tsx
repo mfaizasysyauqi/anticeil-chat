@@ -1,4 +1,5 @@
 import React from 'react';
+import { X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,9 +21,18 @@ export function SendGiftDialog({
 }: SendGiftDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[880px] max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <DialogContent showCloseButton={false} className="sm:max-w-[880px] max-h-[90vh] overflow-y-auto custom-scrollbar">
         <DialogHeader className="flex flex-row items-center justify-between pb-1">
           <DialogTitle className="text-lg font-black text-foreground">Send a Gift</DialogTitle>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="size-8 flex items-center justify-center rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer shrink-0"
+            title="Tutup (ESC)"
+            aria-label="Tutup"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </DialogHeader>
 
         <DialogBody className="space-y-4">

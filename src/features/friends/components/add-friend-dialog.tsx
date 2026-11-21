@@ -251,17 +251,6 @@ export function AddFriendDialog({
             </div>
           )}
         </div>
-
-        <div className={cn('py-3 bg-muted/20 border-t border-border/40 flex items-center justify-end', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="text-xs h-8 px-3 cursor-pointer"
-          >
-            {t('Tutup')}
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );

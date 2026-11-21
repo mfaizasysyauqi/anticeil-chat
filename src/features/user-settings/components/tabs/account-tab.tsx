@@ -1030,18 +1030,6 @@ export function AccountTab({
                     </Button>
                   </div>
                 )}
-
-                <DialogFooter className="mt-4 pt-2 border-t border-border/50">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setShowFamilyCenterDialog(false)}
-                    className="h-8 text-xs font-semibold w-full"
-                  >
-                    {t('Tutup')}
-                  </Button>
-                </DialogFooter>
               </DialogContent>
             </Dialog>
 

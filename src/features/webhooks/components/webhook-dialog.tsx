@@ -323,17 +323,6 @@ export function WebhookDialog({
             </>
           )}
         </div>
-
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-          >
-            {t('Tutup')}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
