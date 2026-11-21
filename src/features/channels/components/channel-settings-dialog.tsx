@@ -65,37 +65,56 @@ export function ChannelSettingsDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasCopiedInvite, setHasCopiedInvite] = useState(false);
 
-  // Sync state when channel changes
+  // Baseline state representing saved values to accurately detect changes
+  const [baseline, setBaseline] = useState(() => ({
+    name: channel ? (channel.name || '') : '',
+    channelType: channel ? resolveChannelType(channel) : ('text' as ColonyChannelType),
+    categoryId: channel ? (channel.categoryId || '') : '',
+    topic: channel ? (channel.description || '') : '',
+    slowmode: channel ? (channel.slowmode || 0) : 0,
+    contentVisibility: channel ? (channel.contentVisibility || 'default') : ('default' as 'default' | 'spoiler' | 'nsfw'),
+  }));
+
+  // Sync state when channel changes or dialog opens
   useEffect(() => {
-    if (channel) {
-      setName(channel.name || '');
-      setChannelType(resolveChannelType(channel));
-      setCategoryId(channel.categoryId || '');
-      setTopic(channel.description || '');
-      setSlowmode(channel.slowmode || 0);
-      setContentVisibility(channel.contentVisibility || 'default');
+    if (channel && isOpen) {
+      const initialType = resolveChannelType(channel);
+      const initial = {
+        name: channel.name || '',
+        channelType: initialType,
+        categoryId: channel.categoryId || '',
+        topic: channel.description || '',
+        slowmode: channel.slowmode || 0,
+        contentVisibility: channel.contentVisibility || 'default',
+      };
+      setName(initial.name);
+      setChannelType(initial.channelType);
+      setCategoryId(initial.categoryId);
+      setTopic(initial.topic);
+      setSlowmode(initial.slowmode);
+      setContentVisibility(initial.contentVisibility);
+      setBaseline(initial);
       setActiveTab('overview');
     }
-  }, [channel, isOpen]);
+  }, [channel?.id, isOpen]);
 
   if (!channel) return null;
 
-  const currentType = resolveChannelType(channel);
   const hasChanges =
-    name !== (channel.name || '') ||
-    channelType !== currentType ||
-    categoryId !== (channel.categoryId || '') ||
-    topic !== (channel.description || '') ||
-    slowmode !== (channel.slowmode || 0) ||
-    contentVisibility !== (channel.contentVisibility || 'default');
+    name !== baseline.name ||
+    channelType !== baseline.channelType ||
+    categoryId !== baseline.categoryId ||
+    topic !== baseline.topic ||
+    slowmode !== baseline.slowmode ||
+    contentVisibility !== baseline.contentVisibility;
 
   const handleReset = () => {
-    setName(channel.name || '');
-    setChannelType(resolveChannelType(channel));
-    setCategoryId(channel.categoryId || '');
-    setTopic(channel.description || '');
-    setSlowmode(channel.slowmode || 0);
-    setContentVisibility(channel.contentVisibility || 'default');
+    setName(baseline.name);
+    setChannelType(baseline.channelType);
+    setCategoryId(baseline.categoryId);
+    setTopic(baseline.topic);
+    setSlowmode(baseline.slowmode);
+    setContentVisibility(baseline.contentVisibility);
   };
 
   const handleSave = async () => {
@@ -106,16 +125,30 @@ export function ChannelSettingsDialog({
     setIsSubmitting(true);
     try {
       const selectedCat = categories.find((c) => c.id === categoryId);
-      await onUpdateChannel(channel.id, {
-        name: channelType === 'voice' ? name.trim() : name.trim().toLowerCase().replace(/\s+/g, '-'),
-        description: topic.trim(),
-        type: channelType,
+      const finalName = channelType === 'voice' ? name.trim() : name.trim().toLowerCase().replace(/\s+/g, '-');
+      const cleanTopic = topic.trim();
+      const newSaved = {
+        name: finalName,
+        channelType,
+        categoryId,
+        topic: cleanTopic,
         slowmode,
         contentVisibility,
-        categoryId: categoryId || undefined,
+      };
+
+      await onUpdateChannel(channel.id, {
+        name: newSaved.name,
+        description: newSaved.topic,
+        type: newSaved.channelType,
+        slowmode: newSaved.slowmode,
+        contentVisibility: newSaved.contentVisibility,
+        categoryId: newSaved.categoryId || undefined,
         categoryName: selectedCat ? selectedCat.name : undefined,
       });
-      toast.success(t('Pengaturan channel berhasil disimpan!'));
+
+      setName(finalName);
+      setTopic(cleanTopic);
+      setBaseline(newSaved);
     } catch {
       toast.error(t('Gagal menyimpan pengaturan channel.'));
     } finally {

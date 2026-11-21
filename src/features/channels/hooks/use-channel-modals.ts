@@ -117,8 +117,12 @@ export function useChannelModals({
         categoryId: updates.categoryId,
         categoryName: updates.categoryName,
       });
+      const merged = { ...updated, ...updates };
       setChannels((prev) =>
-        prev.map((c) => (c.id === channelId ? { ...c, ...updated, ...updates } : c)),
+        prev.map((c) => (c.id === channelId ? { ...c, ...merged } : c)),
+      );
+      setChannelForSettings((prev) =>
+        prev && prev.id === channelId ? { ...prev, ...merged } : prev,
       );
       toast.success(t('Pengaturan channel berhasil disimpan!'));
     } catch (err) {
