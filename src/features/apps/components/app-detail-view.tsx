@@ -201,11 +201,6 @@ export function AppDetailView({
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-foreground tracking-tight truncate">
                       {app.title}
                     </h1>
-                    {app.badge && (
-                      <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
-                        {app.badge}
-                      </Badge>
-                    )}
                   </div>
                   <p className="text-xs sm:text-sm text-muted-foreground font-medium">
                     Oleh <span className="text-foreground font-semibold">{app.developer}</span> • {categoryLabel}

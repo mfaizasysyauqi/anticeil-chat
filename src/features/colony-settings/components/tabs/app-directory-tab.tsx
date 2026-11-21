@@ -549,11 +549,6 @@ export function AppDirectoryTab({
                             <div className={cn('w-full h-full bg-gradient-to-br', app.bannerGradient)} />
                           )}
                           <div className="absolute inset-0 bg-gradient-to-t from-[#1e1f22] via-transparent to-black/30" />
-
-                          {/* App Badge on Banner */}
-                          <span className="absolute top-2 left-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[10px] font-semibold text-white/90 border border-white/10">
-                            {app.badge}
-                          </span>
                         </div>
 
                         {/* App Content */}

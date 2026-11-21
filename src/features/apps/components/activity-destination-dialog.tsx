@@ -216,11 +216,6 @@ export function ActivityDestinationDialog({
                 <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">
                   {app.developer}
                 </span>
-                {app.badge && (
-                  <Badge className="text-[9px] px-1.5 py-0 bg-white/20 text-white border-0 backdrop-blur-md">
-                    {app.badge}
-                  </Badge>
-                )}
               </div>
               <h3 className="text-base font-black text-white leading-tight">
                 {app.title}

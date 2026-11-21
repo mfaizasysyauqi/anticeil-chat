@@ -128,12 +128,6 @@ function ActivityCard({
 
         {/* Ambient Gradient Overlay for depth */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-
-        {app.badge && (
-          <span className="absolute top-2.5 right-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full bg-black/60 text-white backdrop-blur-md border border-white/10 shadow-xs">
-            {app.badge}
-          </span>
-        )}
       </div>
 
       {/* Overlapping App Icon (Positioned at seam between banner and body, exact Discord pattern) */}
