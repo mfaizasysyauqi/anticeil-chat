@@ -138,9 +138,9 @@ function ActivityCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 via-45% to-transparent pointer-events-none z-10" />
 
         {/* App Title Over Banner (Bottom-Left, TikTok style) */}
-        <div className="absolute inset-x-0 bottom-0 z-20 px-3.5 sm:px-4 pb-2.5 flex items-end justify-between gap-2.5 pointer-events-none">
-          <div className="min-w-0 flex-1 pr-14 drop-shadow-md">
-            <h4 className="text-sm sm:text-base font-black text-white group-hover:text-primary transition-colors truncate tracking-tight drop-shadow-sm">
+        <div className="absolute inset-x-0 bottom-0 z-20 px-2.5 sm:px-4 pb-2 sm:pb-2.5 flex items-end justify-between gap-2 pointer-events-none">
+          <div className="min-w-0 flex-1 pr-10 sm:pr-14 drop-shadow-md">
+            <h4 className="text-xs sm:text-base font-black text-white group-hover:text-primary transition-colors truncate tracking-tight drop-shadow-sm">
               {app.title}
             </h4>
           </div>
@@ -148,25 +148,25 @@ function ActivityCard({
       </div>
 
       {/* Overlapping App Icon on the Right (TikTok Style) */}
-      <div className="relative z-20 -mt-6 sm:-mt-7 mr-3.5 sm:mr-4 ml-auto flex items-center justify-end pointer-events-none">
+      <div className="relative z-20 -mt-5 sm:-mt-7 mr-2.5 sm:mr-4 ml-auto flex items-center justify-end pointer-events-none">
         <div
           className={cn(
-            'size-11 sm:size-12 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl shrink-0 border-[3px] border-card group-hover:scale-105 transition-transform',
+            'size-9 sm:size-12 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-xl shrink-0 border-2 sm:border-[3px] border-card group-hover:scale-105 transition-transform',
             app.iconBg || 'bg-primary',
             app.iconColor || 'text-white'
           )}
         >
-          <AppIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+          <AppIcon className="w-4 h-4 sm:w-6 sm:h-6" />
         </div>
       </div>
 
       {/* Body Content below banner (Category & Description) */}
-      <div className="px-3.5 sm:px-4 -mt-3.5 sm:-mt-4 pt-0 pb-4 flex-1 flex flex-col justify-start">
-        <span className="text-[11px] sm:text-xs text-muted-foreground/80 font-medium capitalize">
+      <div className="px-2.5 sm:px-4 -mt-3 sm:-mt-4 pt-0 pb-3 sm:pb-4 flex-1 flex flex-col justify-start">
+        <span className="text-[10px] sm:text-xs text-muted-foreground/80 font-medium capitalize">
           {categoryLabel}
         </span>
 
-        <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-2 leading-relaxed mt-1">
+        <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 leading-relaxed mt-0.5 sm:mt-1">
           {app.description}
         </p>
       </div>
