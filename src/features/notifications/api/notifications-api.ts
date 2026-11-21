@@ -2,9 +2,10 @@ import { api } from '@/lib/api';
 import type { NotificationItem } from '../types';
 
 export const notificationsApi = {
-  getNotifications: async (): Promise<NotificationItem[]> => {
+  getNotifications: async (userId?: string): Promise<NotificationItem[]> => {
     try {
-      const data = await api.get<NotificationItem[]>('/v1/community/notifications');
+      const url = userId ? `/v1/community/notifications?userId=${encodeURIComponent(userId)}` : '/v1/community/notifications';
+      const data = await api.get<NotificationItem[]>(url);
       return Array.isArray(data) ? data : [];
     } catch {
       return [];

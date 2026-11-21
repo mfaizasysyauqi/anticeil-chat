@@ -9,11 +9,13 @@ import { CallStage, StageView } from '@/features/voice';
 import { clearChannelWatchCache } from '@/features/voice/components/activities/hooks/use-youtube-player';
 import { MessagesFeed } from '@/features/chat';
 import { ChatInputBar } from '@/features/chat-input';
+import { colonyApi } from '@/features/colonies/api/colonies-api';
 import {
   ColonyChannel,
   Colony,
   ColonyMember,
   ColonyMessage,
+  ColonyCustomRole,
   CommunityAttachment,
 } from '../../chat-types';
 
@@ -265,6 +267,15 @@ export function ChatChannelView({
   const splitContainerRef = React.useRef<HTMLDivElement>(null);
 
   // Keep chat split hidden by default so activities/video grid are never cut off
+  const [colonyRoles, setColonyRoles] = React.useState<ColonyCustomRole[]>([]);
+  React.useEffect(() => {
+    if (activeColony?.id) {
+      colonyApi.getRoles(activeColony.id).then((r) => {
+        if (Array.isArray(r)) setColonyRoles(r);
+      }).catch(() => {});
+    }
+  }, [activeColony?.id]);
+
   React.useEffect(() => {
     if (!isActivityOpen && !selectedActivityAppId && activeCallChannelId !== activeChannel?.id) {
       setIsActivityChatSplitOpen(false);
@@ -387,6 +398,9 @@ export function ChatChannelView({
       <ChatInputBar
         activeChannel={activeChannel}
         activeColony={activeColony}
+        members={displayMembers}
+        roles={colonyRoles}
+        currentUser={currentUser}
         channelPaddingClass={isSplit ? 'px-3 sm:px-4' : CHANNEL_HORIZONTAL_PADDING}
         stagedAttachment={stagedAttachment}
         setStagedAttachment={setStagedAttachment}

@@ -47,7 +47,7 @@ export function useChatSubsystems({
     notifications,
     handleMarkAsRead: handleMarkNotificationRead,
     handleMarkAllAsRead: handleMarkAllNotificationsRead,
-  } = useNotifications();
+  } = useNotifications([], currentUser?.id);
 
   const unreadNotifCount = useMemo(
     () => notifications.filter((n) => !n.isRead).length,

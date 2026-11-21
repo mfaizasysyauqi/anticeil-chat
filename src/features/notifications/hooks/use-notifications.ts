@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import type { NotificationItem, NotificationsTab } from '../types';
 import { notificationsApi } from '../api/notifications-api';
 
-export function useNotifications(initialData: NotificationItem[] = []) {
+export function useNotifications(initialData: NotificationItem[] = [], userId?: string) {
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialData);
   const [activeTab, setActiveTab] = useState<NotificationsTab>('all');
   const [isLoading, setIsLoading] = useState(false);
@@ -11,7 +11,7 @@ export function useNotifications(initialData: NotificationItem[] = []) {
   const fetchNotifications = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await notificationsApi.getNotifications();
+      const data = await notificationsApi.getNotifications(userId);
       if (Array.isArray(data)) {
         setNotifications(data);
       }
@@ -20,10 +20,13 @@ export function useNotifications(initialData: NotificationItem[] = []) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchNotifications();
+    const handleUpdate = () => fetchNotifications();
+    window.addEventListener('anticeil_notification_updated', handleUpdate);
+    return () => window.removeEventListener('anticeil_notification_updated', handleUpdate);
   }, [fetchNotifications]);
 
   const handleMarkAsRead = async (id: string) => {

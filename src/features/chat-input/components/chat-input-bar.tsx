@@ -19,6 +19,7 @@ import {
   FileText,
   Film,
   Music,
+  AtSign,
 } from 'lucide-react';
 import { SmallDialog } from '@/components/ui/small-dialog';
 import { Button } from '@/components/ui/button';
@@ -36,18 +37,22 @@ import {
 import { MediaPickerPopover } from './media-picker-popover';
 import { ChatAppsPopover } from './chat-apps-popover';
 import { SlashCommandAutocomplete } from './slash-command-autocomplete';
+import { MentionAutocomplete, type MentionOption } from './mention-autocomplete';
 import { CreatePollModal } from './create-poll-modal';
 import { CustomScheduleModal } from './custom-schedule-modal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { MAX_MESSAGE_CHARS, getCurrentMaxMessageChars } from '../utils/text-limit';
 import { getCurrentUserPlan, processFilesBatch, MAX_UPLOAD_FILES_LIMIT } from '../utils/attachment';
-import type { ColonyChannel, Colony } from '@/chat/chat-types';
+import type { ColonyChannel, Colony, ColonyMember, ColonyCustomRole } from '@/chat/chat-types';
 import type { DiscordEmoji, DiscordSticker, DiscordGifItem } from '@/chat/anticeil-media-data';
 
 export interface ChatInputBarProps {
   activeChannel: ColonyChannel | null;
   activeColony: Colony | null;
+  members?: ColonyMember[];
+  roles?: ColonyCustomRole[];
+  currentUser?: any;
   channelPaddingClass?: string;
   stagedAttachment: { name: string; size?: string; url?: string; type?: string } | null;
   setStagedAttachment: (attachment: any) => void;
@@ -98,6 +103,9 @@ export interface ChatInputBarProps {
 export function ChatInputBar({
   activeChannel,
   activeColony,
+  members = [],
+  roles = [],
+  currentUser,
   channelPaddingClass = 'px-4 lg:px-6',
   stagedAttachment,
   setStagedAttachment,
@@ -145,6 +153,167 @@ export function ChatInputBar({
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
   const [isSlashOpen, setIsSlashOpen] = useState(true);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+
+  // Discord-style @Mention autocomplete state
+  const [isMentionOpen, setIsMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
+
+  const getMentionTrigger = (text: string, cursorPos: number) => {
+    const textBeforeCursor = text.slice(0, cursorPos);
+    const match = textBeforeCursor.match(/(?:^|\s)@([a-zA-Z0-9_\-\s]{0,30})$/);
+    if (!match) return null;
+    const matchStr = match[0];
+    const atIndex = textBeforeCursor.length - matchStr.length + (matchStr.startsWith(' ') || matchStr.startsWith('\n') ? 1 : 0);
+    return {
+      query: match[1],
+      atIndex,
+    };
+  };
+
+  const updateMentionState = (text: string, cursorPos?: number) => {
+    const pos = cursorPos ?? textareaRef.current?.selectionStart ?? text.length;
+    const trigger = getMentionTrigger(text, pos);
+    if (trigger) {
+      setMentionQuery(trigger.query);
+      setIsMentionOpen(true);
+    } else {
+      setIsMentionOpen(false);
+      setMentionQuery('');
+      setMentionSelectedIndex(0);
+    }
+  };
+
+  const filteredMentionItems = React.useMemo<MentionOption[]>(() => {
+    if (!isMentionOpen) return [];
+    const cleanQ = (mentionQuery || '').toLowerCase().trim();
+
+    const mems: MentionOption[] = members.map((m) => {
+      const cleanName = m.name?.trim() || 'Pengguna';
+      const handle = m.username
+        ? `_${m.username.replace(/^@/, '')}_`
+        : m.email
+        ? `_${m.email.split('@')[0]}_`
+        : undefined;
+      return {
+        id: `member_${m.id}`,
+        type: 'member' as const,
+        label: cleanName,
+        value: `@${cleanName}`,
+        name: cleanName,
+        tag: handle,
+        avatar: m.avatar,
+        status: m.status || 'offline',
+      };
+    }).filter((m) => !cleanQ || m.name.toLowerCase().includes(cleanQ) || (m.tag && m.tag.toLowerCase().includes(cleanQ)));
+
+    const specials: MentionOption[] = [
+      {
+        id: 'special_everyone',
+        type: 'special' as const,
+        label: '@everyone',
+        value: '@everyone',
+        name: '@everyone',
+        description: 'Notify everyone who has permission to view this channel.',
+      },
+      {
+        id: 'special_here',
+        type: 'special' as const,
+        label: '@here',
+        value: '@here',
+        name: '@here',
+        description: 'Notify everyone online who has permission to view this channel.',
+      },
+      {
+        id: 'special_game',
+        type: 'special' as const,
+        label: '@game',
+        value: '@game',
+        name: '@game',
+        description: 'Mention a game',
+      },
+      {
+        id: 'special_time',
+        type: 'special' as const,
+        label: '@time',
+        value: '@time',
+        name: '@time',
+        description: "Refer to a time dynamically in the viewer's time zone",
+      },
+    ].filter((s) => !cleanQ || s.label.toLowerCase().includes(cleanQ) || s.label.replace(/^@/, '').toLowerCase().includes(cleanQ));
+
+    const validRoles = roles.length > 0 ? roles : [
+      {
+        id: 'role_new_role',
+        colonyId: 'colony-1',
+        name: 'new role',
+        color: '#94a3b8',
+        permissions: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
+      },
+    ];
+
+    const rols: MentionOption[] = validRoles.map((r) => {
+      const roleName = r.name.replace(/^@/, '').trim();
+      return {
+        id: `role_${r.id}`,
+        type: 'role' as const,
+        label: `@${roleName}`,
+        value: `@${roleName}`,
+        name: `@${roleName}`,
+        description: 'Notify users with this role who have permission to view this channel.',
+        color: r.color || '#94a3b8',
+      };
+    }).filter((r) => !cleanQ || r.label.toLowerCase().includes(cleanQ) || r.label.replace(/^@/, '').toLowerCase().includes(cleanQ));
+
+    return [...mems, ...specials, ...rols];
+  }, [isMentionOpen, mentionQuery, members, roles]);
+
+  const handleSelectMention = (item: MentionOption) => {
+    const textarea = textareaRef.current;
+    const cursorPos = textarea?.selectionStart ?? inputText.length;
+    const trigger = getMentionTrigger(inputText, cursorPos);
+
+    const textToInsert = `${item.value} `;
+    let newText = '';
+    let newCursorPos = 0;
+
+    if (trigger) {
+      const beforeAt = inputText.slice(0, trigger.atIndex);
+      const afterCursor = inputText.slice(cursorPos);
+      newText = `${beforeAt}${textToInsert}${afterCursor}`;
+      newCursorPos = beforeAt.length + textToInsert.length;
+    } else {
+      newText = `${inputText}${inputText.endsWith(' ') || !inputText ? '' : ' '}${textToInsert}`;
+      newCursorPos = newText.length;
+    }
+
+    setInputText(newText);
+    setIsMentionOpen(false);
+    setMentionSelectedIndex(0);
+
+    requestAnimationFrame(() => {
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    });
+  };
+
+  const handleOpenMentionDirectly = () => {
+    const textarea = textareaRef.current;
+    const needsSpace = inputText.length > 0 && !inputText.endsWith(' ');
+    const newText = `${inputText}${needsSpace ? ' ' : ''}@`;
+    setInputText(newText);
+    setIsMentionOpen(true);
+    setMentionQuery('');
+    setMentionSelectedIndex(0);
+    requestAnimationFrame(() => {
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(newText.length, newText.length);
+      }
+    });
+  };
   const userPlan = getCurrentUserPlan();
   const maxMessageChars = getCurrentMaxMessageChars();
   const isNectar = userPlan === 'nectar_boost';
@@ -450,6 +619,19 @@ export function ChatInputBar({
         />
       )}
 
+      {/* Discord-style @Mention Autocomplete Menu */}
+      {isMentionOpen && (
+        <MentionAutocomplete
+          isOpen={isMentionOpen}
+          query={mentionQuery}
+          members={members}
+          roles={roles}
+          selectedIndex={mentionSelectedIndex}
+          onSelect={handleSelectMention}
+          onHoverIndex={(idx) => setMentionSelectedIndex(idx)}
+        />
+      )}
+
       {/* Voice Note Recorder Mode or Textarea Input Box */}
       {isRecordingVoice ? (
         <VoiceNoteRecorder
@@ -558,7 +740,19 @@ export function ChatInputBar({
               <span>{t('Use Apps')}</span>
             </DropdownMenuItem>
 
-            {/* 6. Schedule Message */}
+            {/* 6. Mention (@) */}
+            <DropdownMenuItem
+              onClick={() => {
+                handleOpenMentionDirectly();
+                setIsPlusMenuOpen(false);
+              }}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold"
+            >
+              <AtSign className="w-4 h-4 shrink-0 text-primary" />
+              <span>{t('Mention (@)')}</span>
+            </DropdownMenuItem>
+
+            {/* 7. Schedule Message */}
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold">
                 <CalendarPlus className="w-4 h-4 shrink-0" />
@@ -609,13 +803,49 @@ export function ChatInputBar({
           value={inputText}
           maxLength={maxMessageChars + 4000}
           onPaste={handlePaste}
+          onClick={(e) => {
+            updateMentionState(e.currentTarget.value, e.currentTarget.selectionStart);
+          }}
+          onKeyUp={(e) => {
+            if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+              updateMentionState(e.currentTarget.value, e.currentTarget.selectionStart);
+            }
+          }}
           onChange={(e) => {
             setInputText(e.target.value);
             if (!isSlashOpen && e.target.value.startsWith('/')) {
               setIsSlashOpen(true);
             }
+            updateMentionState(e.target.value, e.target.selectionStart);
           }}
           onKeyDown={(e) => {
+            // Discord @Mention keyboard navigation
+            if (isMentionOpen && filteredMentionItems.length > 0) {
+              if (e.key === 'Escape') {
+                setIsMentionOpen(false);
+                return;
+              }
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setMentionSelectedIndex((prev) => (prev + 1) % filteredMentionItems.length);
+                return;
+              }
+              if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setMentionSelectedIndex((prev) => (prev - 1 + filteredMentionItems.length) % filteredMentionItems.length);
+                return;
+              }
+              if ((e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey) {
+                e.preventDefault();
+                const item = filteredMentionItems[mentionSelectedIndex] || filteredMentionItems[0];
+                if (item) {
+                  handleSelectMention(item);
+                }
+                return;
+              }
+            }
+
+            // Slash Command keyboard navigation
             if (inputText.startsWith('/') && isSlashOpen) {
               if (e.key === 'Escape') {
                 setIsSlashOpen(false);
@@ -664,6 +894,16 @@ export function ChatInputBar({
               -{inputText.length - maxMessageChars}
             </span>
           )}
+
+          {/* Mention (@) trigger button */}
+          <button
+            type="button"
+            onClick={handleOpenMentionDirectly}
+            className="w-6 h-6 text-muted-foreground/90 hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
+            title={t('Sebut pengguna (@mention)')}
+          >
+            <AtSign className="w-4 h-4" />
+          </button>
 
           {/* 1. Gift Icon (Desktop/tablet only) */}
           <button

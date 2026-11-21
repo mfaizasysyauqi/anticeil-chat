@@ -4,5 +4,6 @@ export * from './components/chat-input-bar';
 export * from './components/create-poll-modal';
 export * from './components/custom-schedule-modal';
 export * from './components/voice-note-recorder';
+export * from './components/mention-autocomplete';
 export * from './utils/attachment';
 export * from './utils/text-limit';

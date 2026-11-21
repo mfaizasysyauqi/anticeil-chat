@@ -23,6 +23,7 @@ import type {
   DiscordGifItem,
 } from '../anticeil-media-data';
 import { DIRECTORY_APPS } from '@/features/colony-settings/components/tabs/directory-apps-data';
+import { notificationsApi } from '@/features/notifications/api/notifications-api';
 
 function getBotSlashResponse(commandText: string, botName: string): string {
   const lower = commandText.toLowerCase();
@@ -197,6 +198,80 @@ export function useMessageActions({
           [activeChannel.id]: [...list, saved],
         };
       });
+
+      // ── Process @Mentions for Notifications ──
+      try {
+        const textToScan = trimmedContent;
+        if (textToScan && textToScan.includes('@')) {
+          const recipientIds = new Set<string>();
+
+          // 1. @everyone or @here
+          if (/@everyone\b/i.test(textToScan)) {
+            members.forEach((m) => {
+              if (m.id !== currentUserId) recipientIds.add(m.id);
+            });
+          } else if (/@here\b/i.test(textToScan)) {
+            members.forEach((m) => {
+              if (m.id !== currentUserId && (m.status === 'online' || m.status === 'idle')) {
+                recipientIds.add(m.id);
+              }
+            });
+          }
+
+          // 2. Mention by member name, username, or email
+          members.forEach((m) => {
+            const cleanName = m.name?.trim().replace(/\s+/g, ' ');
+            const username = m.username?.trim();
+            const emailPrefix = m.email?.split('@')[0];
+
+            if (cleanName && new RegExp(`@${cleanName}\\b`, 'i').test(textToScan)) {
+              if (m.id !== currentUserId) recipientIds.add(m.id);
+            } else if (username && new RegExp(`@${username}\\b`, 'i').test(textToScan)) {
+              if (m.id !== currentUserId) recipientIds.add(m.id);
+            } else if (emailPrefix && new RegExp(`@${emailPrefix}\\b`, 'i').test(textToScan)) {
+              if (m.id !== currentUserId) recipientIds.add(m.id);
+            }
+          });
+
+          // 3. Mention by role
+          const colonyRoles = (activeColony as any)?.roles || [];
+          colonyRoles.forEach((r: any) => {
+            const roleName = r.name?.replace(/^@/, '').trim();
+            if (roleName && new RegExp(`@${roleName}\\b`, 'i').test(textToScan)) {
+              members.forEach((m) => {
+                if (m.role?.toLowerCase() === roleName.toLowerCase() || (m as any).roleId === r.id) {
+                  if (m.id !== currentUserId) recipientIds.add(m.id);
+                }
+              });
+            }
+          });
+
+          // Self-mention fallback for local testing
+          if (recipientIds.size === 0 && currentUserName && new RegExp(`@${currentUserName}\\b`, 'i').test(textToScan)) {
+            recipientIds.add(currentUserId);
+          }
+
+          if (recipientIds.size > 0) {
+            const targetUserIds = Array.from(recipientIds);
+            await notificationsApi.createNotification({
+              actorId: currentUserId,
+              actorName: currentUserName,
+              actorAvatar: currentUser?.imageUrl || null,
+              type: 'mention',
+              title: `@${currentUserName} menyebut Anda di #${activeChannel.name}`,
+              summary: trimmedContent,
+              channelId: activeChannel.id,
+              channelName: activeChannel.name,
+              colonyId: activeColony?.id,
+              hubName: activeColony?.name,
+              targetUserIds,
+            });
+            window.dispatchEvent(new CustomEvent('anticeil_notification_updated'));
+          }
+        }
+      } catch (notifErr) {
+        console.warn('Failed to dispatch mention notification:', notifErr);
+      }
 
       // ── Bot Slash Command Handling ──
       if (trimmedContent.startsWith('/')) {

@@ -13,6 +13,8 @@ export interface NotificationItem {
   hubName?: string;
   createdAt: string;
   isRead: boolean;
+  targetUserId?: string;
+  targetUserIds?: string[];
 }
 
 export type NotificationsTab = 'all' | 'mentions' | 'unread';
