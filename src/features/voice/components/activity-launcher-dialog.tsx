@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { ANTICEIL_APPS, DiscordAppDefinition } from '../data/voice-activities';
 import { appsApi } from '@/features/apps/api/apps-api';
 import { Colony } from '@/chat/chat-types';
+import { useTranslation } from '@/core/i18n';
 
 export interface ActivityLauncherDialogProps {
   open: boolean;
@@ -34,6 +35,7 @@ export function ActivityLauncherDialog({
   onNavigateToBilling,
   activeColony,
 }: ActivityLauncherDialogProps) {
+  const { t } = useTranslation();
   const [appSearchQuery, setAppSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'game' | 'entertainment' | 'productivity' | 'colony'>('all');
   const [appList, setAppList] = useState<DiscordAppDefinition[]>(ANTICEIL_APPS);
@@ -282,7 +284,7 @@ export function ActivityLauncherDialog({
             {/* 2. Activities (2 Columns Grid matching Discord) */}
             <div>
               <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                {appSearchQuery ? 'Search Results' : 'Activities'}
+                {appSearchQuery ? t('Hasil Pencarian') : t('Aktivitas')}
               </h3>
 
               <div className="grid grid-cols-2 gap-2.5 pb-1">

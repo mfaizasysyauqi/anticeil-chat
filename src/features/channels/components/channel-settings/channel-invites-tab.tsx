@@ -27,6 +27,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { colonyApi } from '@/chat/chat-api';
 import { useTranslation } from '@/core/i18n';
@@ -77,7 +78,7 @@ export function ChannelInvitesTab({
     return activeColony?.inviteCode || 'KnnNLJfFm';
   }, [invites, activeColony?.inviteCode]);
 
-  // Load Invites
+  // Load Invites & Pause Status from Database
   useEffect(() => {
     let isMounted = true;
     colonyApi.getInvites(colonyId).then((res) => {
@@ -100,6 +101,16 @@ export function ChannelInvitesTab({
         }
       }
     });
+
+    api.get(`/v1/colony/colonies/${colonyId}/pause-invites`).then((res: any) => {
+      if (isMounted && res) {
+        setIsPaused(Boolean(res.isPaused));
+        setSecurityPauseInvites(Boolean(res.isPaused));
+        if (res.pauseDuration) setPauseDuration(res.pauseDuration);
+        if (res.pauseDMs !== undefined) setSecurityPauseDMs(Boolean(res.pauseDMs));
+      }
+    }).catch(() => {});
+
     return () => {
       isMounted = false;
     };
@@ -136,10 +147,17 @@ export function ChannelInvitesTab({
     }
   };
 
-  // Security actions save
-  const handleSaveSecurityActions = () => {
+  // Security actions save (persisted to PostgreSQL)
+  const handleSaveSecurityActions = async () => {
     setIsPaused(securityPauseInvites);
     setIsSecurityModalOpen(false);
+    try {
+      await api.post(`/v1/colony/colonies/${colonyId}/pause-invites`, {
+        isPaused: securityPauseInvites,
+        pauseDuration,
+        pauseDMs: securityPauseDMs,
+      });
+    } catch {}
     if (securityPauseInvites) {
       toast.info(t(`Semua tautan undangan dijeda selama ${pauseDuration}.`));
     } else {

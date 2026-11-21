@@ -32,6 +32,7 @@ import { ActivityDestinationDialog } from './activity-destination-dialog';
 import { StandaloneAppStage } from './standalone-app-stage';
 import { AppDetailView } from './app-detail-view';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
+import { useTranslation } from '@/core/i18n';
 
 export interface AppsViewProps {
   channels: ColonyChannel[];
@@ -91,14 +92,15 @@ function ActivityCard({
   app: VoiceAppDefinition;
   onOpenDetail: (app: VoiceAppDefinition) => void;
 }) {
+  const { t } = useTranslation();
   const AppIcon = app.icon || Gamepad2;
 
   const categoryLabel =
     app.category === 'productivity'
-      ? 'Utilitas'
+      ? t('Utilitas')
       : app.category === 'game'
-      ? 'Game'
-      : 'Hiburan';
+      ? t('Game')
+      : t('Hiburan');
 
   return (
     <div
@@ -181,6 +183,7 @@ export function AppsView({
   setActiveColonyId,
   setActiveChannelId,
 }: AppsViewProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | 'entertainment' | 'game' | 'productivity'>('all');
   const [appList, setAppList] = useState<VoiceAppDefinition[]>(ANTICEIL_APPS);
@@ -397,7 +400,7 @@ export function AppsView({
           {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">
             <Rocket className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">Aplikasi & Aktivitas</span>
+            <span className="text-sm font-bold text-foreground">{t('Aplikasi & Aktivitas')}</span>
           </div>
 
           <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
@@ -411,7 +414,7 @@ export function AppsView({
               active={activeCategory === tab.id}
               onClick={() => setActiveCategory(tab.id)}
             >
-              {tab.label}
+              {t(tab.label)}
             </TopBarTabButton>
           ))}
         </div>
@@ -421,7 +424,7 @@ export function AppsView({
           <ResponsiveSearchBar
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Cari aktivitas..."
+            placeholder={t('Cari aktivitas...')}
             inputWidth="w-32 sm:w-44 md:w-48"
           />
         </div>
@@ -480,7 +483,7 @@ export function AppsView({
                   onClick={() => setSearchQuery('')}
                   className="h-8 px-4 text-xs font-semibold cursor-pointer"
                 >
-                  Reset Pencarian
+                  {t('Reset Pencarian')}
                 </Button>
               ) : undefined
             }
@@ -499,14 +502,14 @@ export function AppsView({
                   <div className="flex items-center gap-2">
                     <SectionIcon className="w-4 h-4 text-primary shrink-0" />
                     <h3 className={TEXT_STYLES.SECTION_TITLE}>
-                      {section.title}
+                      {t(section.title)}
                     </h3>
                     <span className={TEXT_STYLES.COUNTER_LABEL}>
                       ({sectionApps.length})
                     </span>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
-                    {section.description}
+                    {t(section.description)}
                   </p>
                 </div>
 

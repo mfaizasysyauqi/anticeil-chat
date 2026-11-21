@@ -53,6 +53,7 @@ import {
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
 import { useTranslation } from '@/core/i18n';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
 
@@ -205,6 +206,31 @@ export function StageView({
     },
   ]);
 
+  // Load Stage State from PostgreSQL Database
+  useEffect(() => {
+    let isMounted = true;
+    api.get(`/v1/colony/channels/${channel.id}/stage`).then((res: any) => {
+      if (isMounted && res) {
+        if (res.status === 'live' || res.status === 'waiting') {
+          setStageStatus(res.status);
+        }
+        if (res.topic) {
+          setStageTopic(res.topic);
+          setNewTopicInput(res.topic);
+        }
+        if (Array.isArray(res.speakers) && res.speakers.length > 0) {
+          setSpeakers(res.speakers);
+        }
+        if (Array.isArray(res.audience) && res.audience.length > 0) {
+          setAudience(res.audience);
+        }
+      }
+    }).catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [channel.id]);
+
   // Speaking indicator simulation
   useEffect(() => {
     if (stageStatus !== 'live' || isMicMuted) return;
@@ -234,33 +260,48 @@ export function StageView({
     toast.success(isMusicPlaying ? t('Musik latar dihentikan') : t('Musik latar dimainkan 🎵'));
   };
 
-  // Start Stage Action
-  const handleStartStage = () => {
+  // Start Stage Action (Persisted to Database)
+  const handleStartStage = async () => {
     if (!newTopicInput.trim()) {
       toast.error(t('Topik Stage tidak boleh kosong'));
       return;
     }
-    setStageTopic(newTopicInput.trim());
+    const finalTopic = newTopicInput.trim();
+    setStageTopic(finalTopic);
     setStageStatus('live');
     setIsStartStageModalOpen(false);
+    try {
+      await api.post(`/v1/colony/channels/${channel.id}/stage/start`, {
+        topic: finalTopic,
+        speakers,
+        audience,
+      });
+    } catch {}
     toast.success(t('Stage berhasil dimulai! 🎙️'));
   };
 
-  // End Stage Action
-  const handleEndStage = () => {
+  // End Stage Action (Persisted to Database)
+  const handleEndStage = async () => {
     setStageStatus('waiting');
     setIsEndStageModalOpen(false);
+    try {
+      await api.post(`/v1/colony/channels/${channel.id}/stage/end`);
+    } catch {}
     toast.info(t('Stage telah diakhiri untuk semua orang'));
     onDisconnect?.();
   };
 
-  // Request to speak toggle
-  const handleToggleHandRaise = () => {
-    setIsHandRaised((prev) => {
-      const next = !prev;
-      toast.success(next ? t('Tangan diangkat! Moderator telah diberitahu ✋') : t('Batal mengangkat tangan'));
-      return next;
-    });
+  // Request to speak toggle (Persisted to Database)
+  const handleToggleHandRaise = async () => {
+    const next = !isHandRaised;
+    setIsHandRaised(next);
+    try {
+      await api.post(`/v1/colony/channels/${channel.id}/stage/hand-raise`, {
+        userId: currentUser?.id || 'usr_me',
+        isHandRaised: next,
+      });
+    } catch {}
+    toast.success(next ? t('Tangan diangkat! Moderator telah diberitahu ✋') : t('Batal mengangkat tangan'));
   };
 
   return (

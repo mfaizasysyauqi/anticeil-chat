@@ -112,7 +112,7 @@ export function HomeChannelsSidebar({
       <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 custom-scrollbar">
         {/* Navigation buttons */}
         <div className="space-y-0.5 mb-3">
-          {/* 1. Aplikasi & Activities (Launcher utama) */}
+          {/* 1. Aplikasi & Aktivitas (Launcher utama) */}
           <button
             onClick={() => {
               setActiveChannelId('');
@@ -134,7 +134,7 @@ export function HomeChannelsSidebar({
                   : 'text-muted-foreground group-hover:text-foreground',
               )}
             />
-            <span className="flex-1 font-medium">{t('Aplikasi & Activities')}</span>
+            <span className="flex-1 font-medium">{t('Aplikasi & Aktivitas')}</span>
           </button>
 
           {/* 2. Colony & Komunitas (Workspace / Discovery) */}

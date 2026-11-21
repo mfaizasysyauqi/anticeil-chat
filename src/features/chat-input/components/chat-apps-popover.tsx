@@ -8,6 +8,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ANTICEIL_APPS, type VoiceAppDefinition } from '@/features/voice/data/voice-activities';
 import { appsApi } from '@/features/apps/api/apps-api';
+import { useTranslation } from '@/core/i18n';
 
 export interface ChatAppsPopoverProps {
   open: boolean;
@@ -26,6 +27,7 @@ export function ChatAppsPopover({
   onLaunchActivity,
   apps: initialApps,
 }: ChatAppsPopoverProps) {
+  const { t } = useTranslation();
   const [appList, setAppList] = useState<VoiceAppDefinition[]>(initialApps || ANTICEIL_APPS);
 
   // Sync with appsApi so newly registered or dynamic community apps update automatically
@@ -58,7 +60,7 @@ export function ChatAppsPopover({
         <button
           type="button"
           className="w-6 h-6 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-          title="Apps & Activities (Aplikasi Komunitas)"
+          title={t('Aplikasi & Aktivitas')}
         >
           {/* Discord 4-shapes Activity icon */}
           <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
@@ -79,7 +81,7 @@ export function ChatAppsPopover({
             type="text"
             value={appsSearchQuery}
             onChange={(e) => setAppsSearchQuery(e.target.value)}
-            placeholder="Cari Aplikasi & Aktivitas..."
+            placeholder={t('Cari Aplikasi & Aktivitas...')}
             className="w-full bg-muted/60 border border-border rounded-lg pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
