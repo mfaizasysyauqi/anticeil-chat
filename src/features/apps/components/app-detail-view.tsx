@@ -123,14 +123,18 @@ export function AppDetailView({
         {/* Right: Actions + Close X */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Button
-            size="sm"
-            variant="outline"
+            size="icon-xs"
+            variant="ghost"
             onClick={handleShare}
-            className="h-8 px-2.5 sm:px-3 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground border-border"
-            title="Salin tautan aplikasi"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+            title={isCopied ? 'Tersalin!' : 'Bagikan'}
+            aria-label="Bagikan"
           >
-            {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{isCopied ? 'Tersalin' : 'Bagikan'}</span>
+            {isCopied ? (
+              <Check className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <Share2 className="w-4 h-4" />
+            )}
           </Button>
 
           <DropdownMenu>
