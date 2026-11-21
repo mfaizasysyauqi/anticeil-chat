@@ -92,8 +92,8 @@ export function ActivityLauncherDialog({
           showCloseButton={false}
           className="w-[95vw] sm:w-[500px] max-w-[500px] p-0 bg-background border border-border text-foreground overflow-hidden shadow-2xl rounded-[16px] flex flex-col max-h-[82vh] h-[520px] focus:outline-none"
         >
-          <DialogTitle className="sr-only">Activities</DialogTitle>
-          <DialogDescription className="sr-only">Browse and launch activities in this voice call.</DialogDescription>
+          <DialogTitle className="sr-only">{t('Aktivitas')}</DialogTitle>
+          <DialogDescription className="sr-only">{t('Jelajahi dan jalankan aktivitas dalam panggilan suara ini.')}</DialogDescription>
 
           {/* Top Search Bar & Close button */}
           <div className="px-3.5 sm:px-4 pt-3.5 pb-2 shrink-0">
@@ -104,7 +104,7 @@ export function ActivityLauncherDialog({
                   type="text"
                   value={appSearchQuery}
                   onChange={(e) => setAppSearchQuery(e.target.value)}
-                  placeholder="Cari aktivitas, game, atau bot..."
+                  placeholder={t('Cari aktivitas, game, atau bot...')}
                   className="w-full h-9 bg-muted/50 border border-border focus:border-border focus:ring-1 focus:ring-ring rounded-lg pl-9 pr-3 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors"
                 />
               </div>
@@ -112,8 +112,8 @@ export function ActivityLauncherDialog({
                 type="button"
                 onClick={() => onOpenChange(false)}
                 className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 flex items-center justify-center transition-colors cursor-pointer shrink-0"
-                title="Tutup"
-                aria-label="Tutup"
+                title={t('Tutup')}
+                aria-label={t('Tutup')}
               >
                 <X className="w-4 h-4 stroke-[2.2]" />
               </button>
@@ -131,7 +131,7 @@ export function ActivityLauncherDialog({
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
-                Semua
+                {t('Semua')}
               </button>
               <button
                 type="button"
@@ -143,7 +143,7 @@ export function ActivityLauncherDialog({
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
-                🎮 Games
+                🎮 {t('Game')}
               </button>
               <button
                 type="button"
@@ -155,7 +155,7 @@ export function ActivityLauncherDialog({
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
-                🍿 Hiburan
+                🍿 {t('Hiburan')}
               </button>
               <button
                 type="button"
@@ -167,7 +167,7 @@ export function ActivityLauncherDialog({
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
-                🎨 Produktivitas
+                🎨 {t('Produktivitas')}
               </button>
               {installedColonyApps.length > 0 && (
                 <button
@@ -189,14 +189,14 @@ export function ActivityLauncherDialog({
               <div className="mt-2.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-between text-xs">
                 <span className="text-[11px] text-primary font-semibold flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  Aktif: <strong className="text-foreground">{currentActiveApp?.title || activeAppId}</strong>
+                  {t('Aktif')}: <strong className="text-foreground">{currentActiveApp?.title || activeAppId}</strong>
                 </span>
                 <button
                   type="button"
                   onClick={onStopActivity}
                   className="text-[11px] text-red-500 hover:text-red-400 hover:underline cursor-pointer font-semibold"
                 >
-                  Hentikan Aktivitas
+                  {t('Hentikan Aktivitas')}
                 </button>
               </div>
             )}
@@ -207,7 +207,7 @@ export function ActivityLauncherDialog({
             {/* 1. Recents Row */}
             {!appSearchQuery && selectedCategory === 'all' && (
               <div>
-                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Recents</h3>
+                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('Terbaru')}</h3>
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                   {appList.map((app) => {
                     const IconComp = app.icon || Gamepad2;
@@ -394,11 +394,11 @@ export function ActivityLauncherDialog({
               </div>
               <div className="flex items-center gap-2 text-foreground/90">
                 <Check className="w-4 h-4 text-primary shrink-0" />
-                <span>High-Definition 1080p 60FPS Screen Sharing & Activities</span>
+                <span>{t('High-Definition 1080p 60FPS Screen Sharing & Activities')}</span>
               </div>
               <div className="flex items-center gap-2 text-foreground/90">
                 <Check className="w-4 h-4 text-primary shrink-0" />
-                <span>Anticeil Activity: YouTube Watch Together, Games, & Workflow Canvas</span>
+                <span>{t('Anticeil Activity: YouTube Watch Together, Games, & Workflow Canvas')}</span>
               </div>
               <div className="flex items-center gap-2 text-foreground/90">
                 <Check className="w-4 h-4 text-primary shrink-0" />

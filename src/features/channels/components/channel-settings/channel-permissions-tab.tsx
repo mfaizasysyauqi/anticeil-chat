@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { channelsApi } from '../../api/channels-api';
 import { colonyApi } from '@/features/colonies/api/colonies-api';
+import { useTranslation } from '@/core/i18n';
 import type {
   ColonyChannel,
   ChannelPermissionOverwrite,
@@ -915,14 +916,15 @@ interface PermissionRowProps {
 }
 
 function PermissionRow({ perm, state, onChange }: PermissionRowProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between p-3.5 gap-4 hover:bg-accent/20 transition-colors">
       <div className="min-w-0 pr-2">
         <span className="text-xs font-bold text-foreground block">
-          {perm.name}
+          {t(perm.name)}
         </span>
         <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
-          {perm.description}
+          {t(perm.description)}
         </p>
       </div>
 
@@ -938,7 +940,7 @@ function PermissionRow({ perm, state, onChange }: PermissionRowProps) {
               ? 'bg-[#da373c] text-white shadow-xs font-bold'
               : 'text-[#949ba4] hover:text-[#da373c] hover:bg-[#da373c]/15',
           )}
-          title="Deny"
+          title={t('Tolak')}
         >
           <X className="w-3.5 h-3.5 stroke-[2.5]" />
         </button>
@@ -953,7 +955,7 @@ function PermissionRow({ perm, state, onChange }: PermissionRowProps) {
               ? 'bg-[#4e5058] text-white shadow-xs font-bold'
               : 'text-[#949ba4] hover:text-white hover:bg-white/5',
           )}
-          title="Neutral / Inherit"
+          title={t('Netral')}
         >
           <Slash className="w-3 h-3 stroke-[2.5]" />
         </button>
@@ -968,7 +970,7 @@ function PermissionRow({ perm, state, onChange }: PermissionRowProps) {
               ? 'bg-[#23a55a] text-white shadow-xs font-bold'
               : 'text-[#949ba4] hover:text-[#23a55a] hover:bg-[#23a55a]/15',
           )}
-          title="Allow"
+          title={t('Izinkan')}
         >
           <Check className="w-3.5 h-3.5 stroke-[2.5]" />
         </button>
