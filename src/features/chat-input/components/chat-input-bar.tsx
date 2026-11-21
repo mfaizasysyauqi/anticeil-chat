@@ -12,7 +12,15 @@ import {
   CalendarPlus,
   Mic,
   Sparkles,
+  Eye,
+  EyeOff,
+  Pencil,
+  Trash2,
+  FileText,
+  Film,
+  Music,
 } from 'lucide-react';
+import { SmallDialog } from '@/components/ui/small-dialog';
 import { Button } from '@/components/ui/button';
 import { VoiceNoteRecorder } from './voice-note-recorder';
 import {
@@ -33,7 +41,7 @@ import { CustomScheduleModal } from './custom-schedule-modal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { MAX_MESSAGE_CHARS, getCurrentMaxMessageChars } from '../utils/text-limit';
-import { getCurrentUserPlan } from '../utils/attachment';
+import { getCurrentUserPlan, processFilesBatch, MAX_UPLOAD_FILES_LIMIT } from '../utils/attachment';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
 import type { DiscordEmoji, DiscordSticker, DiscordGifItem } from '@/chat/anticeil-media-data';
 
@@ -43,6 +51,8 @@ export interface ChatInputBarProps {
   channelPaddingClass?: string;
   stagedAttachment: { name: string; size?: string; url?: string; type?: string } | null;
   setStagedAttachment: (attachment: any) => void;
+  stagedAttachments?: any[];
+  setStagedAttachments?: React.Dispatch<React.SetStateAction<any[]>>;
   inputText: string;
   setInputText: (text: string) => void;
   onSendMessage: () => void;
@@ -86,6 +96,8 @@ export function ChatInputBar({
   channelPaddingClass = 'px-4 lg:px-6',
   stagedAttachment,
   setStagedAttachment,
+  stagedAttachments = [],
+  setStagedAttachments,
   inputText,
   setInputText,
   onSendMessage,
@@ -131,6 +143,105 @@ export function ChatInputBar({
   const userPlan = getCurrentUserPlan();
   const maxMessageChars = getCurrentMaxMessageChars();
   const isNectar = userPlan === 'nectar_boost';
+
+  const [isTooManyUploadsOpen, setIsTooManyUploadsOpen] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [editingAttachmentIdx, setEditingAttachmentIdx] = useState<number | null>(null);
+  const [editingAttachmentName, setEditingAttachmentName] = useState<string>('');
+
+  const attachmentsList = stagedAttachments && stagedAttachments.length > 0
+    ? stagedAttachments
+    : stagedAttachment
+    ? [stagedAttachment]
+    : [];
+
+  useEffect(() => {
+    const handleLimitEvent = () => setIsTooManyUploadsOpen(true);
+    window.addEventListener('anticeil_too_many_uploads', handleLimitEvent);
+    return () => window.removeEventListener('anticeil_too_many_uploads', handleLimitEvent);
+  }, []);
+
+  const removeAttachment = (index: number) => {
+    if (setStagedAttachments) {
+      setStagedAttachments((prev) => prev.filter((_, i) => i !== index));
+    }
+    if (index === 0 && setStagedAttachment) {
+      setStagedAttachment(null);
+    }
+    if (editingAttachmentIdx === index) {
+      setEditingAttachmentIdx(null);
+    }
+  };
+
+  const toggleSpoiler = (index: number) => {
+    if (setStagedAttachments) {
+      setStagedAttachments((prev) =>
+        prev.map((item, i) => (i === index ? { ...item, isSpoiler: !item.isSpoiler } : item))
+      );
+    }
+  };
+
+  const saveRename = (index: number) => {
+    const trimmed = editingAttachmentName.trim();
+    if (trimmed && setStagedAttachments) {
+      setStagedAttachments((prev) =>
+        prev.map((item, i) => (i === index ? { ...item, name: trimmed } : item))
+      );
+    }
+    setEditingAttachmentIdx(null);
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const files = e.clipboardData?.files;
+    if (files && files.length > 0) {
+      e.preventDefault();
+      processFilesBatch(
+        files,
+        attachmentsList.length,
+        (newAtt) => {
+          if (setStagedAttachments) {
+            setStagedAttachments((prev) => [...prev, newAtt]);
+          } else {
+            setStagedAttachment(newAtt);
+          }
+        },
+        () => setIsTooManyUploadsOpen(true)
+      );
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      processFilesBatch(
+        files,
+        attachmentsList.length,
+        (newAtt) => {
+          if (setStagedAttachments) {
+            setStagedAttachments((prev) => [...prev, newAtt]);
+          } else {
+            setStagedAttachment(newAtt);
+          }
+        },
+        () => setIsTooManyUploadsOpen(true)
+      );
+    }
+  };
 
   const handleOpenSubscription = () => {
     if (onOpenSubscriptionModal) {
@@ -190,24 +301,133 @@ export function ChatInputBar({
         </div>
       )}
 
-      {/* Staged Attachment Indicator */}
-      {stagedAttachment && (
-        <div className="p-2 rounded-[12px] bg-[#111214] border border-white/10 shadow-2xl backdrop-blur-md flex items-center justify-between text-xs animate-in slide-in-from-bottom-1">
-          <div className="flex items-center gap-2 truncate">
-            <Paperclip className="w-4 h-4 text-primary shrink-0" />
-            <span className="font-medium truncate text-[#dbdee1]">{stagedAttachment.name}</span>
-            {stagedAttachment.size && (
-              <span className="text-[10px] text-muted-foreground">({stagedAttachment.size})</span>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setStagedAttachment(null)}
-            className="h-6 w-6 text-muted-foreground hover:text-foreground cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </Button>
+      {/* Discord-style Multi-Attachment Staged Preview Strip (Image 2) */}
+      {attachmentsList.length > 0 && (
+        <div className="flex items-center gap-3 overflow-x-auto custom-scrollbar p-2 mb-2 max-w-full rounded-[14px] bg-muted/40 border border-border/60 animate-in slide-in-from-bottom-1">
+          {attachmentsList.map((att, idx) => {
+            const isImage = att.type === 'image' || att.url?.match(/\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i);
+            const isVideo = att.type === 'video' || att.url?.match(/\.(mp4|webm|mov)($|\?)/i);
+            const isAudio = att.type === 'audio' || att.type === 'voice-note';
+
+            return (
+              <div
+                key={idx}
+                className="relative w-44 h-36 shrink-0 rounded-[12px] bg-card border border-border/80 shadow-xs flex flex-col justify-between overflow-hidden p-2 group hover:border-primary/50 transition-all select-none"
+              >
+                {/* Top-Right Action Pill: Spoiler, Edit/Rename, Trash */}
+                <div className="absolute top-2 right-2 flex items-center bg-background/90 dark:bg-black/80 backdrop-blur-md rounded-md p-0.5 border border-border/60 shadow-sm opacity-90 group-hover:opacity-100 transition-opacity z-20">
+                  {/* 1. Toggle Spoiler Button */}
+                  <button
+                    type="button"
+                    onClick={() => toggleSpoiler(idx)}
+                    className={cn(
+                      'p-1 rounded transition-colors cursor-pointer',
+                      att.isSpoiler
+                        ? 'text-primary bg-primary/10'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    )}
+                    title={att.isSpoiler ? t('Hapus Spoiler') : t('Tandai sebagai Spoiler')}
+                  >
+                    {att.isSpoiler ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {/* 2. Edit / Rename Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingAttachmentIdx(idx);
+                      setEditingAttachmentName(att.name);
+                    }}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                    title={t('Ubah Nama Lampiran')}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+
+                  {/* 3. Delete / Remove Button */}
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(idx)}
+                    className="p-1 rounded text-destructive/80 hover:text-destructive hover:bg-destructive/20 transition-colors cursor-pointer"
+                    title={t('Hapus Lampiran')}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Media Preview or File Icon Area */}
+                <div className="w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden rounded-md relative bg-muted/40">
+                  {isImage ? (
+                    <div className="w-full h-full relative flex items-center justify-center overflow-hidden">
+                      <img
+                        src={att.url}
+                        alt={att.name}
+                        className={cn(
+                          'w-full h-full object-cover transition-all',
+                          att.isSpoiler && 'blur-md scale-105'
+                        )}
+                      />
+                      {att.isSpoiler && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <span className="text-[10px] font-black tracking-wider px-2 py-0.5 rounded bg-black/70 text-white border border-white/20 select-none">
+                            SPOILER
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : isVideo ? (
+                    <div className="w-full h-full relative flex items-center justify-center bg-black/40">
+                      <Film className="w-8 h-8 text-muted-foreground" />
+                      {att.isSpoiler && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <span className="text-[10px] font-black tracking-wider px-2 py-0.5 rounded bg-black/70 text-white">
+                            SPOILER
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : isAudio ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-primary">
+                      <Music className="w-8 h-8" />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-muted-foreground">
+                      <FileText className="w-8 h-8" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom Filename & Size */}
+                <div className="mt-1.5 w-full flex flex-col min-w-0">
+                  {editingAttachmentIdx === idx ? (
+                    <input
+                      type="text"
+                      autoFocus
+                      value={editingAttachmentName}
+                      onChange={(e) => setEditingAttachmentName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveRename(idx);
+                        if (e.key === 'Escape') setEditingAttachmentIdx(null);
+                      }}
+                      onBlur={() => saveRename(idx)}
+                      className="w-full text-xs bg-muted border border-primary px-1.5 py-0.5 rounded outline-none text-foreground font-medium"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-between gap-1 min-w-0">
+                      <span className="font-semibold text-xs truncate text-foreground leading-tight" title={att.name}>
+                        {att.name}
+                      </span>
+                      {att.size && (
+                        <span className="text-[10px] text-muted-foreground shrink-0 leading-tight">
+                          {att.size}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -235,9 +455,20 @@ export function ChatInputBar({
           onCancel={() => setIsRecordingVoice(false)}
         />
       ) : (
-        <div className="w-full min-h-[52px] max-h-[50vh] flex items-end gap-2.5 rounded-[12px] bg-muted/70 dark:bg-card border border-border hover:border-foreground/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 px-3 py-2 transition-all shadow-xs">
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={cn(
+            'w-full min-h-[52px] max-h-[50vh] flex items-end gap-2.5 rounded-[12px] bg-muted/70 dark:bg-card border transition-all shadow-xs px-3 py-2',
+            isDraggingOver
+              ? 'border-primary ring-2 ring-primary/40 bg-primary/5'
+              : 'border-border hover:border-foreground/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
+          )}
+        >
           <input
             type="file"
+            multiple
             ref={fileInputRef}
             onChange={onFileSelect}
             accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.csv,.json,.xlsx,.pptx,.md,.rtf,.zip,.rar,.7z"
@@ -372,6 +603,7 @@ export function ChatInputBar({
           rows={1}
           value={inputText}
           maxLength={maxMessageChars + 4000}
+          onPaste={handlePaste}
           onChange={(e) => {
             setInputText(e.target.value);
             if (!isSlashOpen && e.target.value.startsWith('/')) {
@@ -470,7 +702,7 @@ export function ChatInputBar({
           </div>
 
           {/* Send Button — only visible when there's content */}
-          {(inputText.trim() || stagedAttachment) && (
+          {(inputText.trim() || attachmentsList.length > 0) && (
             <button
               type="button"
               onClick={() => {
@@ -536,6 +768,20 @@ export function ChatInputBar({
         onSchedule={async (date, text) => {
           await onScheduleMessage?.(date, text);
         }}
+      />
+
+      {/* Discord-style Too Many Uploads Dialog (Image 1) */}
+      <SmallDialog
+        open={isTooManyUploadsOpen}
+        onOpenChange={setIsTooManyUploadsOpen}
+        onClose={() => setIsTooManyUploadsOpen(false)}
+        title={t('Too many uploads!')}
+        description={t('You can only upload 10 files at a time!')}
+        confirmLabel={t('Got It')}
+        hideCancel={true}
+        variant="default"
+        onConfirm={() => setIsTooManyUploadsOpen(false)}
+        showCloseButton={true}
       />
     </div>
   );

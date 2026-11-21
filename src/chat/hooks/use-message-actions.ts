@@ -61,6 +61,8 @@ export interface UseMessageActionsOptions {
   setInputText: React.Dispatch<React.SetStateAction<string>>;
   stagedAttachment: any;
   setStagedAttachment: (att: any) => void;
+  stagedAttachments?: any[];
+  setStagedAttachments?: React.Dispatch<React.SetStateAction<any[]>>;
   messagesMap: Record<string, ColonyMessage[]>;
   setMessagesMap: React.Dispatch<React.SetStateAction<Record<string, ColonyMessage[]>>>;
   setPinnedMessages: React.Dispatch<React.SetStateAction<ColonyMessage[]>>;
@@ -84,6 +86,8 @@ export function useMessageActions({
   setInputText,
   stagedAttachment,
   setStagedAttachment,
+  stagedAttachments = [],
+  setStagedAttachments,
   messagesMap,
   setMessagesMap,
   setPinnedMessages,
@@ -109,7 +113,10 @@ export function useMessageActions({
     }
     if (!activeChannel) return;
     const trimmedContent = (typeof customContent === 'string' ? customContent : inputText).trim();
-    if (!trimmedContent && !stagedAttachment && !customAttachment) return;
+    const currentAttachments = stagedAttachments && stagedAttachments.length > 0
+      ? stagedAttachments
+      : (customAttachment || stagedAttachment ? [customAttachment || stagedAttachment] : undefined);
+    if (!trimmedContent && (!currentAttachments || currentAttachments.length === 0)) return;
 
     // Check message character length limit
     if (trimmedContent) {
@@ -149,6 +156,10 @@ export function useMessageActions({
         : trimmedContent;
 
     const chosenAttachment = customAttachment || stagedAttachment;
+    const finalAttachments = stagedAttachments && stagedAttachments.length > 0
+      ? stagedAttachments
+      : (chosenAttachment ? [chosenAttachment] : undefined);
+
     const payload: Partial<ColonyMessage> = {
       channelId: activeChannel.id,
       senderId: currentUserId,
@@ -157,7 +168,7 @@ export function useMessageActions({
       senderAvatar: currentUser?.imageUrl ?? null,
       senderRole: myRole,
       content: contentToSend,
-      attachments: chosenAttachment ? [chosenAttachment] : undefined,
+      attachments: finalAttachments,
       replyTo: replyingToMessage ? {
         id: replyingToMessage.id,
         senderId: replyingToMessage.senderId,
@@ -171,6 +182,7 @@ export function useMessageActions({
       setInputText('');
     }
     setStagedAttachment(null);
+    setStagedAttachments?.([]);
     setReplyingToMessage?.(null);
 
     try {

@@ -89,32 +89,22 @@ export interface ProcessedAttachment {
   url: string;
   name: string;
   size: string;
+  isSpoiler?: boolean;
 }
 
-export function processFileInput(
-  e: React.ChangeEvent<HTMLInputElement>,
-  onSuccess: (attachment: ProcessedAttachment) => void,
+export const MAX_UPLOAD_FILES_LIMIT = 10;
+
+export async function processFileObject(
+  file: File,
   options?: { onUpgradeClick?: () => void; userPlan?: 'free' | 'nectar_basic' | 'nectar_boost' },
-) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  // Reset input so user can re-select same file
-  e.target.value = '';
-
-  // 1. Rate limit check
-  if (isRateLimited()) {
-    toast.error('Terlalu banyak upload. Tunggu sebentar sebelum mengunggah lagi (maks 5 file/menit).');
-    return;
-  }
-
-  // 2. Allowed file type check
+): Promise<ProcessedAttachment | null> {
+  // 1. Allowed file type check
   if (!isAllowedFile(file)) {
-    toast.error('Format file tidak didukung. Unggah gambar, dokumen, audio, atau video.');
-    return;
+    toast.error(`Format file "${file.name}" tidak didukung. Unggah gambar, dokumen, audio, atau video.`);
+    return null;
   }
 
-  // 3. Dynamic Tier-based file size check
+  // 2. Dynamic Tier-based file size check
   const category = categorizeFile(file);
   const currentPlan = options?.userPlan || getCurrentUserPlan();
   const maxLimit = getUploadLimitForPlan(currentPlan);
@@ -123,7 +113,7 @@ export function processFileInput(
     if (currentPlan === 'free' && file.size <= NECTAR_TIER_LIMIT) {
       const suggestedTier = file.size <= POLLEN_TIER_LIMIT ? 'Pollen (50MB)' : 'Nectar VIP (500MB)';
       toast.error(
-        `File ini (${formatSize(file.size)}) melebihi batas 25MB Free Tier. Tingkatkan ke ${suggestedTier} untuk batas upload lebih besar!`,
+        `File "${file.name}" (${formatSize(file.size)}) melebihi batas 25MB Free Tier. Tingkatkan ke ${suggestedTier} untuk batas upload lebih besar!`,
         {
           duration: 6000,
           action: options?.onUpgradeClick
@@ -136,7 +126,7 @@ export function processFileInput(
       );
     } else if (currentPlan === 'nectar_basic' && file.size <= NECTAR_TIER_LIMIT) {
       toast.error(
-        `File ini (${formatSize(file.size)}) melebihi batas 50MB Pollen Tier. Tingkatkan ke Nectar VIP untuk upload hingga 500MB!`,
+        `File "${file.name}" (${formatSize(file.size)}) melebihi batas 50MB Pollen Tier. Tingkatkan ke Nectar VIP untuk upload hingga 500MB!`,
         {
           duration: 6000,
           action: options?.onUpgradeClick
@@ -148,36 +138,78 @@ export function processFileInput(
         },
       );
     } else {
-      toast.error(`Ukuran file maksimal ${formatSize(maxLimit)}. File ini berukuran ${formatSize(file.size)}.`);
+      toast.error(`Ukuran file "${file.name}" maksimal ${formatSize(maxLimit)}. File berukuran ${formatSize(file.size)}.`);
     }
-    return;
+    return null;
   }
 
-  // Record for rate limiting
   recordUpload();
 
-  // 4. Process file — optimistic local display + background Cloudflare R2 upload
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const localDataUrl = reader.result as string;
-    // Stage immediately for instant feedback
-    onSuccess({
+  return new Promise<ProcessedAttachment>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const localDataUrl = reader.result as string;
+      const att: ProcessedAttachment = {
+        type: category,
+        url: localDataUrl,
+        name: file.name,
+        size: formatSize(file.size),
+      };
+
+      // Upload to Cloudflare R2 in background
+      uploadMediaToR2(file).then((remote) => {
+        if (remote.isRemote && remote.url) {
+          att.url = remote.url;
+        }
+      });
+
+      resolve(att);
+    };
+    reader.onerror = () => resolve({
       type: category,
-      url: localDataUrl,
+      url: '',
       name: file.name,
       size: formatSize(file.size),
     });
+    reader.readAsDataURL(file);
+  });
+}
 
-    // Upload to Cloudflare R2 via backend bridge
-    const remote = await uploadMediaToR2(file);
-    if (remote.isRemote && remote.url) {
-      onSuccess({
-        type: category,
-        url: remote.url,
-        name: file.name,
-        size: formatSize(file.size),
-      });
+export async function processFilesBatch(
+  files: FileList | File[],
+  currentCount: number,
+  onAddAttachment: (attachment: ProcessedAttachment) => void,
+  onLimitExceeded: () => void,
+  options?: { onUpgradeClick?: () => void; userPlan?: 'free' | 'nectar_basic' | 'nectar_boost' },
+) {
+  const fileArray = Array.from(files);
+  if (fileArray.length === 0) return;
+
+  if (currentCount >= MAX_UPLOAD_FILES_LIMIT || currentCount + fileArray.length > MAX_UPLOAD_FILES_LIMIT) {
+    onLimitExceeded();
+  }
+
+  const allowedToAdd = fileArray.slice(0, Math.max(0, MAX_UPLOAD_FILES_LIMIT - currentCount));
+  for (const file of allowedToAdd) {
+    const att = await processFileObject(file, options);
+    if (att) {
+      onAddAttachment(att);
     }
-  };
-  reader.readAsDataURL(file);
+  }
+}
+
+export function processFileInput(
+  e: React.ChangeEvent<HTMLInputElement>,
+  onSuccess: (attachment: ProcessedAttachment) => void,
+  options?: { onUpgradeClick?: () => void; userPlan?: 'free' | 'nectar_basic' | 'nectar_boost' },
+) {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+  e.target.value = '';
+
+  for (let i = 0; i < files.length; i++) {
+    processFileObject(files[i], options).then((att) => {
+      if (att) onSuccess(att);
+    });
+  }
 }

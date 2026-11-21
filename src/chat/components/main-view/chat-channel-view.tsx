@@ -103,6 +103,8 @@ export interface ChatChannelViewProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   stagedAttachment: CommunityAttachment | null;
   setStagedAttachment: (att: CommunityAttachment | null) => void;
+  stagedAttachments?: CommunityAttachment[];
+  setStagedAttachments?: React.Dispatch<React.SetStateAction<CommunityAttachment[]>>;
   inputText: string;
   setInputText: (text: string) => void;
   handleSendMessage: (customContent?: string) => void | Promise<void>;
@@ -214,6 +216,8 @@ export function ChatChannelView({
   messagesEndRef,
   stagedAttachment,
   setStagedAttachment,
+  stagedAttachments = [],
+  setStagedAttachments,
   inputText,
   setInputText,
   handleSendMessage,
@@ -386,6 +390,8 @@ export function ChatChannelView({
         channelPaddingClass={isSplit ? 'px-3 sm:px-4' : CHANNEL_HORIZONTAL_PADDING}
         stagedAttachment={stagedAttachment}
         setStagedAttachment={setStagedAttachment}
+        stagedAttachments={stagedAttachments}
+        setStagedAttachments={setStagedAttachments}
         inputText={inputText}
         setInputText={setInputText}
         replyingTo={replyingToMessage}

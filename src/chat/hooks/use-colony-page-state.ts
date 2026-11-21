@@ -13,7 +13,7 @@ import {
   useChannelPinsNotifications,
 } from '@/features/channels';
 import { renderFormattedMessage, useColonySocket } from '@/features/chat';
-import { processFileInput } from '@/features/chat-input';
+import { processFileInput, processFilesBatch } from '@/features/chat-input';
 import { useChatModalsState } from './use-chat-modals-state';
 import { useChatSubsystems } from './use-chat-subsystems';
 import { useActivityLauncher } from './use-activity-launcher';
@@ -107,7 +107,12 @@ export function useColonyPageState(): ChatPageContentProps {
   const [messagesMap, setMessagesMap] = useState<Record<string, ColonyMessage[]>>({});
 
   const [inputText, setInputText] = useState('');
-  const [stagedAttachment, setStagedAttachment] = useState<ColonyAttachment | null>(null);
+  const [stagedAttachments, setStagedAttachments] = useState<ColonyAttachment[]>([]);
+  const stagedAttachment = stagedAttachments[0] || null;
+  const setStagedAttachment = useCallback((att: ColonyAttachment | null) => {
+    if (att) setStagedAttachments([att]);
+    else setStagedAttachments([]);
+  }, []);
   const [showMemberList, setShowMemberList] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isTemplatePopoverOpen, setIsTemplatePopoverOpen] = useState(false);
@@ -346,6 +351,8 @@ export function useColonyPageState(): ChatPageContentProps {
     setInputText,
     stagedAttachment,
     setStagedAttachment,
+    stagedAttachments,
+    setStagedAttachments,
     messagesMap,
     setMessagesMap,
     setPinnedMessages,
@@ -359,7 +366,16 @@ export function useColonyPageState(): ChatPageContentProps {
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    processFileInput(e, setStagedAttachment);
+    if (!e.target.files) return;
+    processFilesBatch(
+      e.target.files,
+      stagedAttachments.length,
+      (newAtt) => setStagedAttachments((prev) => [...prev, newAtt as ColonyAttachment]),
+      () => {
+        window.dispatchEvent(new CustomEvent('anticeil_too_many_uploads'));
+      }
+    );
+    e.target.value = '';
   };
 
   const handleJumpToNotification = (item: any) => {
@@ -674,6 +690,8 @@ export function useColonyPageState(): ChatPageContentProps {
     messagesEndRef,
     stagedAttachment,
     setStagedAttachment,
+    stagedAttachments,
+    setStagedAttachments,
     inputText,
     setInputText,
     handleFileChange,

@@ -28,6 +28,7 @@ export interface SmallDialogProps {
   children?: React.ReactNode;
   confirmLabel?: React.ReactNode;
   cancelLabel?: React.ReactNode;
+  hideCancel?: boolean;
   onConfirm?: () => void | Promise<void>;
   variant?: 'destructive' | 'default';
   isLoading?: boolean;
@@ -46,6 +47,7 @@ export function SmallDialog({
   children,
   confirmLabel,
   cancelLabel,
+  hideCancel = false,
   onConfirm,
   variant = 'destructive',
   isLoading = false,
@@ -95,16 +97,18 @@ export function SmallDialog({
         ) : (
           (onConfirm || onClose) && (
             <DialogFooter className="mt-3 gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={onClose}
-                disabled={isLoading}
-                className="h-9 px-3.5 text-xs font-semibold cursor-pointer"
-              >
-                {cancelLabel ?? t('Batal')}
-              </Button>
+              {!hideCancel && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={onClose}
+                  disabled={isLoading}
+                  className="h-9 px-3.5 text-xs font-semibold cursor-pointer"
+                >
+                  {cancelLabel ?? t('Batal')}
+                </Button>
+              )}
               {onConfirm && (
                 <Button
                   type="button"
@@ -114,6 +118,7 @@ export function SmallDialog({
                   disabled={isLoading}
                   className={cn(
                     'h-9 px-4 text-xs font-bold cursor-pointer transition-all shadow-xs active:scale-95',
+                    hideCancel && 'w-full',
                     variant === 'destructive'
                       ? 'bg-destructive hover:bg-destructive/90 text-white'
                       : 'bg-primary hover:bg-primary/90 text-primary-foreground'
