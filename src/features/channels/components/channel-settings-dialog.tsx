@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import { useTranslation } from '@/core/i18n';
 import {
+  type Colony,
   type ColonyChannel,
   type ColonyChannelType,
   type CommunityCustomRole,
@@ -26,6 +27,7 @@ import type { ColonyCategory } from '../api/categories-api';
 import { toast } from 'sonner';
 import { ChannelOverviewTab } from './channel-settings/channel-overview-tab';
 import { ChannelPermissionsTab } from './channel-settings/channel-permissions-tab';
+import { ChannelInvitesTab } from './channel-settings/channel-invites-tab';
 
 interface ChannelSettingsDialogProps {
   channel: ColonyChannel | null;
@@ -37,6 +39,7 @@ interface ChannelSettingsDialogProps {
   categories?: ColonyCategory[];
   roles?: CommunityCustomRole[];
   members?: ColonyMember[];
+  activeColony?: Colony | null;
 }
 
 type SettingsTab = 'overview' | 'permissions' | 'invites' | 'integrations';
@@ -51,6 +54,7 @@ export function ChannelSettingsDialog({
   categories = [],
   roles = [],
   members = [],
+  activeColony,
 }: ChannelSettingsDialogProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>('overview');
@@ -303,41 +307,13 @@ export function ChannelSettingsDialog({
           />
         )}
 
-        {/* Invites Tab */}
+        {/* Invites Tab (Discord 1:1 Parity) */}
         {activeTab === 'invites' && (
-          <div className="w-full space-y-6">
-            <div>
-              <h2 className="text-xl font-bold text-foreground tracking-tight">{t('Tautan Undangan')}</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('Tautan undangan aktif langsung ke channel ini.')}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl border border-border bg-card space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <span className="text-xs font-semibold text-foreground truncate block">
-                    {`${typeof window !== 'undefined' ? window.location.origin : ''}/messages?channel=${channel.id}`}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">{t('Berlaku tanpa batas waktu')}</span>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    const url = `${window.location.origin}/messages?channel=${channel.id}`;
-                    navigator.clipboard.writeText(url);
-                    setHasCopiedInvite(true);
-                    toast.success(t('Tautan undangan channel disalin! 📋'));
-                    setTimeout(() => setHasCopiedInvite(false), 2000);
-                  }}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs gap-1.5 shrink-0"
-                >
-                  {hasCopiedInvite ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  {hasCopiedInvite ? t('Tersalin') : t('Salin')}
-                </Button>
-              </div>
-            </div>
-          </div>
+          <ChannelInvitesTab
+            channel={channel}
+            activeColony={activeColony}
+            members={members}
+          />
         )}
 
         {/* Integrations Tab */}
