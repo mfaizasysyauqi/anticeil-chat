@@ -372,21 +372,35 @@ export function MessageItem({
                             }
                             if (att.type === 'gift') {
                               const isClaimed = claimedGifts[msg.id] || att.giftData?.claimed;
+                              const isRoyalGift = att.giftData?.tier === 'royal';
                               return (
-                                <div key={attIdx} className="my-2 max-w-sm rounded-2xl border border-primary/40 bg-gradient-to-b from-[#202225] to-[#18191c] shadow-2xl p-4 relative overflow-hidden">
+                                <div key={attIdx} className={cn(
+                                  "my-2 max-w-sm rounded-2xl shadow-2xl p-4 relative overflow-hidden border",
+                                  isRoyalGift
+                                    ? "border-amber-500/50 bg-gradient-to-b from-[#2a1705] to-[#120a02]"
+                                    : "border-primary/40 bg-gradient-to-b from-[#202225] to-[#18191c]"
+                                )}>
                                   <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#5865f2] to-[#eb459e] flex items-center justify-center text-white shadow-lg text-2xl shrink-0">
-                                      🎁
+                                    <div className={cn(
+                                      "w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg text-2xl shrink-0",
+                                      isRoyalGift
+                                        ? "bg-gradient-to-tr from-amber-500 to-yellow-400 text-black font-black"
+                                        : "bg-gradient-to-tr from-[#5865f2] to-[#eb459e]"
+                                    )}>
+                                      {isRoyalGift ? '👑' : '🎁'}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <span className="text-[10px] font-black tracking-wider text-[#eb459e] uppercase block">
-                                        A WILD GIFT APPEARS!
+                                      <span className={cn(
+                                        "text-[10px] font-black tracking-wider uppercase block",
+                                        isRoyalGift ? "text-amber-400" : "text-[#eb459e]"
+                                      )}>
+                                        {isRoyalGift ? 'ROYAL ENTERPRISE GIFT!' : 'A WILD GIFT APPEARS!'}
                                       </span>
                                       <h4 className="text-xs font-black text-white italic tracking-wide">
-                                        {att.name || 'Anticeil Nectar Gift'}
+                                        {att.name || (isRoyalGift ? 'Anticeil Royal Enterprise Gift' : 'Anticeil Nectar Gift')}
                                       </h4>
                                       <p className="text-[10px] text-[#949ba4] truncate">
-                                        {att.giftData?.price || 'IDR 142,714'} • Hadiah Komunitas
+                                        {att.giftData?.price || (isRoyalGift ? 'IDR 499,000' : 'IDR 142,714')} • Hadiah Komunitas
                                       </p>
                                     </div>
                                   </div>
@@ -406,13 +420,15 @@ export function MessageItem({
                                       onClick={async () => {
                                         setClaimedGifts((prev) => ({ ...prev, [msg.id]: true }));
                                         confetti({ particleCount: 90, spread: 70, origin: { y: 0.7 } });
-                                        toast.success('🎉 Hadiah Nectar / Pollen berhasil diklaim ke akun Anda!');
+                                        toast.success(`🎉 Hadiah ${isRoyalGift ? 'Royal Enterprise 👑' : 'Nectar / Pollen'} berhasil diklaim ke akun Anda!`);
                                         await colonyApi.claimGift(msg.id, currentUser?.firstName || currentUser?.name || 'User');
                                       }}
                                       className={cn(
                                         "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer",
                                         isClaimed
                                           ? "bg-white/10 text-[#949ba4] cursor-not-allowed"
+                                          : isRoyalGift
+                                          ? "bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-black"
                                           : "bg-[#248046] hover:bg-[#1a6334] text-white hover:shadow-emerald-900/30"
                                       )}
                                     >

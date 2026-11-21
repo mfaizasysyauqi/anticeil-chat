@@ -422,9 +422,10 @@ export function useMessageActions({
   };
 
   // Fullstack Discord Nitro Gift sender (interactive gift card in chat)
-  const handleSendGift = async (tier: 'nectar' | 'pollen' | 'nitro' | 'nitro_basic') => {
+  const handleSendGift = async (tier: 'nectar' | 'pollen' | 'royal' | 'nitro' | 'nitro_basic') => {
     if (!activeChannel) return;
     setIsGiftModalOpen(false);
+    const isRoyal = tier === 'royal';
     const isNectar = tier === 'nectar' || tier === 'nitro';
     const currentUserId = currentUser?.id || 'anon-user';
     const currentUserName =
@@ -437,6 +438,14 @@ export function useMessageActions({
     if (activeColony?.role === 'owner') myRole = 'owner';
     else if (activeColony?.role === 'admin') myRole = 'admin';
 
+    const giftTitle = isRoyal ? 'Royal Enterprise 👑' : isNectar ? 'Nectar 🍯' : 'Pollen 🌼';
+    const giftName = isRoyal
+      ? 'Anticeil Royal Enterprise (1 Bulan)'
+      : isNectar
+      ? 'Anticeil Nectar (1 Bulan)'
+      : 'Anticeil Pollen (1 Bulan)';
+    const giftPrice = isRoyal ? 'IDR 499,000' : isNectar ? 'IDR 142,714' : 'IDR 42,714';
+
     const payload: Partial<ColonyMessage> = {
       channelId: activeChannel.id,
       senderId: currentUserId,
@@ -444,17 +453,19 @@ export function useMessageActions({
       senderEmail: currentUser?.email || 'user@anticeil.com',
       senderAvatar: currentUser?.imageUrl ?? null,
       senderRole: myRole,
-      content: `🎁 Hadiah Anticeil ${isNectar ? 'Nectar 🍯' : 'Pollen 🌼'} untuk kamu!`,
+      content: `🎁 Hadiah Anticeil ${giftTitle} untuk kamu!`,
       attachments: [
         {
           type: 'gift',
-          url: isNectar
+          url: isRoyal
+            ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/crown.svg'
+            : isNectar
             ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/sparkles.svg'
             : '',
-          name: isNectar ? 'Anticeil Nectar (1 Bulan)' : 'Anticeil Pollen (1 Bulan)',
+          name: giftName,
           giftData: {
             tier,
-            price: isNectar ? 'IDR 142,714' : 'IDR 42,714',
+            price: giftPrice,
             claimed: false,
           },
         },
@@ -469,7 +480,7 @@ export function useMessageActions({
         return { ...prev, [activeChannel.id]: [...list, saved] };
       });
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.7 } });
-      toast.success(t(`Berhasil mengirimkan Hadiah ${isNectar ? 'Nectar' : 'Pollen'}! 🎉`));
+      toast.success(t(`Berhasil mengirimkan Hadiah ${giftTitle}! 🎉`));
     } catch (err) {
       console.error('Failed to send gift', err);
     }
