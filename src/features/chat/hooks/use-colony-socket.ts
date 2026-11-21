@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { type ColonyMessage, type ColonyChannel, resolveChannelType } from '@/chat/chat-types';
-import { saveStoredChannels, saveStoredMessages, loadStoredMessages } from '@/chat/chat-defaults';
+import { saveStoredChannels, saveStoredMessages, loadStoredMessages, saveStoredDmChannels, setClosedDmId } from '@/chat/chat-defaults';
 
 export interface UseColonySocketOptions {
   socket: any;
@@ -38,6 +38,27 @@ export function useColonySocket({
 
         // If message is for a DM, also associate with participating user IDs & active channel if matching
         if (newMsg.channelId.startsWith('dm-')) {
+          setClosedDmId(newMsg.channelId, false);
+          setChannels((prev) => {
+            if (prev.some((c) => c.id === newMsg.channelId)) return prev;
+            const dmName = newMsg.senderName || 'Direct Message';
+            const newDm: ColonyChannel = {
+              id: newMsg.channelId,
+              name: dmName,
+              description: `Percakapan langsung dengan ${dmName}`,
+              category: 'DIRECT MESSAGES',
+              colonyId: 'anticeil',
+              isDirectMessage: true,
+              dmUserId: newMsg.senderId,
+              type: 'text',
+            };
+            const updated = [newDm, ...prev];
+            try {
+              saveStoredDmChannels(updated.filter((c) => c.category === 'DIRECT MESSAGES'));
+            } catch {}
+            return updated;
+          });
+
           const parts = newMsg.channelId.slice(3).split('-').filter(Boolean);
           if (parts.length === 2) {
             keysToUpdate.add(`dm-${parts[0]}`);

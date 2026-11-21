@@ -76,7 +76,7 @@ export function useChatNavigation({
         const otherUserId =
           parts.find((p) => p !== currentUser?.id) || parts[0];
         const otherMember = members.find((m) => m.id === otherUserId);
-        if (!otherMember || otherUserId === 'u1' || otherUserId === 'anticeil') {
+        if (!otherMember || otherUserId === 'u1') {
           return null;
         }
         const dmName =

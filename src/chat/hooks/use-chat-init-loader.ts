@@ -8,6 +8,7 @@ import {
   getDmChannelId,
   loadStoredDmChannels,
   saveStoredDmChannels,
+  getClosedDmIds,
 } from '../chat-defaults';
 import type {
   Colony,
@@ -126,6 +127,32 @@ export function useChatInitLoader({
         if (mounted) {
           if (Array.isArray(channelsRes)) {
             const storedDms = loadStoredDmChannels();
+            const effectiveUser = currentUser || authenticationSession.getUser();
+            if (Array.isArray(friendsRes) && effectiveUser?.id) {
+              const closedDmIds = getClosedDmIds();
+              friendsRes.forEach((f: any) => {
+                if (!f || !f.id || f.id === effectiveUser.id) return;
+                const canonicalDmId = getDmChannelId(effectiveUser.id, f.id);
+                if (closedDmIds.has(canonicalDmId)) return;
+                const alreadyExists = storedDms.some(
+                  (c) => c.id === canonicalDmId || c.dmUserId === f.id || c.id === `dm-${f.id}`,
+                );
+                if (!alreadyExists) {
+                  const dmName = f.name || f.username || 'Direct Message';
+                  storedDms.push({
+                    id: canonicalDmId,
+                    name: dmName,
+                    description: `Percakapan langsung dengan ${dmName}`,
+                    category: 'DIRECT MESSAGES',
+                    colonyId: 'anticeil',
+                    isDirectMessage: true,
+                    dmUserId: f.id,
+                    type: 'text',
+                  });
+                }
+              });
+              saveStoredDmChannels(storedDms);
+            }
             const serverChannels = channelsRes.filter(
               (c) =>
                 c.category !== 'DIRECT MESSAGES' && !c.id.startsWith('dm-'),
@@ -304,7 +331,67 @@ export function useChatInitLoader({
     }
   }, [currentUser?.id, activeChannelId, members]);
 
-  // 4. Load threads for all forum channels in the active hub so sidebar shows child threads
+  // 4. Dynamically synchronize accepted friends into direct message channels
+  useEffect(() => {
+    const syncFriendsToDm = (friendsList?: any[]) => {
+      const effectiveUser = currentUser || authenticationSession.getUser();
+      if (!effectiveUser?.id) return;
+
+      const processFriends = (friends: any[]) => {
+        if (!Array.isArray(friends) || friends.length === 0) return;
+        const closedDmIds = getClosedDmIds();
+        setChannels((prev) => {
+          let hasChange = false;
+          const updated = [...prev];
+          friends.forEach((f) => {
+            if (!f || !f.id || f.id === effectiveUser.id) return;
+            const canonicalDmId = getDmChannelId(effectiveUser.id, f.id);
+            if (closedDmIds.has(canonicalDmId)) return;
+            const exists = updated.some(
+              (c) => c.id === canonicalDmId || c.dmUserId === f.id || c.id === `dm-${f.id}`,
+            );
+            if (!exists) {
+              const dmName = f.name || f.username || 'Direct Message';
+              updated.unshift({
+                id: canonicalDmId,
+                name: dmName,
+                description: `Percakapan langsung dengan ${dmName}`,
+                category: 'DIRECT MESSAGES',
+                colonyId: 'anticeil',
+                isDirectMessage: true,
+                dmUserId: f.id,
+                type: 'text',
+              });
+              hasChange = true;
+            }
+          });
+          if (hasChange) {
+            saveStoredDmChannels(updated.filter((c) => c.category === 'DIRECT MESSAGES'));
+            return updated;
+          }
+          return prev;
+        });
+      };
+
+      if (friendsList) {
+        processFriends(friendsList);
+      } else {
+        friendsApi.getFriends().then(processFriends).catch(() => {});
+      }
+    };
+
+    syncFriendsToDm();
+
+    const handleFriendsUpdated = (e: any) => {
+      syncFriendsToDm(e?.detail);
+    };
+    window.addEventListener('anticeil_friends_updated', handleFriendsUpdated);
+    return () => {
+      window.removeEventListener('anticeil_friends_updated', handleFriendsUpdated);
+    };
+  }, [currentUser?.id, setChannels]);
+
+  // 5. Load threads for all forum channels in the active hub so sidebar shows child threads
   useEffect(() => {
     if (!colonyChannels.length) return;
     const forumChannels = colonyChannels.filter((c) => c.type === 'forum');

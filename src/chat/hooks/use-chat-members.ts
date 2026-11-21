@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from 'react';
 import type { ColonyChannel, ColonyMember, ColonyRole, Colony } from '../chat-types';
-import { getDmChannelId, saveStoredDmChannels } from '../chat-defaults';
+import { getDmChannelId, saveStoredDmChannels, setClosedDmId } from '../chat-defaults';
 
 export interface UseChatMembersProps {
   members: ColonyMember[];
@@ -93,6 +93,7 @@ export function useChatMembers({
       : `dm-${member.id}`;
     const dmName =
       member.name || member.username || member.firstName || 'Direct Message';
+    setClosedDmId(dmId, false);
     setChannels((prev) => {
       const existing = prev.find((c) => c.id === dmId);
       const updated = existing
@@ -208,6 +209,7 @@ export function useChatMembers({
 
   // Close / remove DM channel from sidebar
   const handleCloseDM = (dmId: string) => {
+    setClosedDmId(dmId, true);
     setChannels((prev) => {
       const updated = prev.filter((c) => c.id !== dmId);
       saveStoredDmChannels(

@@ -34,6 +34,9 @@ export function useFriendsManager({
       ]);
       setFriendRequests(reqs);
       setPersistedFriends(friends);
+      if (typeof window !== 'undefined' && Array.isArray(friends)) {
+        window.dispatchEvent(new CustomEvent('anticeil_friends_updated', { detail: friends }));
+      }
     } catch {
       // Keep optimistic state
     }
@@ -53,14 +56,8 @@ export function useFriendsManager({
         const username = (f?.username || '').toLowerCase().trim();
         const id = String(f?.id || '');
 
-        // Exclude system accounts / unverified mock seeds
-        const isOfficialAccount =
-          id === 'u1' ||
-          id === 'anticeil' ||
-          username.includes('anticeil') ||
-          name.includes('anticeil');
-
-        if (isOfficialAccount) return false;
+        // Exclude test mock seed
+        if (id === 'u1') return false;
 
         // Exclude generic placeholder labels
         const isGeneric =

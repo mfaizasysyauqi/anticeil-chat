@@ -412,16 +412,13 @@ export function HomeChannelsSidebar({
 
             if (
               !id.startsWith('dm-') ||
-              id === 'dm-anticeil' ||
               id === 'dm-u1' ||
               dmUserId === 'u1' ||
-              dmUserId === 'anticeil' ||
-              name === 'anticeil official' ||
-              name === 'anticeil' ||
-              name === 'direct message' ||
+              (!dmUserId && name === 'direct message') ||
               dm.type === 'voice' ||
+              dm.type === 'forum' ||
+              dm.type === 'kanban' ||
               name.includes('general voice') ||
-              name === 'pengguna' ||
               name === 'pengguna anticeil'
             ) {
               return false;

@@ -71,6 +71,32 @@ export function saveStoredChannels(channels: ColonyChannel[]): void {
 
 // ── Direct Messages Storage ──
 const STORAGE_KEY_DM_CHANNELS = 'anticeil_colony_dm_channels_v3';
+const STORAGE_KEY_CLOSED_DM_IDS = 'anticeil_closed_dm_ids_v1';
+
+export function getClosedDmIds(): Set<string> {
+  try {
+    if (typeof window === 'undefined') return new Set();
+    const raw = localStorage.getItem(STORAGE_KEY_CLOSED_DM_IDS);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function setClosedDmId(dmId: string, closed: boolean): void {
+  try {
+    if (typeof window === 'undefined' || !dmId) return;
+    const set = getClosedDmIds();
+    if (closed) {
+      set.add(dmId);
+    } else {
+      set.delete(dmId);
+    }
+    localStorage.setItem(STORAGE_KEY_CLOSED_DM_IDS, JSON.stringify(Array.from(set)));
+  } catch {}
+}
 
 export function loadStoredDmChannels(): ColonyChannel[] {
   try {
@@ -91,13 +117,9 @@ export function loadStoredDmChannels(): ColonyChannel[] {
       const dmUserId = String(c?.dmUserId || '');
       if (
         !id.startsWith('dm-') ||
-        id === 'dm-anticeil' ||
         id === 'dm-u1' ||
         dmUserId === 'u1' ||
-        dmUserId === 'anticeil' ||
-        name === 'anticeil official' ||
-        name === 'anticeil' ||
-        name === 'direct message' ||
+        (!dmUserId && name === 'direct message') ||
         c?.category !== 'DIRECT MESSAGES' ||
         (c?.colonyId && c.colonyId !== 'anticeil') ||
         c?.type === 'voice' ||
@@ -106,7 +128,6 @@ export function loadStoredDmChannels(): ColonyChannel[] {
         name === 'general voice' ||
         name === 'general' ||
         name === 'forum-diskusi' ||
-        name === 'pengguna' ||
         name === 'pengguna anticeil'
       ) {
         continue;
@@ -149,13 +170,9 @@ export function saveStoredDmChannels(channels: ColonyChannel[]): void {
       const dmUserId = String(c?.dmUserId || '');
       if (
         !id.startsWith('dm-') ||
-        id === 'dm-anticeil' ||
         id === 'dm-u1' ||
         dmUserId === 'u1' ||
-        dmUserId === 'anticeil' ||
-        name === 'anticeil official' ||
-        name === 'anticeil' ||
-        name === 'direct message' ||
+        (!dmUserId && name === 'direct message') ||
         c?.category !== 'DIRECT MESSAGES' ||
         (c?.colonyId && c.colonyId !== 'anticeil') ||
         c?.type === 'voice' ||
@@ -164,7 +181,6 @@ export function saveStoredDmChannels(channels: ColonyChannel[]): void {
         name === 'general voice' ||
         name === 'general' ||
         name === 'forum-diskusi' ||
-        name === 'pengguna' ||
         name === 'pengguna anticeil'
       ) {
         continue;
