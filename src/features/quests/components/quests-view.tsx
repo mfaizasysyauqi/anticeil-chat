@@ -70,7 +70,7 @@ export function QuestsView({
   onLaunchActivity,
 }: QuestsViewProps) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'all' | 'claimed'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'accepted' | 'claimed'>('all');
   const [quests, setQuests] = useState<QuestItem[]>([]);
   const [claimedQuests, setClaimedQuests] = useState<QuestItem[]>([]);
   const [balance, setBalance] = useState<ShopBalance>({ dew: 1500, currencyCode: 'IDR' });
@@ -387,6 +387,175 @@ export function QuestsView({
     return list;
   }, [quests, filterCategory, filterStatus, showOnlyHighReward, showOnlyFeatured, sortBy, searchQuery]);
 
+  // Quests that user has accepted (in_progress or completed ready to claim)
+  const acceptedCount = useMemo(() => {
+    return quests.filter((q) => q.status === 'in_progress' || q.status === 'completed').length;
+  }, [quests]);
+
+  const acceptedQuests = useMemo(() => {
+    let list = quests.filter((q) => q.status === 'in_progress' || q.status === 'completed');
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (item) =>
+          item.title.toLowerCase().includes(q) ||
+          item.subtitle.toLowerCase().includes(q) ||
+          item.promoter.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [quests, searchQuery]);
+
+  // Reusable Quest Card Renderer (100% DRY across All Quests & Accepted Quests tabs)
+  const renderQuestCard = (quest: QuestItem) => {
+    const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
+
+    return (
+      <div
+        key={quest.id}
+        className="rounded-xl border border-border bg-card flex flex-col justify-between overflow-hidden shadow-xs hover:border-primary/50 transition-all group relative"
+      >
+        {/* Quest Artwork Banner */}
+        <div className="relative h-36 bg-[#111214] overflow-hidden">
+          <img
+            src={quest.coverUrl}
+            alt={quest.title}
+            className="size-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-70"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/60 to-transparent" />
+
+          {quest.badge && (
+            <span className="absolute top-2.5 left-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-md">
+              {quest.badge}
+            </span>
+          )}
+
+          {/* Hover Edit & Delete Buttons (Fullstack CRUD) */}
+          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenEditQuest(quest);
+              }}
+              className="size-7 rounded-md bg-background/80 hover:bg-background border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs backdrop-blur-md"
+              title={t('Edit Quest')}
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleDeleteQuest(e, quest.id)}
+              className="size-7 rounded-md bg-background/90 hover:bg-red-600 border border-border/80 hover:border-red-600 text-red-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm hover:shadow-red-950/40 backdrop-blur-md"
+              title={t('Hapus Quest')}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <span className="absolute bottom-2.5 left-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            {quest.promoter}
+          </span>
+        </div>
+
+        {/* Quest Body */}
+        <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+              {quest.title}
+            </h4>
+            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+              {quest.subtitle}
+            </p>
+          </div>
+
+          {/* Reward Box with Glowing Dew Gem */}
+          <div className="p-2.5 rounded-lg bg-cyan-950/20 border border-cyan-500/30 flex items-center justify-between gap-2 shadow-xs">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-md bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-sm shadow-xs animate-pulse">
+                💧
+              </div>
+              <div>
+                <div className="text-xs font-black text-cyan-400">
+                  Claim {quest.rewardDew} Dew
+                </div>
+                <div className="text-[10px] font-semibold text-muted-foreground">
+                  Free-to-Play Currency
+                </div>
+              </div>
+            </div>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+              1.0x
+            </span>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="space-y-1 pt-1">
+            <div className="flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+              <span>
+                {quest.progress} / {quest.target} {quest.unit}
+              </span>
+              <span>{percent}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-muted/60 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-300 rounded-full"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
+            {quest.status === 'completed' ? (
+              <Button
+                size="sm"
+                onClick={() => handleClaimReward(quest)}
+                className="w-full h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer shadow-md animate-bounce"
+              >
+                <Sparkles className="w-3.5 h-3.5 mr-1" />
+                <span>{t('Klaim 💧')} {quest.rewardDew} {t('Dew')}</span>
+              </Button>
+            ) : quest.status === 'in_progress' ? (
+              <div className="w-full flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleProgressQuest(quest)}
+                  className="flex-1 h-8 text-xs font-semibold cursor-pointer"
+                >
+                  <span>{quest.actionLabel || t('Jalankan')}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleProgressQuest(quest)}
+                  className="h-8 px-3 text-xs font-semibold cursor-pointer"
+                  title={t('Tambahkan Progress')}
+                >
+                  +1
+                </Button>
+              </div>
+            ) : quest.status === 'claimed' ? (
+              <div className="w-full h-8 rounded-md bg-muted/50 border border-border/60 text-muted-foreground font-semibold flex items-center justify-center gap-1.5 text-xs">
+                <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3]" />
+                <span>{t('Hadiah Telah Diklaim')}</span>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => handleAcceptQuest(quest)}
+                className="w-full h-8 text-xs font-semibold cursor-pointer shadow-xs"
+              >
+                <span>{t('Accept Quest')}</span>
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Discord-style 1:1 Right Filter Panel Renderer for Quests
   const renderFilterContent = () => {
     return (
@@ -520,6 +689,7 @@ export function QuestsView({
         horizontalPadding={horizontalPadding}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        acceptedCount={acceptedCount}
         claimedCount={claimedQuests.length}
         dewBalance={balance?.dew ?? 0}
         searchQuery={searchQuery}
@@ -529,7 +699,7 @@ export function QuestsView({
       {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
       <ScrollArea className="flex-1 min-h-0">
         <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-6', verticalPadding)}>
-        {activeTab === 'all' ? (
+        {activeTab === 'all' && (
           <>
             {/* ── Top Quests Toolbar: Available Quests count + Sort + Filter + Tambah Quest (100% Consistent with ShopView & FriendsView) ── */}
             <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
@@ -770,159 +940,61 @@ export function QuestsView({
                 </div>
               ) : (
                 <div className={SURFACE_STYLES.CARD_GRID}>
-                  {filteredQuests.map((quest) => {
-                    const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
+                  {filteredQuests.map((quest) => renderQuestCard(quest))}
+                </div>
+              )}
+            </>
+          )}
 
-                    return (
-                      <div
-                        key={quest.id}
-                        className="rounded-xl border border-border bg-card flex flex-col justify-between overflow-hidden shadow-xs hover:border-primary/50 transition-all group relative"
-                      >
-                        {/* Quest Artwork Banner */}
-                        <div className="relative h-36 bg-[#111214] overflow-hidden">
-                          <img
-                            src={quest.coverUrl}
-                            alt={quest.title}
-                            className="size-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-70"
-                            loading="lazy"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/60 to-transparent" />
-
-                          {quest.badge && (
-                            <span className="absolute top-2.5 left-2.5 text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-md">
-                              {quest.badge}
-                            </span>
-                          )}
-
-                          {/* Hover Edit & Delete Buttons (Fullstack CRUD) */}
-                          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenEditQuest(quest);
-                              }}
-                              className="size-7 rounded-md bg-background/80 hover:bg-background border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs backdrop-blur-md"
-                              title={t('Edit Quest')}
-                            >
-                              <Pencil className="w-3 h-3" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => handleDeleteQuest(e, quest.id)}
-                              className="size-7 rounded-md bg-background/90 hover:bg-red-600 border border-border/80 hover:border-red-600 text-red-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm hover:shadow-red-950/40 backdrop-blur-md"
-                              title={t('Hapus Quest')}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
-                          <span className="absolute bottom-2.5 left-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                            {quest.promoter}
-                          </span>
-                        </div>
-
-                      {/* Quest Body */}
-                      <div className="p-4 flex-1 flex flex-col justify-between gap-3">
-                        <div className="space-y-1">
-                          <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                            {quest.title}
-                          </h4>
-                          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                            {quest.subtitle}
-                          </p>
-                        </div>
-
-                        {/* Reward Box with Glowing Dew Gem */}
-                        <div className="p-2.5 rounded-lg bg-cyan-950/20 border border-cyan-500/30 flex items-center justify-between gap-2 shadow-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="size-7 rounded-md bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-sm shadow-xs animate-pulse">
-                              💧
-                            </div>
-                            <div>
-                              <div className="text-xs font-black text-cyan-400">
-                                Claim {quest.rewardDew} Dew
-                              </div>
-                              <div className="text-[10px] font-semibold text-muted-foreground">
-                                Free-to-Play Currency
-                              </div>
-                            </div>
-                          </div>
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                            1.0x
-                          </span>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="space-y-1 pt-1">
-                          <div className="flex items-center justify-between text-[11px] font-medium text-muted-foreground">
-                            <span>
-                              {quest.progress} / {quest.target} {quest.unit}
-                            </span>
-                            <span>{percent}%</span>
-                          </div>
-                          <div className="h-1.5 w-full bg-muted/60 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary transition-all duration-300 rounded-full"
-                              style={{ width: `${percent}%` }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
-                          {quest.status === 'completed' ? (
-                            <Button
-                              size="sm"
-                              onClick={() => handleClaimReward(quest)}
-                              className="w-full h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer shadow-md animate-bounce"
-                            >
-                              <Sparkles className="w-3.5 h-3.5 mr-1" />
-                              <span>{t('Klaim 💧')} {quest.rewardDew} {t('Dew')}</span>
-                            </Button>
-                          ) : quest.status === 'in_progress' ? (
-                            <div className="w-full flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleProgressQuest(quest)}
-                                className="flex-1 h-8 text-xs font-semibold cursor-pointer"
-                              >
-                                <span>{quest.actionLabel || t('Jalankan')}</span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => handleProgressQuest(quest)}
-                                className="h-8 px-3 text-xs font-semibold cursor-pointer"
-                                title={t('Tambahkan Progress')}
-                              >
-                                +1
-                              </Button>
-                            </div>
-                          ) : quest.status === 'claimed' ? (
-                            <div className="w-full h-8 rounded-md bg-muted/50 border border-border/60 text-muted-foreground font-semibold flex items-center justify-center gap-1.5 text-xs">
-                              <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3]" />
-                              <span>{t('Hadiah Telah Diklaim')}</span>
-                            </div>
-                          ) : (
-                            <Button
-                              size="sm"
-                              onClick={() => handleAcceptQuest(quest)}
-                              className="w-full h-8 text-xs font-semibold cursor-pointer shadow-xs"
-                            >
-                              <span>{t('Accept Quest')}</span>
-                            </Button>
-                          )}
-                        </div>
-                      </div>
+          {/* ── 2. Accepted Quests Tab View (Quest yang Diterima) ── */}
+          {activeTab === 'accepted' && (
+            <div>
+              {acceptedQuests.length === 0 ? (
+                <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="size-28 rounded-full bg-muted/40 border border-border/60 flex items-center justify-center text-5xl shadow-inner select-none">
+                    🎯
+                  </div>
+                  <div className="space-y-1.5 max-w-sm">
+                    <h3 className="text-base font-bold text-foreground">
+                      {t('Belum Ada Quest yang Diterima')}
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {t('Ambil dan terima quest dari tab All Quests untuk mulai menjalankan misi dan mengumpulkan Dew gratis.')}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setActiveTab('all')}
+                    className="font-semibold text-xs h-8 px-4 cursor-pointer"
+                  >
+                    {t('Lihat Semua Quest')}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-primary shrink-0" />
+                      <span className={TEXT_STYLES.SECTION_MUTED}>
+                        {t('Quest Diterima')}
+                      </span>
+                      <span className={TEXT_STYLES.COUNTER_LABEL}>
+                        ({acceptedQuests.length})
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        ) : (
-          /* ── Claimed Quests Tab View (Discord 1:1) ── */
+                  </div>
+
+                  <div className={SURFACE_STYLES.CARD_GRID}>
+                    {acceptedQuests.map((quest) => renderQuestCard(quest))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── 3. Claimed Quests Tab View (Discord 1:1) ── */}
+          {activeTab === 'claimed' && (
           <div>
             {claimedQuests.length === 0 ? (
               <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">

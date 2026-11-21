@@ -12,8 +12,9 @@ import { useTranslation } from '@/core/i18n';
 export interface QuestsHeaderProps {
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
-  activeTab: 'all' | 'claimed';
-  onTabChange: (tab: 'all' | 'claimed') => void;
+  activeTab: 'all' | 'accepted' | 'claimed';
+  onTabChange: (tab: 'all' | 'accepted' | 'claimed') => void;
+  acceptedCount?: number;
   claimedCount?: number;
   dewBalance?: number;
   searchQuery?: string;
@@ -29,6 +30,7 @@ export function QuestsHeader({
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   activeTab,
   onTabChange,
+  acceptedCount = 0,
   claimedCount = 0,
   dewBalance = 0,
   searchQuery,
@@ -62,6 +64,18 @@ export function QuestsHeader({
           onClick={() => onTabChange('all')}
         >
           {t('All Quests')}
+        </TopBarTabButton>
+
+        <TopBarTabButton
+          active={activeTab === 'accepted'}
+          onClick={() => onTabChange('accepted')}
+        >
+          <span>{t('Quest Diterima')}</span>
+          {acceptedCount > 0 && (
+            <span className="size-4 rounded-full bg-primary/20 text-primary border border-primary/40 text-[9px] font-black flex items-center justify-center">
+              {acceptedCount}
+            </span>
+          )}
         </TopBarTabButton>
 
         <TopBarTabButton
