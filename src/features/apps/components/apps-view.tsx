@@ -370,6 +370,7 @@ export function AppsView({
           onOpenSendToChannel={handleOpenSendToChannel}
           onSelectOtherApp={handleOpenDetail}
           horizontalPadding={horizontalPadding}
+          verticalPadding={verticalPadding}
         />
 
         {/* Modal Dialog: Kirim ke Channel / DM dari dalam detail view */}

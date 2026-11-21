@@ -14,6 +14,7 @@ import type { VoiceAppDefinition } from '@/features/voice/data/voice-activities'
 import { ActivityStage } from '@/features/voice/components/activities/activity-stage';
 import { YouTubeBadgeIcon } from '@/features/voice/components/call-stage';
 import { MagneticFloatingCollapseButton } from '@/components/ui/magnetic-floating-collapse-button';
+import { LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 
 export interface StandaloneAppStageProps {
   app: VoiceAppDefinition;
@@ -32,7 +33,7 @@ export function StandaloneAppStage({
   currentUser,
   socket,
   onOpenSidebar: _onOpenSidebar,
-  horizontalPadding = 'px-4 sm:px-6',
+  horizontalPadding = LAYOUT_PAGE_SPACING.HORIZONTAL,
 }: StandaloneAppStageProps) {
   const [copied, setCopied] = useState(false);
   const [isTheaterMode, setIsTheaterMode] = useState(false);

@@ -27,6 +27,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import {
+  LAYOUT_PAGE_SPACING,
+  CHANNEL_HORIZONTAL_PADDING,
+  CHANNEL_VERTICAL_PADDING,
+} from '@/lib/layout-constants';
 import type { VoiceAppDefinition } from '@/features/voice/data/voice-activities';
 import { ANTICEIL_APPS } from '@/features/voice/data/voice-activities';
 
@@ -37,6 +42,7 @@ export interface AppDetailViewProps {
   onOpenSendToChannel: (app: VoiceAppDefinition) => void;
   onSelectOtherApp: (app: VoiceAppDefinition) => void;
   horizontalPadding?: string;
+  verticalPadding?: string;
 }
 
 export function AppDetailView({
@@ -45,7 +51,8 @@ export function AppDetailView({
   onLaunchStandalone,
   onOpenSendToChannel,
   onSelectOtherApp,
-  horizontalPadding = 'px-4 sm:px-6 md:px-8',
+  horizontalPadding = LAYOUT_PAGE_SPACING.HORIZONTAL,
+  verticalPadding = 'py-4 sm:py-6',
 }: AppDetailViewProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
@@ -90,75 +97,73 @@ export function AppDetailView({
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
-      {/* ── App Bar Header (Symmetrical with max-w-6xl body) ─────────────── */}
-      <div className="sticky top-0 z-30 h-12 border-b border-sidebar-border bg-background/95 backdrop-blur-md shrink-0 w-full">
-        <div className={cn('h-full max-w-6xl mx-auto flex items-center justify-between gap-3', horizontalPadding)}>
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              onClick={onBack}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/60 cursor-pointer shrink-0"
-              title="Kembali ke Katalog Aktivitas"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
+      {/* ── App Bar Header (100% Symmetrical with LAYOUT_PAGE_SPACING) ── */}
+      <div className={cn('sticky top-0 z-30 h-12 border-b border-sidebar-border bg-background/95 backdrop-blur-md shrink-0 w-full flex items-center justify-between gap-3 overflow-hidden', horizontalPadding)}>
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            onClick={onBack}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/60 cursor-pointer shrink-0"
+            title="Kembali ke Katalog Aktivitas"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
 
-            <span className="text-sm font-bold text-foreground truncate tracking-wide">
-              {app.title}
-            </span>
-          </div>
+          <span className="text-sm font-bold text-foreground truncate tracking-wide">
+            {app.title}
+          </span>
+        </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleShare}
-              className="h-8 px-2.5 sm:px-3 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground border-border"
-              title="Salin tautan aplikasi"
-            >
-              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{isCopied ? 'Tersalin' : 'Bagikan'}</span>
-            </Button>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleShare}
+            className="h-8 px-2.5 sm:px-3 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground border-border"
+            title="Salin tautan aplikasi"
+          >
+            {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{isCopied ? 'Tersalin' : 'Bagikan'}</span>
+          </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="icon-xs"
-                  variant="ghost"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
-                  title="Opsi lainnya"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={handleShare} className="gap-2 cursor-pointer text-xs">
-                  <Share2 className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>Salin Tautan Aktivitas</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onOpenSendToChannel(app)} className="gap-2 cursor-pointer text-xs">
-                  <Radio className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>Buka di Saluran Lain</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => toast.info('Aplikasi ini terverifikasi aman oleh tim Anticeil.')}
-                  className="gap-2 cursor-pointer text-xs"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Status Keamanan: Terverifikasi</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon-xs"
+                variant="ghost"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                title="Opsi lainnya"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={handleShare} className="gap-2 cursor-pointer text-xs">
+                <Share2 className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>Salin Tautan Aktivitas</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onOpenSendToChannel(app)} className="gap-2 cursor-pointer text-xs">
+                <Radio className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>Buka di Saluran Lain</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => toast.info('Aplikasi ini terverifikasi aman oleh tim Anticeil.')}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Status Keamanan: Terverifikasi</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       {/* ── Main Scroll Area ──────────────────────────────────────────────── */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className={cn('py-4 sm:py-6 max-w-6xl mx-auto space-y-6', horizontalPadding)}>
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-6', verticalPadding)}>
           {/* Hero Banner with Landscape Cover (Mobile / Tablet / Desktop Responsive) */}
           <div className="relative w-full rounded-2xl overflow-hidden border border-border shadow-2xl bg-zinc-950">
             {/* Landscape Backdrop */}
