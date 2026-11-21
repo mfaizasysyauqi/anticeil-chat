@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   Plus,
@@ -54,10 +54,15 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredSessions = sessions.filter((s) =>
-    s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.messages.some((m) => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredSessions = sessions.filter((s) => {
+    const title = typeof s?.title === 'string' ? s.title : '';
+    const query = searchQuery.toLowerCase();
+    return (
+      title.toLowerCase().includes(query) ||
+      (Array.isArray(s?.messages) &&
+        s.messages.some((m) => typeof m?.content === 'string' && m.content.toLowerCase().includes(query)))
+    );
+  });
 
   const pinnedSessions = filteredSessions.filter((s) => s.isPinned);
   const regularSessions = filteredSessions.filter((s) => !s.isPinned);
@@ -113,7 +118,7 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
         <div className="mb-2">
           <button
             type="button"
-            onClick={onCreateNewSession}
+            onClick={() => onCreateNewSession?.()}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md bg-accent text-accent-foreground hover:bg-accent/80 text-xs font-semibold transition-all cursor-pointer group shadow-2xs"
           >
             <div className="w-5 h-5 rounded-md bg-primary/20 text-primary flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
@@ -165,7 +170,7 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={onCreateNewSession}
+                onClick={() => onCreateNewSession?.()}
                 className="text-xs h-7 gap-1 cursor-pointer"
               >
                 <Plus className="w-3 h-3" /> {t('Buat Obrolan')}
@@ -207,8 +212,13 @@ function SessionItem({
   onDelete: () => void;
   onTogglePin: () => void;
 }) {
+  const displayTitle = typeof session?.title === 'string' && session.title.trim() ? session.title.trim() : 'Percakapan Baru';
   const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(session.title);
+  const [editTitle, setEditTitle] = useState(displayTitle);
+
+  useEffect(() => {
+    setEditTitle(displayTitle);
+  }, [displayTitle]);
 
   const handleSave = () => {
     if (editTitle.trim()) {
@@ -230,7 +240,7 @@ function SessionItem({
               handleSave();
             } else if (e.key === 'Escape') {
               setIsEditing(false);
-              setEditTitle(session.title);
+              setEditTitle(displayTitle);
             }
           }}
           className="flex-1 bg-transparent text-xs text-foreground outline-hidden border-b border-primary"
@@ -247,7 +257,7 @@ function SessionItem({
           type="button"
           onClick={() => {
             setIsEditing(false);
-            setEditTitle(session.title);
+            setEditTitle(displayTitle);
           }}
           className="p-1 text-muted-foreground hover:text-foreground cursor-pointer"
           title="Batal"
@@ -270,7 +280,7 @@ function SessionItem({
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <MessageSquare className="w-3.5 h-3.5 shrink-0 opacity-70" />
-        <span className="truncate leading-tight">{session.title}</span>
+        <span className="truncate leading-tight">{displayTitle}</span>
       </div>
 
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1">

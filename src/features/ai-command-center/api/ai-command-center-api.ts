@@ -28,10 +28,12 @@ export const aiCommandCenterApi = {
   /**
    * Create a new AI Command Center session
    */
-  async createSession(title = 'Percakapan Baru'): Promise<AiSession> {
+  async createSession(title?: string): Promise<AiSession> {
+    const safeTitle =
+      typeof title === 'string' && title.trim() ? title.trim() : 'Percakapan Baru';
     const newSession: AiSession = {
       id: `ai_sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      title,
+      title: safeTitle,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       messages: [],

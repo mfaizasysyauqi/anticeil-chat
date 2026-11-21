@@ -56,8 +56,9 @@ export function useAiCommandCenter() {
   }, []);
 
   // Fullstack Create Session
-  const handleCreateNewSession = useCallback(async (title = 'Percakapan Baru') => {
-    const newSession = await aiCommandCenterApi.createSession(title);
+  const handleCreateNewSession = useCallback(async (title?: string) => {
+    const safeTitle = typeof title === 'string' && title.trim() ? title.trim() : 'Percakapan Baru';
+    const newSession = await aiCommandCenterApi.createSession(safeTitle);
     setSessions((prev) => [newSession, ...prev.filter((s) => s.id !== newSession.id)]);
     setActiveSessionId(newSession.id);
     storeActiveSessionId(newSession.id);

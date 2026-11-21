@@ -22,13 +22,21 @@ export function getStoredSessions(): AiSession[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    // Filter out legacy dummy sessions with no messages
-    const cleaned = parsed.filter(
-      (s: AiSession) =>
-        s &&
-        s.id &&
-        !(s.title === 'Pusat Perintah Utama' && (!s.messages || s.messages.length === 0)),
-    );
+    // Filter out legacy dummy sessions with no messages and ensure sanitized schema
+    const cleaned = parsed
+      .filter((s: any) => s && s.id)
+      .map((s: any): AiSession => ({
+        id: String(s.id),
+        title: typeof s.title === 'string' && s.title.trim() ? s.title.trim() : 'Percakapan Baru',
+        createdAt: typeof s.createdAt === 'string' ? s.createdAt : new Date().toISOString(),
+        updatedAt: typeof s.updatedAt === 'string' ? s.updatedAt : new Date().toISOString(),
+        messages: Array.isArray(s.messages) ? s.messages : [],
+        isPinned: Boolean(s.isPinned),
+      }))
+      .filter(
+        (s: AiSession) =>
+          !(s.title === 'Pusat Perintah Utama' && (!s.messages || s.messages.length === 0)),
+      );
     return cleaned;
   } catch (err) {
     console.warn('Failed to parse AI sessions from localStorage', err);
@@ -39,7 +47,17 @@ export function getStoredSessions(): AiSession[] {
 export function saveStoredSessions(sessions: AiSession[]): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(sessions));
+    const safeSessions = (sessions || [])
+      .filter((s: any) => s && s.id)
+      .map((s: any) => ({
+        id: String(s.id),
+        title: typeof s.title === 'string' && s.title.trim() ? s.title.trim() : 'Percakapan Baru',
+        createdAt: typeof s.createdAt === 'string' ? s.createdAt : new Date().toISOString(),
+        updatedAt: typeof s.updatedAt === 'string' ? s.updatedAt : new Date().toISOString(),
+        messages: Array.isArray(s.messages) ? s.messages : [],
+        isPinned: Boolean(s.isPinned),
+      }));
+    localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(safeSessions));
   } catch (err) {
     console.warn('Failed to save AI sessions to localStorage', err);
   }
@@ -84,10 +102,12 @@ export function saveStoredGroqConfig(apiKey: string, model: string): void {
   localStorage.setItem(STORAGE_KEY_GROQ_MODEL, model.trim());
 }
 
-export function createNewSession(initialTitle = 'Percakapan Baru'): AiSession {
+export function createNewSession(initialTitle?: string): AiSession {
+  const safeTitle =
+    typeof initialTitle === 'string' && initialTitle.trim() ? initialTitle.trim() : 'Percakapan Baru';
   const newSession: AiSession = {
     id: `ai_sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    title: initialTitle,
+    title: safeTitle,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     messages: [],
