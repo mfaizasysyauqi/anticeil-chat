@@ -444,6 +444,15 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
       onReturnToCall={() => {
         const destId = activeCallChannelId || activeChannel?.id;
         if (destId) {
+          // 1. Resolve matching colony for channel
+          const matchingChannel = channels.find((c) => c.id === destId);
+          const targetColonyId = destId.startsWith('dm-') ? 'anticeil' : matchingChannel?.colonyId;
+          if (targetColonyId && setActiveColonyId) {
+            setActiveColonyId(targetColonyId);
+          }
+          // 2. Clear any full-page view (Shop, Quests, Calendar, Friends, etc.)
+          setHomeView?.(null);
+          // 3. Switch to active destination channel
           setActiveChannelId(destId);
         } else if (selectedActivityAppId) {
           setActiveColonyId?.('anticeil');
@@ -452,6 +461,9 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
         }
         setIsCallPiP(false);
         setIsActivityOpen(true);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('anticeil_close_mobile_channels'));
+        }
       }}
       onDisconnectCall={() => {
         if (onDisconnectCall) {

@@ -11,6 +11,9 @@ import {
   Play,
   ChevronUp,
   LogIn,
+  Palette,
+  Crown,
+  ScreenShare,
 } from 'lucide-react';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { Button } from '@/components/ui/button';
@@ -19,6 +22,99 @@ import { useTranslation } from '@/core/i18n';
 import { AudioDeviceMenu } from '@/features/voice';
 import { ANTICEIL_APPS } from '@/features/voice/data/voice-activities';
 import { UserProfileDialog, type UserPresenceStatus } from './user-profile-dialog';
+
+function getAppBrand(appId: string | null | undefined) {
+  if (!appId) return null;
+  const raw = appId.toLowerCase().trim();
+  const def = ANTICEIL_APPS.find((a) => a.id === raw || a.id.toLowerCase() === raw);
+
+  if (raw === 'watch-together' || raw === 'youtube' || raw.includes('youtube') || raw.includes('watch')) {
+    return {
+      id: 'watch-together',
+      title: 'Watch Together',
+      renderIcon: () => (
+        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-xs border border-white/20">
+          <svg className="w-5 h-3.5 fill-[#FF0000]" viewBox="0 0 24 24">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+        </div>
+      ),
+    };
+  }
+
+  if (raw === 'tradingview' || raw === 'trading-view' || raw === 'charting' || raw.includes('trading')) {
+    return {
+      id: 'tradingview',
+      title: 'TradingView Charts',
+      renderIcon: () => (
+        <div className="w-8 h-8 rounded-lg bg-[#131722] border border-white/10 flex items-center justify-center shrink-0 shadow-xs">
+          <svg className="w-4.5 h-4.5 text-white fill-current" viewBox="0 0 24 24">
+            <path d="M15.865 8.279a2.452 2.452 0 1 1-4.904 0a2.452 2.452 0 0 1 4.904 0M9.75 6H0v4.904h4.846v7.269H9.75Zm8.596 0H24l-5.106 12.173H13.24z" />
+          </svg>
+        </div>
+      ),
+    };
+  }
+
+  if (raw === 'whiteboard' || raw === 'jamspace' || raw.includes('whiteboard') || raw.includes('jamspace')) {
+    return {
+      id: 'whiteboard',
+      title: 'Jamspace Whiteboard',
+      renderIcon: () => (
+        <div className="w-8 h-8 rounded-lg bg-[#2563eb] flex items-center justify-center shrink-0 shadow-xs">
+          <Palette className="w-4 h-4 text-white" />
+        </div>
+      ),
+    };
+  }
+
+  if (raw === 'chess' || raw.includes('chess')) {
+    return {
+      id: 'chess',
+      title: 'Anticeil Chess',
+      renderIcon: () => (
+        <div className="w-8 h-8 rounded-lg bg-[#b45309] flex items-center justify-center shrink-0 shadow-xs">
+          <Crown className="w-4 h-4 text-white" />
+        </div>
+      ),
+    };
+  }
+
+  if (raw === 'screenshare' || raw.includes('screen') || raw.includes('share')) {
+    return {
+      id: 'screenshare',
+      title: 'Share Screen',
+      renderIcon: () => (
+        <div className="w-8 h-8 rounded-lg bg-[#7c3aed] flex items-center justify-center shrink-0 shadow-xs">
+          <ScreenShare className="w-4 h-4 text-white" />
+        </div>
+      ),
+    };
+  }
+
+  if (def) {
+    const CustomIcon = def.icon || Play;
+    return {
+      id: def.id,
+      title: def.title,
+      renderIcon: () => (
+        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-xs", def.iconBg || 'bg-primary/20', def.iconColor || 'text-primary')}>
+          <CustomIcon className="w-4 h-4" />
+        </div>
+      ),
+    };
+  }
+
+  return {
+    id: raw,
+    title: raw.charAt(0).toUpperCase() + raw.slice(1),
+    renderIcon: () => (
+      <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary border border-primary/30 flex items-center justify-center shrink-0">
+        <Play className="w-4 h-4 fill-current" />
+      </div>
+    ),
+  };
+}
 
 interface UserBottomDockProps {
   currentUser: any;
@@ -101,13 +197,8 @@ export function UserBottomDock({
     >
       {/* 1. Discord-Style Active Activity Dock Card (Image 1) */}
       {selectedActivityAppId && (isActivityOpen || isCallPiP || Boolean(activeCallChannelId)) ? (() => {
-        const currentAppDef = ANTICEIL_APPS.find((a) => a.id === selectedActivityAppId);
-        const currentAppTitle =
-          currentAppDef?.title ||
-          (selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube'
-            ? 'Watch Together'
-            : selectedActivityAppId);
-        const CurrentAppIcon = currentAppDef?.icon;
+        const brand = getAppBrand(selectedActivityAppId);
+        const currentAppTitle = brand?.title || selectedActivityAppId;
 
         return (
           <div className="px-2 pt-2 pb-0">
@@ -116,23 +207,9 @@ export function UserBottomDock({
               className="w-full px-2.5 py-2 rounded-lg bg-transparent hover:bg-sidebar-accent/50 border border-sidebar-border transition-all flex items-center justify-between gap-2.5 cursor-pointer group shadow-2xs"
               title="Klik untuk membuka aktivitas"
             >
-              {/* Left: App Icon */}
+              {/* Left: App Icon & Title */}
               <div className="flex items-center gap-2.5 min-w-0">
-                {selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube' ? (
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-xs">
-                    <svg className="w-5 h-4 text-[#ff0000] fill-current" viewBox="0 0 24 24">
-                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                    </svg>
-                  </div>
-                ) : CurrentAppIcon ? (
-                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-xs", currentAppDef?.iconBg || 'bg-primary/20', currentAppDef?.iconColor || 'text-primary')}>
-                    <CurrentAppIcon className="w-4 h-4 fill-current" />
-                  </div>
-                ) : (
-                  <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary border border-primary/30 flex items-center justify-center shrink-0">
-                    <Play className="w-4 h-4 fill-current" />
-                  </div>
-                )}
+                {brand?.renderIcon()}
 
                 {/* Middle: Title & Location */}
                 <div className="flex flex-col min-w-0 text-left">
@@ -140,7 +217,7 @@ export function UserBottomDock({
                     {currentAppTitle}
                   </span>
                   <span className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
-                    {activeCallChannelName || 'general'} / {activeColonyName || 'server'}
+                    {activeCallChannelName || 'general'} / {activeColonyName || 'Pesan Langsung'}
                   </span>
                 </div>
               </div>
@@ -164,11 +241,15 @@ export function UserBottomDock({
       })() : activeCallChannelId ? (
         /* 2. Active Voice Call Connected Banner */
         <div className="px-2 pt-2 pb-0">
-          <div className="px-2.5 py-1.5 rounded-[8px] bg-sidebar-accent/50 border border-sidebar-border flex items-center justify-between animate-in slide-in-from-bottom-2">
+          <div
+            onClick={onReturnToCall}
+            className="w-full px-2.5 py-1.5 rounded-[8px] bg-sidebar-accent/50 hover:bg-sidebar-accent/80 border border-sidebar-border transition-all flex items-center justify-between cursor-pointer group shadow-2xs animate-in slide-in-from-bottom-2"
+            title={t('Kembali ke Layar Panggilan')}
+          >
             <div className="flex items-center gap-2 min-w-0">
               <Radio className="w-3.5 h-3.5 text-emerald-500 animate-pulse shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-[11px] font-bold text-emerald-400 leading-tight">
+              <div className="flex flex-col min-w-0 text-left">
+                <span className="text-[11px] font-bold text-emerald-400 group-hover:text-emerald-300 transition-colors leading-tight">
                   {isActivityChannel ? t('Aktivitas Berjalan') : t('Voice Terhubung')}
                 </span>
                 <span className="text-[10px] text-muted-foreground truncate">
@@ -176,11 +257,14 @@ export function UserBottomDock({
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-0.5 shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onReturnToCall}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReturnToCall?.();
+                }}
                 className="h-6 w-6 text-muted-foreground hover:text-foreground"
                 title={t('Kembali ke Layar Panggilan')}
               >
@@ -189,7 +273,10 @@ export function UserBottomDock({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onDisconnectCall}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDisconnectCall?.();
+                }}
                 className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-500/20"
                 title={t('Putus Panggilan')}
               >
