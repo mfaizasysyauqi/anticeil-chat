@@ -13,6 +13,7 @@ import {
   PanelLeftClose,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EmptyIconBadge } from '@/components/ui/empty';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -151,18 +152,23 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
           </span>
 
           {regularSessions.length === 0 && pinnedSessions.length === 0 ? (
-            <div className="py-8 px-3 text-center space-y-2">
-              <Bot className="w-8 h-8 text-muted-foreground/40 mx-auto" />
-              <p className="text-xs text-muted-foreground">
-                Belum ada riwayat perintah AI.
+            <div className="py-6 px-3 flex flex-col items-center text-center">
+              <EmptyIconBadge size="compact" className="mb-2.5">
+                <Bot className="stroke-[1.8]" />
+              </EmptyIconBadge>
+              <p className="text-xs font-semibold text-foreground mb-1">
+                {t('Belum Ada Riwayat')}
+              </p>
+              <p className="text-[11px] text-muted-foreground mb-3 max-w-[180px]">
+                {t('Belum ada riwayat perintah AI.')}
               </p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onCreateNewSession}
-                className="text-xs h-7 gap-1"
+                className="text-xs h-7 gap-1 cursor-pointer"
               >
-                <Plus className="w-3 h-3" /> Buat Obrolan
+                <Plus className="w-3 h-3" /> {t('Buat Obrolan')}
               </Button>
             </div>
           ) : (

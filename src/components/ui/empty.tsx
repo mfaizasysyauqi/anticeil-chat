@@ -94,6 +94,43 @@ function EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+export const emptyIconBadgeVariants = cva(
+  'rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs shrink-0',
+  {
+    variants: {
+      size: {
+        default: 'size-16 [&_svg]:size-8',
+        compact: 'size-12 [&_svg]:size-6',
+        lg: 'size-20 [&_svg]:size-10',
+      },
+    },
+    defaultVariants: {
+      size: 'default',
+    },
+  },
+);
+
+export interface EmptyIconBadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof emptyIconBadgeVariants> {}
+
+function EmptyIconBadge({
+  className,
+  size = 'default',
+  children,
+  ...props
+}: EmptyIconBadgeProps) {
+  return (
+    <div
+      data-slot="empty-icon-badge"
+      className={cn(emptyIconBadgeVariants({ size }), className)}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
 export interface EmptyStateProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   icon?: React.ReactNode;
   title: React.ReactNode;
@@ -122,15 +159,9 @@ export function EmptyState({
       {...props}
     >
       {icon && (
-        <div
-          data-slot="empty-icon-badge"
-          className={cn(
-            'rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-4 shadow-xs shrink-0',
-            compact ? 'size-12 [&_svg]:size-6' : 'size-16 [&_svg]:size-8',
-          )}
-        >
+        <EmptyIconBadge size={compact ? 'compact' : 'default'} className="mb-4">
           {icon}
-        </div>
+        </EmptyIconBadge>
       )}
       <h3
         data-slot="empty-title"
@@ -168,4 +199,5 @@ export {
   EmptyDescription,
   EmptyContent,
   EmptyMedia,
+  EmptyIconBadge,
 };

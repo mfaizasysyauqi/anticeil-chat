@@ -21,6 +21,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EmptyIconBadge } from '@/components/ui/empty';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import {
   DropdownMenu,
@@ -350,10 +351,10 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       <div className="flex-1 min-h-0 overflow-y-auto px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 space-y-4">
         {messages.length === 0 ? (
           <div className="max-w-2xl mx-auto py-8 sm:py-12 text-center space-y-6">
-            <div className="relative inline-flex">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary/30 to-purple-500/20 border border-primary/30 flex items-center justify-center text-primary shadow-xl">
-                <Sparkles className="w-8 h-8" />
-              </div>
+            <div className="flex justify-center">
+              <EmptyIconBadge size="default">
+                <Sparkles className="stroke-[1.8]" />
+              </EmptyIconBadge>
             </div>
 
             <div className="space-y-2">
