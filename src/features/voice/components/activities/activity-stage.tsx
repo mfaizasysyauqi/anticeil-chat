@@ -7,6 +7,7 @@ import { WhiteboardCanvas } from './whiteboard-canvas';
 import { ChessGame } from './chess-game';
 import { ScreenShareView } from './screen-share-view';
 import { TradingViewChart } from './tradingview-chart';
+import { AnticeilPlatformStage } from './anticeil-platform-stage';
 import { ColonyAppStage } from './colony-app-stage';
 
 export interface ActivityStageProps {
@@ -93,6 +94,16 @@ export function ActivityStage({
         />
       )}
 
+      {(activeAppId === 'anticeil-platform' || activeAppId === 'platform') && (
+        <AnticeilPlatformStage
+          channel={channel}
+          socket={socket}
+          currentUserName={currentUserName}
+          currentUser={currentUser}
+          participants={participants}
+        />
+      )}
+
       {activeAppId !== 'watch-together' &&
         activeAppId !== 'youtube' &&
         activeAppId !== 'whiteboard' &&
@@ -100,7 +111,9 @@ export function ActivityStage({
         activeAppId !== 'anticeil-chess' &&
         activeAppId !== 'screenshare' &&
         activeAppId !== 'tradingview' &&
-        activeAppId !== 'charting' && (
+        activeAppId !== 'charting' &&
+        activeAppId !== 'anticeil-platform' &&
+        activeAppId !== 'platform' && (
           <ColonyAppStage
             appId={activeAppId}
             channel={channel}

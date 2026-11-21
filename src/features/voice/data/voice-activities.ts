@@ -65,6 +65,33 @@ export type DiscordAppDefinition = VoiceAppDefinition;
 
 export const VOICE_APPS: VoiceAppDefinition[] = [
   {
+    id: 'anticeil-platform',
+    title: 'Anticeil Platform',
+    bannerTitle: 'ANTICEIL PLATFORM',
+    developer: 'Anticeil Official',
+    category: 'productivity',
+    bannerGradient: 'from-blue-600 via-indigo-800 to-zinc-950',
+    bannerImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
+    iconBg: 'bg-blue-600',
+    iconColor: 'text-white',
+    icon: Sparkles,
+    tagline: 'Platform otomasi & ekosistem cerdas Anticeil...',
+    description: 'Buka dashboard utama Anticeil Platform dengan autentikasi SSO otomatis untuk alur kerja dan otomasi cerdas.',
+    isRecent: true,
+    isPromoted: true,
+    badge: 'OFFICIAL',
+    accentColor: '#2563eb',
+    buttonClass: 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-md shadow-blue-600/25 border-0',
+    serverCount: 'Official Core',
+    supportedLanguages: ['English, US', 'Bahasa Indonesia'],
+    screenshots: [
+      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
+    ],
+    overviewLong: 'Anticeil Platform adalah pusat kontrol kerja, otomasi, dan integrasi cerdas Anticeil. Terhubung langsung melalui Single Sign-On (SSO) akun Anticeil Anda.',
+    howToPlay: 'Klik Luncurkan atau Buka Platform untuk masuk ke Anticeil Platform dengan sesi akun yang tersinkronisasi otomatis.',
+  },
+  {
     id: 'watch-together',
     title: 'Watch Together',
     bannerTitle: 'WATCH TOGETHER',
