@@ -357,7 +357,7 @@ export function ColonyRail({
                         'relative size-10 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                         isDmActive
                           ? hasProfileImage
-                            ? 'ring-2 ring-primary ring-offset-1 ring-offset-sidebar shadow-xs'
+                            ? 'ring-1 ring-primary/30 shadow-xs'
                             : 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
                           : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
                       )}
@@ -431,7 +431,7 @@ export function ColonyRail({
                         'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
                         isActive
                           ? hasCustomIcon
-                            ? 'ring-2 ring-primary ring-offset-1 ring-offset-sidebar shadow-xs'
+                            ? 'ring-1 ring-primary/30 shadow-xs'
                             : 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
                           : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
                       )}
