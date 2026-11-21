@@ -89,6 +89,7 @@ const CATEGORY_TABS = [
 ] as const;
 
 const RECENT_APPS_STORAGE_KEY = 'anticeil_recent_apps';
+const MAX_RECENT_APPS = 10;
 const DEFAULT_RECENT_IDS = ['watch-together', 'tradingview', 'chess', 'whiteboard', 'screenshare'];
 
 function ActivityCard({
@@ -216,23 +217,25 @@ export function AppsView({
     return null;
   });
 
-  // Recent Apps Tracking (Ordered from most recently opened to oldest)
+  // Recent Apps Tracking (Ordered from most recently opened to oldest, max 10)
   const [recentAppIds, setRecentAppIds] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem(RECENT_APPS_STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.slice(0, MAX_RECENT_APPS);
+          }
         }
       } catch {}
     }
-    return DEFAULT_RECENT_IDS;
+    return DEFAULT_RECENT_IDS.slice(0, MAX_RECENT_APPS);
   });
 
   const trackRecentApp = (appId: string) => {
     setRecentAppIds((prev) => {
-      const updated = [appId, ...prev.filter((id) => id !== appId)];
+      const updated = [appId, ...prev.filter((id) => id !== appId)].slice(0, MAX_RECENT_APPS);
       try {
         localStorage.setItem(RECENT_APPS_STORAGE_KEY, JSON.stringify(updated));
       } catch {}
@@ -253,13 +256,13 @@ export function AppsView({
 
   const recentApps = useMemo(() => {
     const list: VoiceAppDefinition[] = [];
-    for (const id of recentAppIds) {
+    for (const id of recentAppIds.slice(0, MAX_RECENT_APPS)) {
       const found = appList.find((a) => a.id === id);
       if (found && !list.some((item) => item.id === found.id)) {
         list.push(found);
       }
     }
-    return list;
+    return list.slice(0, MAX_RECENT_APPS);
   }, [recentAppIds, appList]);
 
   const handleOpenDetail = (app: VoiceAppDefinition) => {
