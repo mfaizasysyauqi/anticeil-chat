@@ -66,7 +66,7 @@ export const LAYOUT_PAGE_SPACING = {
    * Standard single-line App Bar container
    */
   APP_BAR_CONTAINER:
-    'h-12 border-b border-sidebar-border px-3.5 sm:px-4 md:px-5 lg:px-6 flex items-center justify-between shrink-0 bg-background z-10',
+    'h-12 border-b border-sidebar-border px-3.5 sm:px-4 md:px-5 lg:px-6 flex items-center justify-between shrink-0 bg-background z-10 overflow-hidden',
 } as const;
 
 /**

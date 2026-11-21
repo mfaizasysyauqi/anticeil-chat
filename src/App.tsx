@@ -11,7 +11,7 @@ function AppContent() {
 
   return (
     <div
-      className="w-screen h-screen overflow-hidden flex flex-col font-sans select-none antialiased bg-background text-foreground"
+      className="w-full h-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col font-sans select-none antialiased bg-background text-foreground"
     >
       <Routes>
         <Route path="/" element={<Navigate to="/ai" replace />} />

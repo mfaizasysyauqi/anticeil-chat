@@ -38,7 +38,7 @@ export function QuestsHeader({
   return (
     <div
       className={cn(
-        'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2',
+        'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2 overflow-hidden',
         horizontalPadding
       )}
     >
@@ -67,7 +67,7 @@ export function QuestsHeader({
       </div>
 
       {/* Center: Tabs with Reusable TopBarTabButton */}
-      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1">
+      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1 touch-pan-x">
         <TopBarTabButton
           active={activeTab === 'all'}
           onClick={() => onTabChange('all')}

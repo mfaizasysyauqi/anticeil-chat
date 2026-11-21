@@ -347,7 +347,7 @@ export function AppsView({
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
       {/* ── Single App Bar (h-12) ─────────────────────────── */}
-      <div className={cn('h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2', horizontalPadding)}>
+      <div className={cn('h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2 overflow-hidden', horizontalPadding)}>
         <div className="flex items-center gap-2 shrink-0">
           {onOpenSidebar && (
             <Button
@@ -372,7 +372,7 @@ export function AppsView({
         </div>
 
         {/* Category Tabs: 100% DRY TopBarTabButton */}
-        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1 touch-pan-x">
           {CATEGORY_TABS.map((tab) => (
             <TopBarTabButton
               key={tab.id}

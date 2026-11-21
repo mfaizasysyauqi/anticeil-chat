@@ -109,8 +109,8 @@ export function ChannelTopHeaderBar({
   );
 
   return (
-    <div className={`h-12 border-b border-sidebar-border ${channelPaddingClass} flex items-center justify-between shrink-0 bg-background z-10`}>
-      <div className="flex items-center gap-2 min-w-0">
+    <div className={`h-12 border-b border-sidebar-border ${channelPaddingClass} flex items-center justify-between shrink-0 bg-background z-10 overflow-hidden`}>
+      <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
         {/* Burger Menu Button (Visible only on Mobile: md:hidden) */}
         <button
           type="button"
@@ -135,15 +135,15 @@ export function ChannelTopHeaderBar({
         ) : (
           <Hash className="w-5 h-5 text-muted-foreground shrink-0" />
         )}
-        <span className="text-sm font-semibold truncate text-foreground flex items-center gap-1.5 shrink-0 max-w-[180px] sm:max-w-[260px]">
-          {activeChannel ? activeChannel.name : t('Belum ada channel')}
+        <span className="text-sm font-semibold truncate text-foreground flex items-center gap-1.5 min-w-0">
+          <span className="truncate">{activeChannel ? activeChannel.name : t('Belum ada channel')}</span>
           {activeChannel?.isGroupDm && activeChannel?.dmUserIds && activeChannel.dmUserIds.length > 0 && (
             <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold shrink-0">
               {activeChannel.dmUserIds.length} {t('Anggota')}
             </span>
           )}
           {activeChannel?.isPrivate && (
-            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-semibold flex items-center gap-1">
+            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-semibold flex items-center gap-1 shrink-0">
               <Lock className="w-2.5 h-2.5" /> Private
             </span>
           )}
@@ -151,7 +151,7 @@ export function ChannelTopHeaderBar({
       </div>
 
       {/* Top Bar Actions: Exactly Discord Signature (Calls, E2EE, Threads, Bell, Pin, Member List / User Profile, Search) */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         {/* DM Voice Call Button */}
         {isDmMode && onStartVoiceCall && (
           <Tooltip delayDuration={150}>
@@ -200,35 +200,41 @@ export function ChannelTopHeaderBar({
 
         {/* 1. Threads Popover (Server channels only) */}
         {!isDmMode && (
-          <ThreadsPopover
-            open={isThreadsPopoverOpen}
-            onOpenChange={setIsThreadsPopoverOpen}
-            channelThreads={channelThreads}
-            threadSearchQuery={threadSearchQuery}
-            setThreadSearchQuery={setThreadSearchQuery}
-            onOpenCreateThreadModal={onOpenCreateThreadModal}
-            onSelectThread={onSelectThread}
-          />
+          <div className="hidden sm:inline-flex">
+            <ThreadsPopover
+              open={isThreadsPopoverOpen}
+              onOpenChange={setIsThreadsPopoverOpen}
+              channelThreads={channelThreads}
+              threadSearchQuery={threadSearchQuery}
+              setThreadSearchQuery={setThreadSearchQuery}
+              onOpenCreateThreadModal={onOpenCreateThreadModal}
+              onSelectThread={onSelectThread}
+            />
+          </div>
         )}
 
         {/* 2. Notification Settings Dropdown (Server channels only) */}
         {!isDmMode && (
-          <ChannelNotificationDropdown
-            open={isNotificationDropdownOpen}
-            onOpenChange={setIsNotificationDropdownOpen}
-            channelNotification={channelNotification}
-            onUpdateNotification={onUpdateNotification}
-          />
+          <div className="hidden sm:inline-flex">
+            <ChannelNotificationDropdown
+              open={isNotificationDropdownOpen}
+              onOpenChange={setIsNotificationDropdownOpen}
+              channelNotification={channelNotification}
+              onUpdateNotification={onUpdateNotification}
+            />
+          </div>
         )}
 
         {/* 3. Pinned Messages Popover */}
-        <PinnedMessagesPopover
-          isOpen={isPinnedPopoverOpen}
-          onOpenChange={setIsPinnedPopoverOpen}
-          pinnedMessages={pinnedMessages}
-          onJumpToMessage={onJumpToMessage}
-          onTogglePin={onTogglePin}
-        />
+        <div className="hidden sm:inline-flex">
+          <PinnedMessagesPopover
+            isOpen={isPinnedPopoverOpen}
+            onOpenChange={setIsPinnedPopoverOpen}
+            pinnedMessages={pinnedMessages}
+            onJumpToMessage={onJumpToMessage}
+            onTogglePin={onTogglePin}
+          />
+        </div>
 
         {/* 4. Member List Toggle (Server) / Show User Profile Toggle (DM / Friends mode) */}
         <Tooltip delayDuration={150}>

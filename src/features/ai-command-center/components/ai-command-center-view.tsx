@@ -508,7 +508,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       {/* 3. Command Input Dock (Full width, Gemini-style prompt form with file upload + model selector) */}
       <div
         className={cn(
-          'shrink-0 pb-3 pt-0 bg-transparent z-10 flex flex-col w-full',
+          'shrink-0 pb-2 sm:pb-3 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-0 bg-transparent z-10 flex flex-col w-full',
           CHANNEL_HORIZONTAL_PADDING,
         )}
       >
@@ -593,7 +593,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                       className="flex items-center gap-1 px-2 sm:px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/60 rounded-full border border-border/60 transition-colors cursor-pointer select-none"
                       title="Ganti Model AI"
                     >
-                      <span className="max-w-[100px] sm:max-w-[150px] truncate">
+                      <span className="max-w-[70px] sm:max-w-[150px] truncate text-[11px] sm:text-xs">
                         {GROQ_MODELS.find((m) => m.id === selectedModel)?.name.replace(' Versatile', '').replace(' Instant', '') || selectedModel}
                       </span>
                       <ChevronDown className="w-3.5 h-3.5 opacity-70 shrink-0" />

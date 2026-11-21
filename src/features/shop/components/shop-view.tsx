@@ -986,7 +986,7 @@ export function ShopView({
       {/* ── 1. Reusable Top App Bar (h-12) 100% Consistent with Apps & Colonies ── */}
       <div
         className={cn(
-          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2',
+          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 gap-2 overflow-hidden',
           horizontalPadding
         )}
       >
@@ -1015,7 +1015,7 @@ export function ShopView({
         </div>
 
         {/* Tab Filter Pills: Responsive dynamic tabs container (overflowing tabs move to 'More' like Discord) */}
-        <div ref={tabsContainerRef} className="flex-1 min-w-0 flex items-center gap-1 overflow-hidden px-1">
+        <div ref={tabsContainerRef} className="flex-1 min-w-0 flex items-center gap-1 overflow-hidden px-1 touch-pan-x">
           {/* 1. Featured Tab */}
           <TopBarTabButton
             data-tab-id="featured"

@@ -267,7 +267,7 @@ export function ColoniesView({
       {/* ── Top Header Bar: Discord Style (100% Match to Teman & Permintaan Pesan) ── */}
       <div
         className={cn(
-          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10',
+          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 overflow-hidden',
           horizontalPadding
         )}
       >
@@ -297,7 +297,7 @@ export function ColoniesView({
         </div>
 
         {/* Tab Filter Pills: Server Saya & Jelajahi */}
-        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1 touch-pan-x">
             <button
               onClick={() => setActiveTab('joined')}
               className={cn(

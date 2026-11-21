@@ -48,7 +48,7 @@ export function MessageRequestsView({
       {/* Top Header Bar: Discord Style Message Requests */}
       <div
         className={cn(
-          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10',
+          'h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background z-10 overflow-hidden',
           horizontalPadding
         )}
       >

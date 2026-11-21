@@ -36,7 +36,7 @@ export function FriendsHeader({
 
   return (
     <div
-      className={`h-12 border-b border-sidebar-border ${horizontalPadding} flex items-center justify-between shrink-0 bg-background z-10`}
+      className={`h-12 border-b border-sidebar-border ${horizontalPadding} flex items-center justify-between shrink-0 bg-background z-10 overflow-hidden`}
     >
       <div className="flex items-center gap-2 shrink-0">
         {/* Burger Menu Button (Visible on Mobile: md:hidden) */}
@@ -64,7 +64,7 @@ export function FriendsHeader({
       </div>
 
       {/* Tabs: Online, Semua, Tertunda & Action: Tambah Teman Dialog */}
-      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1">
+      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1 touch-pan-x">
           <button
             onClick={() => onTabChange('online')}
             className={cn(

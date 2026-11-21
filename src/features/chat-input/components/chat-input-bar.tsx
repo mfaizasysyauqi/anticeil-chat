@@ -155,7 +155,7 @@ export function ChatInputBar({
   };
 
   return (
-    <div className={`shrink-0 ${channelPaddingClass} pb-3 pt-0 bg-transparent z-10 flex flex-col gap-1.5`}>
+    <div className={`shrink-0 ${channelPaddingClass} pb-2 sm:pb-3 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-0 bg-transparent z-10 flex flex-col gap-1.5`}>
       {/* Discord Reply Banner */}
       {replyingTo && (
         <div className="px-3 py-1.5 rounded-[12px] bg-[#111214] border border-white/10 shadow-lg flex items-center justify-between text-xs animate-in slide-in-from-bottom-1 select-none">
@@ -420,11 +420,11 @@ export function ChatInputBar({
             </span>
           )}
 
-          {/* 1. Gift Icon */}
+          {/* 1. Gift Icon (Desktop/tablet only) */}
           <button
             type="button"
             onClick={onOpenGiftModal}
-            className="w-6 h-6 text-muted-foreground/90 hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
+            className="hidden sm:flex w-6 h-6 text-muted-foreground/90 hover:text-foreground items-center justify-center transition-colors cursor-pointer"
             title="Kirim Hadiah (Send a Gift)"
           >
             <Gift className="w-5 h-5" />
@@ -450,14 +450,16 @@ export function ChatInputBar({
             onOpenQuickAddSticker={onOpenQuickAddSticker}
           />
 
-          {/* Apps & Activity Popover */}
-          <ChatAppsPopover
-            open={isTemplatePopoverOpen}
-            onOpenChange={setIsTemplatePopoverOpen}
-            appsSearchQuery={appsSearchQuery}
-            setAppsSearchQuery={setAppsSearchQuery}
-            onLaunchActivity={onLaunchActivity}
-          />
+          {/* Apps & Activity Popover (Desktop/tablet only, on mobile accessible via + menu) */}
+          <div className="hidden sm:flex items-center">
+            <ChatAppsPopover
+              open={isTemplatePopoverOpen}
+              onOpenChange={setIsTemplatePopoverOpen}
+              appsSearchQuery={appsSearchQuery}
+              setAppsSearchQuery={setAppsSearchQuery}
+              onLaunchActivity={onLaunchActivity}
+            />
+          </div>
 
           {/* Send Button — only visible when there's content */}
           {(inputText.trim() || stagedAttachment) && (
