@@ -226,10 +226,10 @@ export function ColonyRail({
                 <button
                   type="button"
                   onClick={onToggleCollapseSidebar}
-                  className="relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px] bg-sidebar-accent text-muted-foreground hover:bg-primary/20 hover:text-primary hover:border-primary/40 border border-border/50 hover:scale-105 active:scale-95 shadow-xs"
+                  className="group relative size-10 rounded-[14px] bg-sidebar-accent hover:bg-sidebar-accent/80 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold text-muted-foreground hover:text-foreground shadow-xs"
                   aria-label={t('Buka Sidebar (Ctrl+B)')}
                 >
-                  <PanelLeftOpen className="w-5 h-5 text-primary transition-transform duration-200 group-hover:scale-110" />
+                  <PanelLeftOpen className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
