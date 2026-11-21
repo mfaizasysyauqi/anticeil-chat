@@ -9,6 +9,7 @@ export * from './components/pip-call-stage';
 export * from './components/activity-filmstrip';
 export * from './components/activities/activity-stage';
 export * from './components/call-stage';
+export * from './components/stage/stage-view';
 export * from './hooks/use-voice-settings';
 export * from './hooks/use-voice-call-state';
 export * from './components/audio-device-menu';

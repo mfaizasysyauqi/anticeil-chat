@@ -284,7 +284,17 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
             isActiveCh ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
           )}
         />
-        <span className="truncate flex-1">{ch.name}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="truncate">{ch.name}</span>
+            {ch.type === 'stage' && isActiveCh && (
+              <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-400 text-[9px] font-bold shrink-0 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live
+              </span>
+            )}
+          </div>
+        </div>
         {ch.isPrivate && (
           <span title="Private Channel">
             <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />

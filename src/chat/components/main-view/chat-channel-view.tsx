@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { ChannelTopHeaderBar, ForumChannelView } from '@/features/channels';
 import { KanbanChannelView, type KanbanCard } from '@/features/kanban';
-import { CallStage } from '@/features/voice';
+import { CallStage, StageView } from '@/features/voice';
 import { MessagesFeed } from '@/features/chat';
 import { ChatInputBar } from '@/features/chat-input';
 import {
@@ -428,7 +428,7 @@ export function ChatChannelView({
 
   return (
     <div className="flex flex-1 flex-col h-full min-h-0 min-w-0 bg-background overflow-hidden">
-      {!isCallOrActivityActive && (
+      {!isCallOrActivityActive && activeChannel?.type !== 'stage' && (
         <ChannelTopHeaderBar
           activeChannel={activeChannel}
           channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
@@ -470,7 +470,42 @@ export function ChatChannelView({
         />
       )}
 
-      {isCallOrActivityActive ? (
+      {activeChannel?.type === 'stage' ? (
+        <div className="flex-1 min-h-0 flex w-full h-full relative overflow-hidden">
+          <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
+            <StageView
+              channel={activeChannel}
+              activeColony={activeColony}
+              currentUser={currentUser}
+              onDisconnect={() => {
+                setActiveCallChannelId(null);
+              }}
+              onToggleChat={() => setIsActivityChatSplitOpen((prev) => !prev)}
+              isChatOpen={isActivityChatSplitOpen}
+            />
+          </div>
+          {isActivityChatSplitOpen && (
+            <div className="w-80 border-l border-white/10 flex flex-col bg-background h-full min-h-0 z-20 shadow-2xl animate-in slide-in-from-right-4 duration-200">
+              <div className="h-12 border-b border-border/40 px-3 flex items-center justify-between shrink-0 font-bold text-xs text-foreground">
+                <span className="flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                  <span>{t('Chat Stage')}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsActivityChatSplitOpen(false)}
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0 flex flex-col">
+                {renderChatFeedAndInput(true)}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : isCallOrActivityActive ? (
         <div ref={splitContainerRef} className="flex-1 min-h-0 overflow-hidden flex flex-col w-full h-full relative">
           <div
             style={{
