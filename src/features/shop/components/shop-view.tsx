@@ -944,7 +944,7 @@ export function ShopView({
             </div>
           </div>
 
-          <span className="absolute top-2.5 right-2.5 text-[8px] font-bold text-white/70 bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-xs tracking-wider z-10">
+          <span className="absolute bottom-2.5 left-3 text-[8px] font-bold text-white/70 bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-xs tracking-wider z-10">
             OVERLAY .GIF
           </span>
         </div>
@@ -1455,9 +1455,9 @@ export function ShopView({
       <ScrollArea className="flex-1 min-h-0">
         <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-6', verticalPadding)}>
           {/* Top Catalog Toolbar: Sort by + Hide/Show Filters toggle (Discord 1:1) */}
-          <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
-            <div className="flex items-center gap-2">
-              <span className={TEXT_STYLES.SECTION_MUTED}>
+          <div className="flex items-center justify-between min-h-7 gap-2 sm:gap-3 pb-2 border-b border-border/50">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
+              <span className={cn(TEXT_STYLES.SECTION_MUTED, 'text-xs')}>
                 {t('Katalog')}
               </span>
               <span className={TEXT_STYLES.COUNTER_LABEL}>
@@ -1465,12 +1465,12 @@ export function ShopView({
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {/* Sort by dropdown */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground font-medium shrink-0">{t('Sort by')}</span>
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <span className="hidden md:inline text-xs text-muted-foreground font-medium shrink-0">{t('Sort by')}</span>
                 <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
-                  <SelectTrigger size="xs" className="w-38 h-7 text-xs bg-muted/40 border-border/60">
+                  <SelectTrigger size="xs" className="w-26 sm:w-34 md:w-38 h-7 text-xs bg-muted/40 border-border/60">
                     <SelectValue placeholder={t('Sort by')} />
                   </SelectTrigger>
                   <SelectContent align="end" className="bg-card border-border z-[160]">
@@ -1494,17 +1494,17 @@ export function ShopView({
               <Button
                 size="sm"
                 onClick={handleOpenCreateProduct}
-                className={BUTTON_STYLES.TOOLBAR_ACTION}
+                className={cn(BUTTON_STYLES.TOOLBAR_ACTION, 'px-2 sm:px-3 h-7')}
                 title={t('Tambah Produk Baru ke Database Shop')}
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>{t('Tambah Item')}</span>
+                <span className="hidden sm:inline">{t('Tambah Item')}</span>
               </Button>
             </div>
           </div>
         {/* ── Reusable Hero Banner (Matches AppsView YouTube Watch Together layout) ── */}
         {!searchQuery && (activeTab === 'all' || activeTab === 'featured') && heroCollection && (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-card to-background border border-primary/20 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-card to-background border border-primary/20 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 shadow-xl">
             <div className="space-y-2 max-w-xl z-10">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary border border-primary/30">
                 <Sparkles className="w-3 h-3" /> {heroCollection.tagline || t('KOLEKSI UNGGULAN')}
@@ -1520,7 +1520,7 @@ export function ShopView({
             <Button
               size="lg"
               onClick={() => setActiveTab('featured')}
-              className="font-bold h-10 px-6 gap-2 cursor-pointer z-10 shadow-lg shrink-0"
+              className="w-full sm:w-auto font-bold h-10 px-6 gap-2 cursor-pointer z-10 shadow-lg shrink-0 justify-center"
             >
               <span>{heroCollection.actionLabel || t('Lihat Koleksi')}</span>
               <ArrowRight className="w-4 h-4" />
@@ -1533,7 +1533,7 @@ export function ShopView({
 
         {/* ── Dew Shop Dedicated Hero Banner ── */}
         {!searchQuery && activeTab === 'dew' && (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500/20 via-card to-background border border-cyan-500/30 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500/20 via-card to-background border border-cyan-500/30 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 shadow-xl">
             <div className="space-y-2 max-w-xl z-10">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
                 <Droplets className="w-3 h-3" /> {t('DEW & SALDO POIN')}
@@ -1546,7 +1546,7 @@ export function ShopView({
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 z-10 shrink-0">
+            <div className="flex items-center gap-2.5 z-10 shrink-0 w-full sm:w-auto">
               <Button
                 size="sm"
                 onClick={() => {
@@ -1556,7 +1556,7 @@ export function ShopView({
                     window.location.pathname = '/quests';
                   }
                 }}
-                className="font-bold h-9 px-4 gap-1.5 cursor-pointer shadow-md bg-cyan-600 hover:bg-cyan-500 text-white"
+                className="w-full sm:w-auto font-bold h-9 px-4 gap-1.5 cursor-pointer shadow-md bg-cyan-600 hover:bg-cyan-500 text-white justify-center"
               >
                 <span>🎯</span>
                 <span>{t('Dapatkan Dew dari Quests')}</span>
@@ -1683,33 +1683,33 @@ export function ShopView({
                     </div>
 
                     {/* Card Body */}
-                    <div className="p-3.5 flex-1 flex flex-col justify-between gap-3">
+                    <div className="p-2.5 sm:p-3.5 flex-1 flex flex-col justify-between gap-2.5 sm:gap-3">
                       <div>
-                        <span className="text-[10px] font-semibold text-primary block uppercase tracking-wider truncate mb-0.5">
+                        <span className="text-[9px] sm:text-[10px] font-semibold text-primary block uppercase tracking-wider truncate mb-0.5">
                           {item.collection || 'ANTICEIL NATIVE'}
                         </span>
                         <h4 className="text-xs font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
                           {item.name}
                         </h4>
-                        <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground line-clamp-2 mt-0.5 sm:mt-1 leading-relaxed">
                           {item.description}
                         </p>
                       </div>
 
                       {/* Card Footer */}
-                      <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
+                      <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-1.5 sm:gap-2">
                         <div className="min-w-0">
-                          <div className="text-xs font-bold text-foreground truncate">
+                          <div className="text-[11px] sm:text-xs font-bold text-foreground truncate">
                             IDR {(item.priceIdr ?? 0).toLocaleString('id-ID')}
                           </div>
-                          <div className="flex items-center gap-1 text-[10px] font-semibold text-cyan-400">
+                          <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold text-cyan-400">
                             <span>💧</span>
                             <span>{item.priceDew ?? item.priceOrbs ?? 0} Dew</span>
                           </div>
                         </div>
 
                         {isOwned ? (
-                          <span className="h-7 px-2.5 rounded-[4px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-[10px] font-bold flex items-center gap-1 shrink-0">
+                          <span className="h-7 px-2 sm:px-2.5 rounded-[4px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0">
                             <Check className="w-3 h-3 stroke-[3]" />
                             <span>{t('Dimiliki')}</span>
                           </span>
@@ -1721,7 +1721,7 @@ export function ShopView({
                               e.stopPropagation();
                               setActiveModalItem(item);
                             }}
-                            className="h-7 px-3 text-xs font-semibold cursor-pointer shadow-xs shrink-0"
+                            className="h-7 px-2.5 sm:px-3 text-xs font-semibold cursor-pointer shadow-xs shrink-0"
                           >
                             <span>{t('Buka')}</span>
                           </Button>

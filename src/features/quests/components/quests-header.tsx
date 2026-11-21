@@ -58,7 +58,7 @@ export function QuestsHeader({
       </div>
 
       {/* Center: Tabs with Reusable TopBarTabButton */}
-      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1 touch-pan-x">
+      <div className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto scrollbar-none px-1 touch-pan-x">
         <TopBarTabButton
           active={activeTab === 'all'}
           onClick={() => onTabChange('all')}
@@ -92,18 +92,18 @@ export function QuestsHeader({
       </div>
 
       {/* Right: Search Bar & F2P Dew Balance Chip (No Shop Button) */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {onSearchChange !== undefined && (
           <ResponsiveSearchBar
             value={searchQuery || ''}
             onChange={onSearchChange}
             placeholder={t('Cari quest...')}
-            inputWidth="w-28 sm:w-36 md:w-44"
+            inputWidth="w-24 sm:w-36 md:w-44"
           />
         )}
 
         <div
-          className="h-7 px-2.5 rounded-[4px] bg-muted/40 border border-border/60 flex items-center gap-1.5 text-xs font-bold text-cyan-400 select-none shrink-0"
+          className="h-7 px-2 sm:px-2.5 rounded-[4px] bg-muted/40 border border-border/60 flex items-center gap-1 sm:gap-1.5 text-xs font-bold text-cyan-400 select-none shrink-0"
           title={t('Dew adalah mata uang F2P eksklusif yang hanya bisa didapatkan dari Quest!')}
         >
           <span className="text-xs">💧</span>

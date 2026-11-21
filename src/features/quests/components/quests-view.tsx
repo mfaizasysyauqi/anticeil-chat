@@ -416,7 +416,7 @@ export function QuestsView({
         className="rounded-xl border border-border bg-card flex flex-col justify-between overflow-hidden shadow-xs hover:border-primary/50 transition-all group relative"
       >
         {/* Quest Artwork Banner */}
-        <div className="relative h-36 bg-[#111214] overflow-hidden">
+        <div className="relative h-28 sm:h-36 bg-[#111214] overflow-hidden">
           <img
             src={quest.coverUrl}
             alt={quest.title}
@@ -431,15 +431,15 @@ export function QuestsView({
             </span>
           )}
 
-          {/* Hover Edit & Delete Buttons (Fullstack CRUD) */}
-          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Edit & Delete Buttons (Fullstack CRUD) */}
+          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 handleOpenEditQuest(quest);
               }}
-              className="size-7 rounded-md bg-background/80 hover:bg-background border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs backdrop-blur-md"
+              className="size-6 sm:size-7 rounded-md bg-background/80 hover:bg-background border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs backdrop-blur-md"
               title={t('Edit Quest')}
             >
               <Pencil className="w-3 h-3" />
@@ -447,56 +447,56 @@ export function QuestsView({
             <button
               type="button"
               onClick={(e) => handleDeleteQuest(e, quest.id)}
-              className="size-7 rounded-md bg-background/90 hover:bg-red-600 border border-border/80 hover:border-red-600 text-red-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm hover:shadow-red-950/40 backdrop-blur-md"
+              className="size-6 sm:size-7 rounded-md bg-background/90 hover:bg-red-600 border border-border/80 hover:border-red-600 text-red-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm hover:shadow-red-950/40 backdrop-blur-md"
               title={t('Hapus Quest')}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <span className="absolute bottom-2.5 left-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+          <span className="absolute bottom-2.5 left-2.5 text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wider truncate max-w-[70%]">
             {quest.promoter}
           </span>
         </div>
 
         {/* Quest Body */}
-        <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+        <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between gap-2.5 sm:gap-3">
           <div className="space-y-1">
-            <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+            <h4 className="text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
               {quest.title}
             </h4>
-            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+            <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-2 leading-relaxed">
               {quest.subtitle}
             </p>
           </div>
 
           {/* Reward Box with Glowing Dew Gem */}
-          <div className="p-2.5 rounded-lg bg-cyan-950/20 border border-cyan-500/30 flex items-center justify-between gap-2 shadow-xs">
-            <div className="flex items-center gap-2">
-              <div className="size-7 rounded-md bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-sm shadow-xs animate-pulse">
+          <div className="p-2 sm:p-2.5 rounded-lg bg-cyan-950/20 border border-cyan-500/30 flex items-center justify-between gap-1.5 sm:gap-2 shadow-xs">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <div className="size-6 sm:size-7 rounded-md bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-xs sm:text-sm shadow-xs shrink-0 animate-pulse">
                 💧
               </div>
-              <div>
-                <div className="text-xs font-black text-cyan-400">
+              <div className="min-w-0">
+                <div className="text-[11px] sm:text-xs font-black text-cyan-400 truncate">
                   Claim {quest.rewardDew} Dew
                 </div>
-                <div className="text-[10px] font-semibold text-muted-foreground">
+                <div className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground truncate">
                   Free-to-Play Currency
                 </div>
               </div>
             </div>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+            <span className="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
               1.0x
             </span>
           </div>
 
           {/* Progress Bar */}
           <div className="space-y-1 pt-1">
-            <div className="flex items-center justify-between text-[11px] font-medium text-muted-foreground">
-              <span>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-medium text-muted-foreground">
+              <span className="truncate mr-1">
                 {quest.progress} / {quest.target} {quest.unit}
               </span>
-              <span>{percent}%</span>
+              <span className="shrink-0">{percent}%</span>
             </div>
             <div className="h-1.5 w-full bg-muted/60 rounded-full overflow-hidden">
               <div
@@ -507,7 +507,7 @@ export function QuestsView({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
+          <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-1.5 sm:gap-2">
             {quest.status === 'completed' ? (
               <Button
                 size="sm"
@@ -702,10 +702,10 @@ export function QuestsView({
         {activeTab === 'all' && (
           <>
             {/* ── Top Quests Toolbar: Available Quests count + Sort + Filter + Tambah Quest (100% Consistent with ShopView & FriendsView) ── */}
-            <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between min-h-7 gap-2 sm:gap-3 pb-2 border-b border-border/50">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
                 <Flame className="w-4 h-4 text-primary shrink-0" />
-                <span className={TEXT_STYLES.SECTION_MUTED}>
+                <span className={cn(TEXT_STYLES.SECTION_MUTED, 'truncate max-w-[110px] sm:max-w-none text-xs')}>
                   {t('Available Quests')}
                 </span>
                 <span className={TEXT_STYLES.COUNTER_LABEL}>
@@ -713,22 +713,22 @@ export function QuestsView({
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {/* Sort dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className={BUTTON_STYLES.TOOLBAR_BORDERED}
+                      className={cn(BUTTON_STYLES.TOOLBAR_BORDERED, 'px-2 sm:px-2.5 max-w-[105px] sm:max-w-none')}
                     >
-                      <span>
+                      <span className="truncate">
                         {sortBy === 'suggested'
                           ? t('Suggested')
                           : sortBy === 'reward_desc'
                           ? t('Hadiah Tertinggi')
                           : t('Nama (A-Z)')}
                       </span>
-                      <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+                      <ChevronDown className="w-3.5 h-3.5 opacity-70 shrink-0" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40 bg-card border-border z-[150] text-foreground">
@@ -756,19 +756,19 @@ export function QuestsView({
                 <Button
                   size="sm"
                   onClick={handleOpenCreateQuest}
-                  className={BUTTON_STYLES.TOOLBAR_ACTION}
+                  className={cn(BUTTON_STYLES.TOOLBAR_ACTION, 'px-2 sm:px-3 h-7')}
                   title={t('Tambah Quest Baru ke Database')}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>{t('Tambah Quest')}</span>
+                  <span className="hidden sm:inline">{t('Tambah Quest')}</span>
                 </Button>
               </div>
             </div>
 
             {/* ── Featured Hero Quest Banner (Discord 1:1) ── */}
             {heroQuest && (
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/25 via-card to-background border border-primary/30 p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
-                <div className="space-y-2.5 max-w-xl z-10">
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/25 via-card to-background border border-primary/30 p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 shadow-xl">
+                <div className="space-y-2 sm:space-y-2.5 max-w-xl z-10">
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary border border-primary/30">
                       <Sparkles className="w-3 h-3" /> {heroQuest.badge || t('QUEST UNGGULAN')}
@@ -786,19 +786,19 @@ export function QuestsView({
                   </p>
 
                   <div className="flex items-center gap-2 pt-1">
-                    <div className="px-3 py-1 rounded-md bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-xs font-black flex items-center gap-1.5 shadow-xs">
+                    <div className="px-2.5 sm:px-3 py-1 rounded-md bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-xs font-black flex items-center gap-1.5 shadow-xs">
                       <span>💧</span>
                       <span>+{heroQuest.rewardDew} Dew (F2P Money)</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-3 z-10 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 z-10 shrink-0 w-full md:w-auto">
                   {heroQuest.status === 'completed' ? (
                     <Button
                       size="lg"
                       onClick={() => handleClaimReward(heroQuest)}
-                      className="font-bold h-11 px-6 gap-2 cursor-pointer shadow-lg bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse"
+                      className="flex-1 md:flex-initial font-bold h-10 sm:h-11 px-5 sm:px-6 gap-2 cursor-pointer shadow-lg bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse justify-center"
                     >
                       <Sparkles className="w-4 h-4" />
                       <span>{t('Klaim 💧')} {heroQuest.rewardDew} {t('Dew')}</span>
@@ -807,13 +807,13 @@ export function QuestsView({
                     <Button
                       size="lg"
                       onClick={() => handleProgressQuest(heroQuest)}
-                      className="font-bold h-11 px-6 gap-2 cursor-pointer shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+                      className="flex-1 md:flex-initial font-bold h-10 sm:h-11 px-5 sm:px-6 gap-2 cursor-pointer shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground justify-center"
                     >
                       <Play className="w-4 h-4 fill-current" />
                       <span>{heroQuest.actionLabel || t('Lanjutkan Quest')}</span>
                     </Button>
                   ) : heroQuest.status === 'claimed' ? (
-                    <div className="h-11 px-6 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold flex items-center gap-2 text-sm">
+                    <div className="h-10 sm:h-11 px-4 sm:px-6 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold flex items-center gap-2 text-xs sm:text-sm">
                       <Check className="w-4 h-4 stroke-[3]" />
                       <span>{t('Hadiah Sudah Diklaim')}</span>
                     </div>
@@ -821,19 +821,19 @@ export function QuestsView({
                     <Button
                       size="lg"
                       onClick={() => handleAcceptQuest(heroQuest)}
-                      className="font-bold h-11 px-6 gap-2 cursor-pointer shadow-lg"
+                      className="flex-1 md:flex-initial font-bold h-10 sm:h-11 px-5 sm:px-6 gap-2 cursor-pointer shadow-lg justify-center"
                     >
                       <span>{t('Terima Quest')}</span>
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   )}
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleOpenEditQuest(heroQuest)}
-                      className="h-11 px-3 text-xs font-semibold gap-1 cursor-pointer bg-card/60 backdrop-blur-xs"
+                      className="h-10 sm:h-11 px-3 text-xs font-semibold gap-1 cursor-pointer bg-card/60 backdrop-blur-xs"
                       title={t('Edit Quest')}
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -842,7 +842,7 @@ export function QuestsView({
                       size="sm"
                       variant="outline"
                       onClick={(e) => handleDeleteQuest(e, heroQuest.id)}
-                      className="h-11 px-3 text-xs font-semibold gap-1 cursor-pointer bg-card/80 hover:bg-red-600 border border-border/70 hover:border-red-600 text-red-400 hover:text-white backdrop-blur-xs transition-colors shadow-xs"
+                      className="h-10 sm:h-11 px-3 text-xs font-semibold gap-1 cursor-pointer bg-card/80 hover:bg-red-600 border border-border/70 hover:border-red-600 text-red-400 hover:text-white backdrop-blur-xs transition-colors shadow-xs"
                       title={t('Hapus Quest')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1021,12 +1021,12 @@ export function QuestsView({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 pb-2 border-b border-border/50">
                   <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
                     {t('Riwayat Quest yang Telah Selesai')} ({claimedQuests.length})
                   </h3>
-                  <div className="text-xs font-bold text-cyan-400 flex items-center gap-1">
-                    <span>💧 Total Dew Didapat:</span>
+                  <div className="text-xs font-bold text-cyan-400 flex items-center gap-1 shrink-0">
+                    <span>💧 {t('Total')}:</span>
                     <span>+{claimedQuests.reduce((acc, q) => acc + q.rewardDew, 0)} Dew</span>
                   </div>
                 </div>
