@@ -506,16 +506,43 @@ export function AppsView({
             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/25" />
 
             {/* Content on top */}
-            <div className="relative z-10 space-y-2 max-w-2xl">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary text-primary-foreground shadow-sm">
-                <Flame className="w-3 h-3 fill-current" /> UNGGULAN
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-md group-hover:text-primary transition-colors">
-                {featuredApp.title}
-              </h2>
-              <p className="text-xs sm:text-sm text-zinc-200/90 leading-relaxed font-medium line-clamp-2 drop-shadow-xs max-w-xl">
-                {featuredApp.description}
-              </p>
+            <div className="relative z-10 flex items-center justify-between gap-4 w-full">
+              {/* Left: Info */}
+              <div className="space-y-2 max-w-2xl min-w-0 flex-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary text-primary-foreground shadow-sm">
+                  <Flame className="w-3 h-3 fill-current" /> UNGGULAN
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-md group-hover:text-primary transition-colors">
+                  {featuredApp.title}
+                </h2>
+                <p className="text-xs sm:text-sm text-zinc-200/90 leading-relaxed font-medium line-clamp-2 drop-shadow-xs max-w-xl">
+                  {featuredApp.description}
+                </p>
+              </div>
+
+              {/* Right: YouTube / App Logo */}
+              <div className="shrink-0 flex items-center justify-center pl-2">
+                {featuredApp.id === 'watch-together' || featuredApp.id === 'youtube' ? (
+                  <div className="size-14 sm:size-18 md:size-20 rounded-2xl sm:rounded-3xl bg-white flex items-center justify-center shadow-2xl shadow-black/60 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300 border border-white/20">
+                    <svg
+                      className="w-8 h-6 sm:w-11 sm:h-8 md:w-12 md:h-9 text-[#FF0000] fill-current drop-shadow-xs"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div
+                    className={cn(
+                      'size-14 sm:size-18 md:size-20 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-2xl shadow-black/60 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300 border border-white/20',
+                      featuredApp.iconBg || 'bg-primary',
+                      featuredApp.iconColor || 'text-white'
+                    )}
+                  >
+                    <featuredApp.icon className="w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
