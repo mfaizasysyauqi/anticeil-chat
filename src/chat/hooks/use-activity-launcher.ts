@@ -9,6 +9,7 @@ import {
   ColonyRole,
 } from '@/chat/chat-types';
 import { EXTENDED_DISCORD_APPS } from '../anticeil-media-data';
+import { ANTICEIL_APPS } from '@/features/voice/data/voice-activities';
 import { colonyApi } from '../chat-api';
 import { channelWatchStateCache } from '@/features/voice/components/activities/hooks/use-youtube-player';
 
@@ -136,7 +137,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
         channelWatchStateCache.delete(activeCallChannelId);
       }
 
-      const app = EXTENDED_DISCORD_APPS.find((a) => a.id === appId) || {
+      const app = ANTICEIL_APPS.find((a) => a.id === appId) || EXTENDED_DISCORD_APPS.find((a) => a.id === appId) || {
         id: appId,
         title: appId === 'watch-together' || appId === 'youtube' ? 'Watch Together' : appId,
         developer: appId === 'watch-together' || appId === 'youtube' ? 'YouTube' : 'Community App',
@@ -219,7 +220,9 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
                   name: app.title,
                   developer: app.developer,
                   description: app.description,
-                  icon: app.icon,
+                  icon: typeof (app as any).icon === 'string' 
+                    ? (app as any).icon 
+                    : (appId === 'watch-together' || appId === 'youtube' ? '▶️' : appId === 'tradingview' ? '📈' : appId === 'whiteboard' ? '🎨' : appId === 'chess' ? '👑' : appId === 'screenshare' ? '🖥️' : '🎮'),
                   iconBg: app.iconBg,
                   bannerGradient: app.bannerGradient,
                   startedBy: currentUserName,

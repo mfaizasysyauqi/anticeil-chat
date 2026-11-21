@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Play, Palette, Crown, ScreenShare, Check, Sparkles, X, Dices, HelpCircle, Gamepad2, Bot } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { DISCORD_APPS, DiscordAppDefinition } from '../data/voice-activities';
+import { ANTICEIL_APPS, DiscordAppDefinition } from '../data/voice-activities';
+import { appsApi } from '@/features/apps/api/apps-api';
 import { Colony } from '@/chat/chat-types';
 
 export interface ActivityLauncherDialogProps {
@@ -35,13 +36,27 @@ export function ActivityLauncherDialog({
 }: ActivityLauncherDialogProps) {
   const [appSearchQuery, setAppSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'game' | 'entertainment' | 'productivity' | 'colony'>('all');
+  const [appList, setAppList] = useState<DiscordAppDefinition[]>(ANTICEIL_APPS);
+
+  // Sync with appsApi so newly registered or dynamic community apps update automatically
+  useEffect(() => {
+    let isMounted = true;
+    appsApi.getApps().then((fetched) => {
+      if (isMounted && Array.isArray(fetched) && fetched.length > 0) {
+        setAppList(fetched);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const installedColonyApps = useMemo(() => {
     return activeColony?.installedApps || [];
   }, [activeColony?.installedApps]);
 
   const filteredApps = useMemo(() => {
-    let list = DISCORD_APPS;
+    let list = appList;
     if (selectedCategory !== 'all' && selectedCategory !== 'colony') {
       list = list.filter((a) => a.category === selectedCategory);
     }
@@ -54,7 +69,7 @@ export function ActivityLauncherDialog({
         a.tagline.toLowerCase().includes(q) ||
         a.developer.toLowerCase().includes(q),
     );
-  }, [appSearchQuery, selectedCategory]);
+  }, [appList, appSearchQuery, selectedCategory]);
 
   const filteredColonyApps = useMemo(() => {
     if (!installedColonyApps.length) return [];
@@ -187,108 +202,33 @@ export function ActivityLauncherDialog({
 
           {/* Modal Scrollable Body */}
           <div className="flex-1 overflow-y-auto px-3.5 sm:px-4 pb-3.5 space-y-3.5 max-md:scrollbar-none custom-scrollbar">
-            {/* 1. Recents Row (YouTube, Whiteboard, Chess, ScreenShare, Wordle, Trivia) */}
+            {/* 1. Recents Row */}
             {!appSearchQuery && selectedCategory === 'all' && (
               <div>
                 <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Recents</h3>
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                  {/* YouTube Watch Together */}
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => onLaunchApp('watch-together')}
-                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm group shrink-0"
-                          title="Watch Together"
-                        >
-                          <div className="w-6 h-4.5 rounded-sm bg-[#ff0000] flex items-center justify-center text-white shadow-xs">
-                            <Play className="w-3 h-3 fill-white ml-0.5" />
-                          </div>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs font-semibold">Watch Together</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Jamspace Whiteboard */}
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => onLaunchApp('whiteboard')}
-                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-blue-500 shrink-0"
-                          title="Jamspace Whiteboard"
-                        >
-                          <Palette className="w-5 h-5 stroke-[2.2]" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs font-semibold">Jamspace Whiteboard</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Anticeil Chess */}
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => onLaunchApp('chess')}
-                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-amber-500 shrink-0"
-                          title="Anticeil Chess"
-                        >
-                          <Crown className="w-5 h-5 stroke-[2.2]" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs font-semibold">Anticeil Chess</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Wordle Party */}
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => onLaunchApp('wordle')}
-                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-emerald-500 shrink-0"
-                          title="Wordle Party"
-                        >
-                          <Dices className="w-5 h-5 stroke-[2.2]" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs font-semibold">Wordle Party</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Cyber Trivia */}
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => onLaunchApp('trivia')}
-                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-indigo-500 shrink-0"
-                          title="Cyber Trivia"
-                        >
-                          <HelpCircle className="w-5 h-5 stroke-[2.2]" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs font-semibold">Cyber Trivia</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Share Screen */}
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => onLaunchApp('screenshare')}
-                          className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm text-purple-500 shrink-0"
-                          title="Share Screen"
-                        >
-                          <ScreenShare className="w-5 h-5 stroke-[2.2]" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs font-semibold">Share Screen</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  {appList.map((app) => {
+                    const IconComp = app.icon || Gamepad2;
+                    return (
+                      <TooltipProvider key={app.id} delayDuration={150}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={() => onLaunchApp(app.id)}
+                              className="w-11 h-11 rounded-xl bg-card hover:bg-muted border border-border flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm group shrink-0"
+                              title={app.title}
+                            >
+                              <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shadow-xs", app.iconBg || "bg-primary/20")}>
+                                <IconComp className={cn("w-4 h-4", app.iconColor || "text-primary")} />
+                              </div>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="text-xs font-semibold">{app.title}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -346,7 +286,9 @@ export function ActivityLauncherDialog({
               </h3>
 
               <div className="grid grid-cols-2 gap-2.5 pb-1">
-                {filteredApps.map((app) => (
+                {filteredApps.map((app) => {
+                  const IconComp = app.icon || Gamepad2;
+                  return (
                   <div
                     key={app.id}
                     onClick={() => onLaunchApp(app.id)}
@@ -373,7 +315,7 @@ export function ActivityLauncherDialog({
                             app.bannerGradient,
                           )}
                         >
-                          <app.icon className="w-8 h-8 text-white/30" />
+                          <IconComp className="w-8 h-8 text-white/30" />
                         </div>
                       )}
 
@@ -403,7 +345,7 @@ export function ActivityLauncherDialog({
                           app.iconBg,
                         )}
                       >
-                        <app.icon className="w-4 h-4 text-white" />
+                        <IconComp className={cn("w-4 h-4", app.iconColor || "text-white")} />
                       </div>
                       <div className="flex flex-col min-w-0 flex-1">
                         <span className="text-xs font-bold text-foreground group-hover:text-foreground truncate leading-snug">
@@ -415,7 +357,8 @@ export function ActivityLauncherDialog({
                       </div>
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </div>
             </div>
           </div>
