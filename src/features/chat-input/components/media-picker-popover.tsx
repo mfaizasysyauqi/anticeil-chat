@@ -113,7 +113,7 @@ export function MediaPickerPopover({
             </span>
           </button>
 
-          {/* Sticker Button (Hidden on mobile, accessible inside popover tabs) */}
+          {/* Sticker Button */}
           <button
             type="button"
             onClick={() => {
@@ -122,7 +122,7 @@ export function MediaPickerPopover({
               onOpenChange(true);
             }}
             className={cn(
-              "hidden sm:flex w-6 h-6 items-center justify-center transition-colors cursor-pointer",
+              "flex w-6 h-6 items-center justify-center transition-colors cursor-pointer",
               open && activeMediaTab === 'stickers' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             )}
             title="Buka pemilih stiker"
@@ -136,7 +136,7 @@ export function MediaPickerPopover({
             </svg>
           </button>
 
-          {/* Emoji Button */}
+          {/* Emoji Button (Desktop/tablet only; mobile uses native keyboard emoji) */}
           <button
             type="button"
             onClick={() => {
@@ -145,7 +145,7 @@ export function MediaPickerPopover({
               onOpenChange(true);
             }}
             className={cn(
-              "w-6 h-6 flex items-center justify-center transition-colors cursor-pointer",
+              "hidden sm:flex w-6 h-6 items-center justify-center transition-colors cursor-pointer",
               open && activeMediaTab === 'emojis' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             )}
             title="Pilih emoji"

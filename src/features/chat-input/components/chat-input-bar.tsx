@@ -905,11 +905,11 @@ export function ChatInputBar({
             <AtSign className="w-4 h-4" />
           </button>
 
-          {/* 1. Gift Icon (Desktop/tablet only) */}
+          {/* 1. Gift Icon */}
           <button
             type="button"
             onClick={onOpenGiftModal}
-            className="hidden sm:flex w-6 h-6 text-muted-foreground/90 hover:text-foreground items-center justify-center transition-colors cursor-pointer"
+            className="flex w-6 h-6 text-muted-foreground/90 hover:text-foreground items-center justify-center transition-colors cursor-pointer"
             title="Kirim Hadiah (Send a Gift)"
           >
             <Gift className="w-5 h-5" />
@@ -935,8 +935,8 @@ export function ChatInputBar({
             onOpenQuickAddSticker={onOpenQuickAddSticker}
           />
 
-          {/* Apps & Activity Popover (Desktop/tablet only, on mobile accessible via + menu) */}
-          <div className="hidden sm:flex items-center">
+          {/* Apps & Activity Popover */}
+          <div className="flex items-center">
             <ChatAppsPopover
               open={isTemplatePopoverOpen}
               onOpenChange={setIsTemplatePopoverOpen}
