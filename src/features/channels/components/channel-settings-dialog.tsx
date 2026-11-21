@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import { ChannelOverviewTab } from './channel-settings/channel-overview-tab';
 import { ChannelPermissionsTab } from './channel-settings/channel-permissions-tab';
 import { ChannelInvitesTab } from './channel-settings/channel-invites-tab';
+import { ChannelIntegrationsTab } from './channel-settings/channel-integrations-tab';
 
 interface ChannelSettingsDialogProps {
   channel: ColonyChannel | null;
@@ -40,6 +41,7 @@ interface ChannelSettingsDialogProps {
   roles?: CommunityCustomRole[];
   members?: ColonyMember[];
   activeColony?: Colony | null;
+  channels?: ColonyChannel[];
 }
 
 type SettingsTab = 'overview' | 'permissions' | 'invites' | 'integrations';
@@ -55,6 +57,7 @@ export function ChannelSettingsDialog({
   roles = [],
   members = [],
   activeColony,
+  channels = [],
 }: ChannelSettingsDialogProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>('overview');
@@ -316,43 +319,17 @@ export function ChannelSettingsDialog({
           />
         )}
 
-        {/* Integrations Tab */}
+        {/* Integrations Tab (Discord 1:1 Parity) */}
         {activeTab === 'integrations' && (
-          <div className="w-full space-y-6">
-            <div>
-              <h2 className="text-xl font-bold text-foreground tracking-tight">{t('Integrasi Webhook')}</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('Kelola Webhook dan bot otomatisasi yang terhubung dengan channel ini.')}
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl border border-border bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Webhook className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-foreground block">{t('Webhook Otomatisasi')}</span>
-                  <span className="text-[11px] text-muted-foreground">{t('Kirim pesan otomatis via HTTP POST')}</span>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  onClose();
-                  onOpenWebhooks?.(channel.id);
-                }}
-                className="text-xs font-semibold shrink-0 cursor-pointer"
-              >
-                {t('Buka Webhook')}
-              </Button>
-            </div>
-          </div>
+          <ChannelIntegrationsTab
+            channel={channel}
+            activeColony={activeColony}
+            channels={channels}
+          />
         )}
 
-        {/* ── Discord Floating Save Bar at Bottom ─────────────────────────── */}
-        {hasChanges && (
+        {/* ── Discord Floating Save Bar at Bottom (Overview Tab) ─────────────────────────── */}
+        {hasChanges && activeTab === 'overview' && (
           <div className="sticky bottom-2 z-30 p-3 rounded-xl bg-card/95 backdrop-blur-md border border-border shadow-2xl flex items-center justify-between animate-in slide-in-from-bottom-3 duration-200 mt-6">
             <div className="flex items-center gap-2 text-xs font-semibold text-foreground min-w-0 mr-2">
               <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
