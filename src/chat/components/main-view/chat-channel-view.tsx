@@ -326,6 +326,7 @@ export function ChatChannelView({
         claimedGifts={claimedGifts}
         setClaimedGifts={setClaimedGifts}
         onOpenCreateChannel={() => setIsCreateChannelOpen(true)}
+        onOpenEditChannel={onOpenEditChannel}
         onToggleReaction={handleToggleReaction}
         onTogglePin={handleTogglePin}
         onReply={(msg) => setReplyingToMessage?.(msg)}

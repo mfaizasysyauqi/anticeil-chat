@@ -10,6 +10,9 @@ import {
   Check,
   ExternalLink,
   Layers,
+  Pencil,
+  Volume2,
+  Megaphone,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
@@ -49,6 +52,7 @@ export interface MessagesFeedProps {
   claimedGifts: Record<string, boolean>;
   setClaimedGifts: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   onOpenCreateChannel: () => void;
+  onOpenEditChannel?: (channel: ColonyChannel) => void;
   onToggleReaction: (messageId: string, emoji: string) => void;
   onTogglePin: (messageId: string) => void;
   onReply?: (message: ColonyMessage) => void;
@@ -70,6 +74,7 @@ export function MessagesFeed({
   claimedGifts,
   setClaimedGifts,
   onOpenCreateChannel,
+  onOpenEditChannel,
   onToggleReaction,
   onTogglePin,
   onReply,
@@ -82,6 +87,7 @@ export function MessagesFeed({
   messagesEndRef,
   t,
 }: MessagesFeedProps) {
+  const isDm = Boolean(activeChannel?.isDirectMessage || activeChannel?.id?.startsWith('dm-'));
   return (
     <div
       className={cn(
@@ -109,19 +115,39 @@ export function MessagesFeed({
         </div>
       ) : (
         <>
-          {/* Welcome banner at top of channel */}
+          {/* Welcome banner at top of channel (Discord Style) */}
           <div className="mb-6 pt-4 pb-2">
-            <div className="w-14 h-14 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center text-primary mb-3">
-              <Hash className="w-7 h-7" />
+            <div className="w-16 h-16 rounded-full bg-zinc-800/80 dark:bg-[#2b2d31] border border-border/50 flex items-center justify-center text-foreground mb-4">
+              {activeChannel.type === 'voice' ? (
+                <Volume2 className="w-8 h-8" />
+              ) : activeChannel.type === 'announcement' ? (
+                <Megaphone className="w-8 h-8" />
+              ) : activeChannel.type === 'forum' ? (
+                <MessageSquare className="w-8 h-8" />
+              ) : (
+                <Hash className="w-8 h-8" />
+              )}
             </div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
               Selamat datang di #{activeChannel.name}!
             </h2>
-            <p className="text-sm text-muted-foreground mt-1 max-w-xl leading-relaxed">
+            <p className="text-sm text-muted-foreground mt-1.5 max-w-xl leading-relaxed">
               {(activeChannel.description ||
-                'Ruang obrolan tim Anticeil. Mulai percakapan, bagikan template otomatisasi, atau koordinasikan alur kerja tim.'
+                `Ini adalah awal dari channel #${activeChannel.name}.`
               ).replace(/\s*\((?:Member|member)\)/gi, '')}
             </p>
+
+            {!isDm && onOpenEditChannel && (
+              <button
+                type="button"
+                onClick={() => onOpenEditChannel(activeChannel)}
+                className="mt-3.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted/80 hover:bg-muted text-foreground transition-all cursor-pointer border border-border/60 hover:border-border shadow-2xs group"
+                title={t('Edit Channel')}
+              >
+                <Pencil className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span>{t('Edit Channel')}</span>
+              </button>
+            )}
           </div>
 
           <Separator className="my-4 bg-border/40" />
