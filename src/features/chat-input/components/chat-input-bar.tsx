@@ -730,9 +730,12 @@ export function ChatInputBar({
 
             {/* 5. Use Apps */}
             <DropdownMenuItem
-              onClick={() => {
-                setIsTemplatePopoverOpen(true);
+              onSelect={(e) => {
+                e.preventDefault();
                 setIsPlusMenuOpen(false);
+                setTimeout(() => {
+                  setIsTemplatePopoverOpen(true);
+                }, 50);
               }}
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold"
             >
