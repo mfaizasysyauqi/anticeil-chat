@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { Mail, ShieldAlert, Check, X, Menu, ShieldCheck } from 'lucide-react';
+import { Mail, Check, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
-import { EmptyState } from '@/components/ui/empty';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { MessageRequestItem, MessageRequestsTab } from '../types';
+import { MessageRequestsEmptyState } from './message-requests-empty-state';
 
 interface MessageRequestsViewProps {
   requests: MessageRequestItem[];
@@ -36,6 +35,29 @@ export function MessageRequestsView({
   const pendingRequests = requests.filter((r) => !r.isSpam);
   const nonContactRequests = requests.filter((r) => !r.isSpam && (!r.isContact || r.mutualServers === 0));
   const spamRequests = requests.filter((r) => r.isSpam);
+
+  const tabs = [
+    {
+      id: 'requests' as const,
+      label: t('Semua'),
+      count: pendingRequests.length,
+      headerTitle: t('Semua Permintaan Tertunda'),
+    },
+    {
+      id: 'non_contacts' as const,
+      label: t('Luar Kontak'),
+      count: nonContactRequests.length,
+      headerTitle: t('Permintaan dari Luar Kontak'),
+    },
+    {
+      id: 'spam' as const,
+      label: t('Spam'),
+      count: spamRequests.length,
+      headerTitle: t('Spam'),
+    },
+  ];
+
+  const currentTabConfig = tabs.find((t) => t.id === activeTab) || tabs[0];
 
   const currentList =
     activeTab === 'requests'
@@ -67,50 +89,23 @@ export function MessageRequestsView({
 
         {/* Tab Filter Pills: Requests & Spam */}
         <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto scrollbar-none px-1">
-          <button
-            onClick={() => setActiveTab('requests')}
-            className={cn(
-              'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
-              activeTab === 'requests'
-                ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-            )}
-          >
-            <span>{t('Semua')}</span>
-            {pendingRequests.length > 0 && (
-              <span className="text-[10px] text-muted-foreground/80">({pendingRequests.length})</span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('non_contacts')}
-            className={cn(
-              'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
-              activeTab === 'non_contacts'
-                ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-            )}
-          >
-            <span>{t('Luar Kontak')}</span>
-            {nonContactRequests.length > 0 && (
-              <span className="text-[10px] text-muted-foreground/80">({nonContactRequests.length})</span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('spam')}
-            className={cn(
-              'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
-              activeTab === 'spam'
-                ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-            )}
-          >
-            <span>{t('Spam')}</span>
-            {spamRequests.length > 0 && (
-              <span className="text-[10px] text-muted-foreground/80">({spamRequests.length})</span>
-            )}
-          </button>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'px-3 py-1 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shrink-0',
+                activeTab === tab.id
+                  ? 'bg-accent text-accent-foreground shadow-2xs font-bold'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              <span>{tab.label}</span>
+              {tab.count > 0 && (
+                <span className="text-[10px] text-muted-foreground/80">({tab.count})</span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -119,38 +114,12 @@ export function MessageRequestsView({
         <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding)}>
         {/* Section Header Count */}
         <div className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-4">
-          {activeTab === 'requests'
-            ? `${t('Semua Permintaan Tertunda')} — ${pendingRequests.length}`
-            : activeTab === 'non_contacts'
-            ? `${t('Permintaan dari Luar Kontak')} — ${nonContactRequests.length}`
-            : `${t('Spam')} — ${spamRequests.length}`}
+          {`${currentTabConfig.headerTitle} — ${currentTabConfig.count}`}
         </div>
 
         {/* Requests List */}
         {currentList.length === 0 ? (
-          <EmptyState
-            icon={
-              activeTab === 'requests' ? (
-                <ShieldCheck className="w-8 h-8 text-primary/80 stroke-[1.8]" />
-              ) : (
-                <ShieldAlert className="w-8 h-8 text-muted-foreground/80 stroke-[1.8]" />
-              )
-            }
-            title={
-              activeTab === 'requests'
-                ? t('Tidak ada permintaan pesan')
-                : activeTab === 'non_contacts'
-                ? t('Tidak ada permintaan dari luar kontak')
-                : t('Tidak ada pesan spam')
-            }
-            description={
-              activeTab === 'requests'
-                ? t('Saat orang yang bukan teman Anda mengirim pesan langsung, pesannya akan muncul di sini.')
-                : activeTab === 'non_contacts'
-                ? t('Semua pesan dari pengguna di luar daftar kontak Anda difilter dan dikelompokkan di sini.')
-                : t('Pesan mencurigakan atau yang ditandai sebagai spam akan dikarantina di tab ini.')
-            }
-          />
+          <MessageRequestsEmptyState activeTab={activeTab} />
         ) : (
           <div className="divide-y divide-border/40 border border-border/40 rounded-lg overflow-hidden bg-card/40">
             {currentList.map((item) => (
