@@ -21,7 +21,15 @@ import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { OverlayVoiceWidgetSection } from './overlay-voice-widget-section';
 
-export function GameOverlaySubtab() {
+export interface GameOverlaySubtabProps {
+  currentUser?: any;
+  currentUserName?: string;
+}
+
+export function GameOverlaySubtab({
+  currentUser,
+  currentUserName,
+}: GameOverlaySubtabProps = {}) {
   const { t } = useTranslation();
 
   // Overview
@@ -134,8 +142,8 @@ export function GameOverlaySubtab() {
         </div>
 
         {/* Card 3: Report a Problem */}
-        <div className="flex items-center justify-between p-4 rounded-xl border border-border/80 bg-[#1e1f22] hover:border-border transition-colors">
-          <div className="space-y-1 pr-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-4 rounded-xl border border-border/80 bg-[#1e1f22] hover:border-border transition-colors">
+          <div className="space-y-1 pr-2 sm:pr-4">
             <div className="text-sm font-semibold text-foreground">
               {t('Report a Problem')}
             </div>
@@ -154,7 +162,7 @@ export function GameOverlaySubtab() {
                 ),
               )
             }
-            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-5 h-9 rounded-lg font-semibold shrink-0 cursor-pointer"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-5 h-9 rounded-lg font-semibold shrink-0 cursor-pointer self-start sm:self-auto"
           >
             {t('Report')}
           </Button>
@@ -162,20 +170,20 @@ export function GameOverlaySubtab() {
 
         <div className="pt-2 border-t border-border/40 space-y-4">
           {/* Toggle Overlay Lock */}
-          <div className="flex items-center justify-between gap-4 py-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 py-2">
             <div className="text-xs font-semibold text-foreground">
               {t('Toggle Overlay Lock')}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
               {isEditingOverlayKeybind ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                   <Input
                     type="text"
                     value={tempOverlayKeybind}
                     onChange={(e) =>
                       setTempOverlayKeybind(e.target.value.toUpperCase())
                     }
-                    className="h-8 w-32 text-xs font-mono bg-muted/40 border-primary text-foreground text-center"
+                    className="h-8 w-28 sm:w-32 text-xs font-mono bg-muted/40 border-primary text-foreground text-center"
                     autoFocus
                     placeholder="Tekan shortcut..."
                   />
@@ -362,6 +370,8 @@ export function GameOverlaySubtab() {
         isVoiceWidgetPinned={isVoiceWidgetPinned}
         setIsVoiceWidgetPinned={setIsVoiceWidgetPinned}
         t={t}
+        currentUser={currentUser}
+        currentUserName={currentUserName}
       />
 
       {/* SUB-SECTION 4: NOTIFICATIONS */}

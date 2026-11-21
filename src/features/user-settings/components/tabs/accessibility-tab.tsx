@@ -14,11 +14,15 @@ import { AccessibilityReducedMotion } from './accessibility/accessibility-reduce
 export interface AccessibilityTabProps {
   theme?: any;
   onNavigateSection?: (section: string) => void;
+  currentUser?: any;
+  currentUserName?: string;
 }
 
 export function AccessibilityTab({
   theme,
   onNavigateSection,
+  currentUser,
+  currentUserName,
 }: AccessibilityTabProps) {
   const { t } = useTranslation();
   const [showUserAvatars, setShowUserAvatars] = useState(true);
@@ -78,18 +82,22 @@ export function AccessibilityTab({
   // ==========================================
 
   return (
-          <div className="space-y-8 divide-y divide-border/50 pb-8">
-            {/* Top Interactive Live Chat Message Preview Box */}
-            <AccessibilityPreview
-              enableHighContrast={enableHighContrast}
-              saturationLevel={saturationLevel}
-              chatFontSize={chatFontSize}
-              chatMessageDisplay={chatMessageDisplay}
-              spaceMessageGroups={spaceMessageGroups}
-              showUserAvatars={showUserAvatars}
-              roleColorsDisplay={roleColorsDisplay}
-              alwaysUnderlineLinks={alwaysUnderlineLinks}
-            />
+    <div className="space-y-8 divide-y divide-border/50 pb-8">
+      {/* Top Sticky Interactive Live Chat Message Preview Box */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-1 pb-4 -mx-3.5 sm:-mx-4 md:-mx-5 lg:-mx-6 px-3.5 sm:px-4 md:px-5 lg:px-6 border-b border-border/50 shadow-xs">
+        <AccessibilityPreview
+          enableHighContrast={enableHighContrast}
+          saturationLevel={saturationLevel}
+          chatFontSize={chatFontSize}
+          chatMessageDisplay={chatMessageDisplay}
+          spaceMessageGroups={spaceMessageGroups}
+          showUserAvatars={showUserAvatars}
+          roleColorsDisplay={roleColorsDisplay}
+          alwaysUnderlineLinks={alwaysUnderlineLinks}
+          currentUser={currentUser}
+          currentUserName={currentUserName}
+        />
+      </div>
 
             {/* SUB-SECTION 1: TEXT READABILITY */}
             <div id="accessibility-text-readability" className="scroll-mt-6 space-y-6 pt-6">

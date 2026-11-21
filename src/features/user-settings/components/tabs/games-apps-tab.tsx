@@ -20,6 +20,7 @@ export interface GamesAppsTabProps {
 
 export function GamesAppsTab({
   activeSection,
+  currentUser,
   currentUserName,
   onNavigateSection,
   colonies,
@@ -34,7 +35,12 @@ export function GamesAppsTab({
         <ActivityPrivacySubtab onNavigateSection={onNavigateSection} colonies={colonies} />
       );
     case 'overlay':
-      return <GameOverlaySubtab />;
+      return (
+        <GameOverlaySubtab
+          currentUser={currentUser}
+          currentUserName={currentUserName}
+        />
+      );
     case 'connected_apps':
       return <ConnectedAppsSubtab currentUserName={currentUserName} />;
     default:

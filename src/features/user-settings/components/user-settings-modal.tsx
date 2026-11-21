@@ -453,6 +453,8 @@ export function UserSettingsModal({
           <AccessibilityTab
             theme={theme}
             onNavigateSection={(id) => setActiveSection(id as SettingsSection)}
+            currentUser={currentUser}
+            currentUserName={currentUserName}
           />
         )}
 
