@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Pencil,
   Copy,
@@ -10,20 +11,13 @@ import {
   Smile,
   Settings,
   X,
-  Radio,
-  ExternalLink,
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { cn } from '@/lib/utils';
-import { TEXT_STYLES, BUTTON_STYLES } from '@/lib/layout-constants';
+import { TEXT_STYLES } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
@@ -41,6 +35,7 @@ export interface UserProfileDialogProps {
   onOpenEditProfile?: () => void;
   onOpenSettings?: (section?: string) => void;
   colonies?: Colony[];
+  className?: string;
 }
 
 const PRESENCE_OPTIONS: Array<{
@@ -83,11 +78,17 @@ export function UserProfileDialog({
   onOpenEditProfile,
   onOpenSettings,
   colonies = [],
+  className,
 }: UserProfileDialogProps) {
   const { t } = useTranslation();
 
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Presence status
   const [presence, setPresence] = useState<UserPresenceStatus>(() => {
@@ -97,6 +98,23 @@ export function UserProfileDialog({
       return 'online';
     }
   });
+
+  // Handle Escape key to close
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   // Custom status inline editing
   const [isEditingThought, setIsEditingThought] = useState(false);
@@ -217,20 +235,39 @@ export function UserProfileDialog({
     }
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        showCloseButton={false}
-        size="md"
-        className="p-0 gap-0 overflow-hidden rounded-2xl border border-border/60 bg-[#111214] text-foreground shadow-2xl w-full max-h-[92vh] flex flex-col select-none"
-      >
-        <DialogTitle className="sr-only">{t('Profil Pengguna Anticeil')}</DialogTitle>
+  if (!isOpen || !isMounted || typeof document === 'undefined') return null;
 
+  return createPortal(
+    <>
+      {/* 1. Transparent Click-Away Dismiss Backdrop (Shows chat/channels clearly behind it without dimming) */}
+      <div
+        className="fixed inset-0 z-40 bg-transparent cursor-default select-none"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-hidden="true"
+      />
+
+      {/* 2. Discord-Style User Profile Pop-up Container */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('Profil Pengguna Anticeil')}
+        onClick={(e) => e.stopPropagation()}
+        className={cn(
+          'fixed bottom-[70px] left-2 right-2 sm:right-auto sm:left-3 md:left-4 z-50',
+          'w-auto sm:w-[340px] max-w-[calc(100vw-1rem)] max-h-[min(620px,calc(100vh-84px))]',
+          'flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-[#111214] text-foreground shadow-2xl shadow-black/85 select-none outline-hidden ring-1 ring-white/10',
+          'animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2 duration-150',
+          className
+        )}
+      >
         {/* Scrollable Container */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {/* 1. Header Banner (TikTok Style) */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col min-h-0">
+          {/* 1. Header Banner */}
           <div
-            className="h-36 sm:h-44 w-full relative transition-all bg-cover bg-center overflow-hidden flex flex-col justify-end"
+            className="h-28 sm:h-32 w-full relative transition-all bg-cover bg-center overflow-hidden flex flex-col justify-end shrink-0"
             style={{
               backgroundColor: bannerUrl ? undefined : bannerColor,
               backgroundImage: bannerUrl ? `url(${bannerUrl})` : undefined,
@@ -238,7 +275,7 @@ export function UserProfileDialog({
               backgroundPosition: 'center',
             }}
           >
-            {/* Theme Gradient Overlay (TikTok style fade-to-bottom) */}
+            {/* Theme Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#111214] via-[#111214]/70 via-40% to-transparent pointer-events-none z-10" />
 
             {/* Action Buttons on Banner */}
@@ -253,7 +290,7 @@ export function UserProfileDialog({
                         onClose();
                         onOpenEditProfile();
                       }}
-                      className="h-7 w-7 rounded-full bg-black/50 hover:bg-black/75 text-white/90 border border-white/20 backdrop-blur-xs cursor-pointer shadow-xs"
+                      className="h-7 w-7 rounded-full bg-black/60 hover:bg-black/80 text-white/90 border border-white/20 backdrop-blur-xs cursor-pointer shadow-xs"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
@@ -268,22 +305,23 @@ export function UserProfileDialog({
                 variant="secondary"
                 size="icon"
                 onClick={onClose}
-                className="h-7 w-7 rounded-full bg-black/50 hover:bg-black/75 text-white/90 border border-white/20 backdrop-blur-xs cursor-pointer shadow-xs"
+                className="h-7 w-7 rounded-full bg-black/60 hover:bg-black/80 text-white/90 border border-white/20 backdrop-blur-xs cursor-pointer shadow-xs"
+                title={t('Tutup')}
               >
                 <X className="w-3.5 h-3.5" />
               </Button>
             </div>
 
             {/* Content Over Banner: Name & Username on Left, Avatar on Right */}
-            <div className="relative z-20 px-4 pb-3 flex items-end justify-between gap-3">
+            <div className="relative z-20 px-3.5 pb-2.5 flex items-end justify-between gap-2.5">
               {/* Left: Name and Username */}
               <div className="min-w-0 flex-1 drop-shadow-md">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-black text-white leading-tight truncate tracking-tight drop-shadow-sm">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-base sm:text-lg font-black text-white leading-tight truncate tracking-tight drop-shadow-sm">
                     {currentUserName}
-                  </h2>
+                  </h3>
                   {pronouns && (
-                    <span className="text-xs text-white/80 font-normal shrink-0">
+                    <span className="text-[11px] text-white/80 font-normal shrink-0">
                       ({pronouns})
                     </span>
                   )}
@@ -291,8 +329,8 @@ export function UserProfileDialog({
 
                 <div
                   onClick={handleCopyUsername}
-                  className="inline-flex items-center gap-1.5 text-xs text-white/85 font-mono hover:text-white cursor-pointer transition-colors group/copy mt-0.5"
-                  title="Klik untuk menyalin username"
+                  className="inline-flex items-center gap-1 text-[11px] text-white/85 font-mono hover:text-white cursor-pointer transition-colors group/copy mt-0.5"
+                  title={t('Klik untuk menyalin username')}
                 >
                   <span>@{username}</span>
                   {isCopiedUsername ? (
@@ -304,11 +342,11 @@ export function UserProfileDialog({
               </div>
 
               {/* Right: Avatar with Status Ring */}
-              <div className="relative rounded-full ring-4 ring-[#111214] bg-[#111214] shrink-0 shadow-2xl">
+              <div className="relative rounded-full ring-3 ring-[#111214] bg-[#111214] shrink-0 shadow-xl">
                 <CommunityAvatar
                   name={currentUserName}
                   imageUrl={avatarUrl}
-                  size={76}
+                  size={58}
                   showStatus
                   status={presence}
                 />
@@ -317,7 +355,7 @@ export function UserProfileDialog({
           </div>
 
           {/* 2. Badges & Content Row below banner */}
-          <div className="px-4 pt-2.5 pb-2 relative space-y-3">
+          <div className="px-3.5 pt-2.5 pb-2 relative space-y-3">
             {/* Badges Container */}
             <div className="flex items-center gap-1.5 p-1 rounded-lg bg-card/60 border border-border/50 backdrop-blur-xs w-fit">
               {isOwner && (
@@ -372,7 +410,7 @@ export function UserProfileDialog({
             </div>
 
             {/* 4. Custom Status Thought Card */}
-            <div className="mt-3">
+            <div className="mt-2.5">
               {isEditingThought ? (
                 <div className="flex items-center gap-1.5 bg-card/80 p-2 rounded-xl border border-primary/50 shadow-inner">
                   <Smile className="w-4 h-4 text-primary shrink-0" />
@@ -408,7 +446,7 @@ export function UserProfileDialog({
               ) : currentThought ? (
                 <div
                   onClick={() => setIsEditingThought(true)}
-                  className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-card/60 hover:bg-card/90 border border-border/50 text-xs text-foreground cursor-pointer transition-colors group/thought"
+                  className="flex items-center justify-between gap-2 p-2 rounded-xl bg-card/60 hover:bg-card/90 border border-border/50 text-xs text-foreground cursor-pointer transition-colors group/thought"
                   title="Klik untuk mengubah status"
                 >
                   <div className="flex items-center gap-2 min-w-0">
@@ -430,11 +468,11 @@ export function UserProfileDialog({
             </div>
 
             {/* Divider */}
-            <div className="h-px bg-border/60 my-3.5" />
+            <div className="h-px bg-border/60 my-2.5" />
 
             {/* 5. Quick Presence Status Switcher */}
             <div className="space-y-1.5">
-              <span className={cn(TEXT_STYLES.SECTION_MUTED, 'block mb-2')}>
+              <span className={cn(TEXT_STYLES.SECTION_MUTED, 'block mb-1.5')}>
                 Status Kehadiran
               </span>
               <div className="grid grid-cols-2 gap-1.5">
@@ -446,7 +484,7 @@ export function UserProfileDialog({
                       type="button"
                       onClick={() => handleSelectPresence(opt.id)}
                       className={cn(
-                        'flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer text-left',
+                        'flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer text-left',
                         isSelected
                           ? 'bg-card border-primary/60 text-foreground shadow-xs ring-1 ring-primary/40'
                           : 'bg-card/30 border-border/40 text-muted-foreground hover:text-foreground hover:bg-card/70'
@@ -461,15 +499,15 @@ export function UserProfileDialog({
             </div>
 
             {/* Divider */}
-            <div className="h-px bg-border/60 my-3.5" />
+            <div className="h-px bg-border/60 my-2.5" />
 
             {/* 6. About Me / Bio */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <span className={cn(TEXT_STYLES.SECTION_MUTED, 'block')}>
                 Tentang Saya
               </span>
               {bio ? (
-                <p className="text-xs text-muted-foreground/90 leading-relaxed whitespace-pre-wrap bg-card/40 p-2.5 rounded-lg border border-border/40">
+                <p className="text-xs text-muted-foreground/90 leading-relaxed whitespace-pre-wrap bg-card/40 p-2 rounded-lg border border-border/40">
                   {bio}
                 </p>
               ) : (
@@ -480,7 +518,7 @@ export function UserProfileDialog({
             </div>
 
             {/* 7. Member Since */}
-            <div className="mt-3.5 space-y-1.5">
+            <div className="mt-2.5 space-y-1">
               <span className={cn(TEXT_STYLES.SECTION_MUTED, 'block')}>
                 Anggota Sejak
               </span>
@@ -492,7 +530,7 @@ export function UserProfileDialog({
 
             {/* 8. Mutual Colonies */}
             {colonies.length > 0 && (
-              <div className="mt-3.5 space-y-2">
+              <div className="mt-2.5 space-y-1.5">
                 <span className={cn(TEXT_STYLES.SECTION_MUTED, 'block')}>
                   Colony Anda ({colonies.length})
                 </span>
@@ -500,7 +538,7 @@ export function UserProfileDialog({
                   {colonies.slice(0, 6).map((c) => (
                     <div
                       key={c.id}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-card/60 border border-border/40 text-[11px] text-foreground font-medium truncate max-w-[170px]"
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-card/60 border border-border/40 text-[11px] text-foreground font-medium truncate max-w-[150px]"
                       title={c.name}
                     >
                       <div className="size-4 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[9px] shrink-0">
@@ -521,7 +559,7 @@ export function UserProfileDialog({
         </div>
 
         {/* 9. Bottom Footer Actions */}
-        <div className="p-3 bg-card/90 border-t border-border/60 flex items-center gap-2 shrink-0">
+        <div className="p-2.5 bg-card/90 border-t border-border/60 flex items-center gap-2 shrink-0">
           {onOpenEditProfile && (
             <Button
               size="sm"
@@ -532,7 +570,7 @@ export function UserProfileDialog({
               className="flex-1 h-8 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 cursor-pointer shadow-xs"
             >
               <Pencil className="w-3.5 h-3.5" />
-              <span>Edit Profil</span>
+              <span>{t('Edit Profil')}</span>
             </Button>
           )}
 
@@ -545,7 +583,7 @@ export function UserProfileDialog({
                 onOpenSettings('account');
               }}
               className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-              title="Buka Pengaturan Akun"
+              title={t('Buka Pengaturan Akun')}
             >
               <Settings className="w-3.5 h-3.5" />
             </Button>
@@ -568,12 +606,13 @@ export function UserProfileDialog({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
-                Salin ID Pengguna
+                {t('Salin ID Pengguna')}
               </TooltipContent>
             </Tooltip>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </>,
+    document.body
   );
 }

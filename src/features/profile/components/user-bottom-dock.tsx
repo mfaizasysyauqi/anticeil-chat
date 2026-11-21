@@ -221,7 +221,7 @@ export function UserBottomDock({
       ) : (
         <div className="w-full h-[64px] px-2 flex items-center justify-between">
           <div
-            onClick={() => setIsProfileDialogOpen(true)}
+            onClick={() => setIsProfileDialogOpen((prev) => !prev)}
             className="flex items-center gap-2 min-w-0 flex-1 mr-1 px-1.5 py-1 rounded-md hover:bg-sidebar-accent/60 cursor-pointer transition-colors group/user"
             title={t('Lihat profil pengguna')}
           >
