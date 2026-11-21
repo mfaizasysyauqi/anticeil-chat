@@ -385,6 +385,8 @@ export interface UserBottomDockWrapperProps {
   isCallPiP?: boolean;
   activeChannel?: ColonyChannel | null;
   colonies?: Colony[];
+  setActiveColonyId?: (id: string) => void;
+  setHomeView?: (view: any) => void;
 }
 
 export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
@@ -412,6 +414,8 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
   isCallPiP,
   activeChannel,
   colonies = [],
+  setActiveColonyId,
+  setHomeView,
 }) => {
   const activeCallChannel =
     (activeCallChannelId ? channels.find((c) => c.id === activeCallChannelId) : null) ||
@@ -441,6 +445,10 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
         const destId = activeCallChannelId || activeChannel?.id;
         if (destId) {
           setActiveChannelId(destId);
+        } else if (selectedActivityAppId) {
+          setActiveColonyId?.('anticeil');
+          setActiveChannelId('');
+          setHomeView?.('apps');
         }
         setIsCallPiP(false);
         setIsActivityOpen(true);
@@ -452,6 +460,12 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
           setActiveCallChannelId(null);
           setIsActivityOpen(false);
           setIsCallPiP(false);
+          if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('activity');
+            window.history.replaceState(null, '', url.toString());
+            window.dispatchEvent(new CustomEvent('anticeil_activity_close'));
+          }
         }
       }}
     />

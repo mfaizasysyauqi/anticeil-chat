@@ -416,15 +416,26 @@ export function useColonyPageState(): ChatPageContentProps {
     setIsActivityOpen(false);
     setIsCallPiP(false);
 
-    const currentColonyId = activeColonyId || activeChannel?.colonyId;
-    const defaultText =
-      colonyChannels.find((c) => (c.type === 'text' || !c.type) && !c.isDirectMessage) ||
-      channels.find((c) => (c.colonyId || 'anticeil') === currentColonyId && (c.type === 'text' || !c.type) && !c.isDirectMessage) ||
-      channels.find((c) => (c.type === 'text' || !c.type) && !c.isDirectMessage);
-    if (defaultText) {
-      setActiveChannelId(defaultText.id);
-    } else {
-      setActiveChannelId('');
+    // Clean up activity from URL and notify any standalone sessions
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('activity');
+      window.history.replaceState(null, '', url.toString());
+      window.dispatchEvent(new CustomEvent('anticeil_activity_close'));
+    }
+
+    // Only switch to default text channel if we were actively leaving a voice channel
+    if (channelToLeave) {
+      const currentColonyId = activeColonyId || activeChannel?.colonyId;
+      const defaultText =
+        colonyChannels.find((c) => (c.type === 'text' || !c.type) && !c.isDirectMessage) ||
+        channels.find((c) => (c.colonyId || 'anticeil') === currentColonyId && (c.type === 'text' || !c.type) && !c.isDirectMessage) ||
+        channels.find((c) => (c.type === 'text' || !c.type) && !c.isDirectMessage);
+      if (defaultText) {
+        setActiveChannelId(defaultText.id);
+      } else {
+        setActiveChannelId('');
+      }
     }
   }, [
     activeCallChannelId,

@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { AudioDeviceMenu } from '@/features/voice';
+import { ANTICEIL_APPS } from '@/features/voice/data/voice-activities';
 import { UserProfileDialog, type UserPresenceStatus } from './user-profile-dialog';
 
 interface UserBottomDockProps {
@@ -99,56 +100,68 @@ export function UserBottomDock({
       )}
     >
       {/* 1. Discord-Style Active Activity Dock Card (Image 1) */}
-      {selectedActivityAppId && (isActivityOpen || isCallPiP || Boolean(activeCallChannelId)) ? (
-        <div className="px-2 pt-2 pb-0">
-          <div
-            onClick={onReturnToCall}
-            className="w-full px-2.5 py-2 rounded-lg bg-transparent hover:bg-sidebar-accent/50 border border-sidebar-border transition-all flex items-center justify-between gap-2.5 cursor-pointer group shadow-2xs"
-            title="Klik untuk membuka aktivitas"
-          >
-            {/* Left: App Icon */}
-            <div className="flex items-center gap-2.5 min-w-0">
-              {selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube' ? (
-                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-xs">
-                  <svg className="w-5 h-4 text-[#ff0000] fill-current" viewBox="0 0 24 24">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                  </svg>
-                </div>
-              ) : (
-                <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary border border-primary/30 flex items-center justify-center shrink-0">
-                  <Play className="w-4 h-4 fill-current" />
-                </div>
-              )}
+      {selectedActivityAppId && (isActivityOpen || isCallPiP || Boolean(activeCallChannelId)) ? (() => {
+        const currentAppDef = ANTICEIL_APPS.find((a) => a.id === selectedActivityAppId);
+        const currentAppTitle =
+          currentAppDef?.title ||
+          (selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube'
+            ? 'Watch Together'
+            : selectedActivityAppId);
+        const CurrentAppIcon = currentAppDef?.icon;
 
-              {/* Middle: Title & Location */}
-              <div className="flex flex-col min-w-0 text-left">
-                <span className="text-xs sm:text-[13px] font-bold text-foreground leading-tight truncate group-hover:text-primary transition-colors">
-                  {selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube'
-                    ? 'Watch Together'
-                    : selectedActivityAppId}
-                </span>
-                <span className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
-                  {activeCallChannelName || 'general'} / {activeColonyName || 'server'}
-                </span>
-              </div>
-            </div>
-
-            {/* Right: Disconnect / Leave Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDisconnectCall?.();
-              }}
-              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent rounded-md transition-colors shrink-0"
-              title="Tinggalkan Aktivitas"
+        return (
+          <div className="px-2 pt-2 pb-0">
+            <div
+              onClick={onReturnToCall}
+              className="w-full px-2.5 py-2 rounded-lg bg-transparent hover:bg-sidebar-accent/50 border border-sidebar-border transition-all flex items-center justify-between gap-2.5 cursor-pointer group shadow-2xs"
+              title="Klik untuk membuka aktivitas"
             >
-              <LogOut className="w-4 h-4" />
-            </Button>
+              {/* Left: App Icon */}
+              <div className="flex items-center gap-2.5 min-w-0">
+                {selectedActivityAppId === 'watch-together' || selectedActivityAppId === 'youtube' ? (
+                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-xs">
+                    <svg className="w-5 h-4 text-[#ff0000] fill-current" viewBox="0 0 24 24">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                  </div>
+                ) : CurrentAppIcon ? (
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-xs", currentAppDef?.iconBg || 'bg-primary/20', currentAppDef?.iconColor || 'text-primary')}>
+                    <CurrentAppIcon className="w-4 h-4 fill-current" />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary border border-primary/30 flex items-center justify-center shrink-0">
+                    <Play className="w-4 h-4 fill-current" />
+                  </div>
+                )}
+
+                {/* Middle: Title & Location */}
+                <div className="flex flex-col min-w-0 text-left">
+                  <span className="text-xs sm:text-[13px] font-bold text-foreground leading-tight truncate group-hover:text-primary transition-colors">
+                    {currentAppTitle}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                    {activeCallChannelName || 'general'} / {activeColonyName || 'server'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Right: Disconnect / Leave Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDisconnectCall?.();
+                }}
+                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent rounded-md transition-colors shrink-0"
+                title="Tinggalkan Aktivitas"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : activeCallChannelId ? (
+        );
+      })() : activeCallChannelId ? (
         /* 2. Active Voice Call Connected Banner */
         <div className="px-2 pt-2 pb-0">
           <div className="px-2.5 py-1.5 rounded-[8px] bg-sidebar-accent/50 border border-sidebar-border flex items-center justify-between animate-in slide-in-from-bottom-2">

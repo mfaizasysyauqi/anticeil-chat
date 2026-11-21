@@ -51,6 +51,10 @@ export interface AppsViewProps {
   onStartDM?: (member: ColonyMember) => void;
   setActiveColonyId?: (colonyId: string) => void;
   setActiveChannelId?: (chId: string) => void;
+  selectedActivityAppId?: string | null;
+  setSelectedActivityAppId?: (id: string | null) => void;
+  isActivityOpen?: boolean;
+  setIsActivityOpen?: (open: boolean) => void;
 }
 
 interface ActivitySectionConfig {
@@ -189,6 +193,10 @@ export function AppsView({
   onStartDM,
   setActiveColonyId,
   setActiveChannelId,
+  selectedActivityAppId,
+  setSelectedActivityAppId,
+  isActivityOpen,
+  setIsActivityOpen,
 }: AppsViewProps) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -205,6 +213,30 @@ export function AppsView({
     }
     return null;
   });
+
+  // Realtime two-way synchronization with global activity state
+  useEffect(() => {
+    if (!selectedActivityAppId || isActivityOpen === false) {
+      setStandaloneApp(null);
+    } else if (selectedActivityAppId && isActivityOpen && !activeCallChannelId) {
+      const app =
+        appList.find((a) => a.id === selectedActivityAppId) ||
+        ANTICEIL_APPS.find((a) => a.id === selectedActivityAppId) ||
+        null;
+      if (app) {
+        setStandaloneApp(app);
+      }
+    }
+  }, [selectedActivityAppId, isActivityOpen, activeCallChannelId, appList]);
+
+  // Realtime global activity close event listener
+  useEffect(() => {
+    const handleClose = () => {
+      setStandaloneApp(null);
+    };
+    window.addEventListener('anticeil_activity_close', handleClose);
+    return () => window.removeEventListener('anticeil_activity_close', handleClose);
+  }, []);
 
   // Discord-style App Detail View State: Clean catalog -> detail page -> launch
   const [selectedDetailApp, setSelectedDetailApp] = useState<VoiceAppDefinition | null>(() => {
@@ -329,6 +361,8 @@ export function AppsView({
         });
       }
       setStandaloneApp(app);
+      setSelectedActivityAppId?.(app.id);
+      setIsActivityOpen?.(true);
       const url = new URL(window.location.href);
       url.searchParams.set('activity', app.id);
       window.history.replaceState(null, '', url.toString());
@@ -393,6 +427,8 @@ export function AppsView({
           app={standaloneApp}
           onClose={() => {
             setStandaloneApp(null);
+            setSelectedActivityAppId?.(null);
+            setIsActivityOpen?.(false);
             const url = new URL(window.location.href);
             url.searchParams.delete('activity');
             window.history.replaceState(null, '', url.toString());

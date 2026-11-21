@@ -256,7 +256,8 @@ export function useUrlSync({
       url.searchParams.delete('channel');
 
       const newSearch = url.search ? url.search : '';
-      if (currentPath !== targetPath) {
+      const currentSearch = window.location.search;
+      if (currentPath !== targetPath || currentSearch !== newSearch) {
         window.history.replaceState(null, '', targetPath + newSearch);
       }
     } catch {}

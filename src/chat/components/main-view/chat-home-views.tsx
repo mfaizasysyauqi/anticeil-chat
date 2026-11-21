@@ -64,6 +64,10 @@ export interface ChatHomeViewsProps {
   isColoniesView: boolean;
   requireAuth: (action: () => void, title?: string, desc?: string) => void;
   setIsCreateHubOpen: (open: boolean) => void;
+  selectedActivityAppId?: string | null;
+  setSelectedActivityAppId?: (id: string | null) => void;
+  isActivityOpen?: boolean;
+  setIsActivityOpen?: (open: boolean) => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -114,6 +118,10 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   isColoniesView,
   requireAuth,
   setIsCreateHubOpen,
+  selectedActivityAppId,
+  setSelectedActivityAppId,
+  isActivityOpen,
+  setIsActivityOpen,
   t,
 }) => {
   const handleOpenNav = onOpenSidebar || (() => setIsMobileChannelsOpen(true));
@@ -271,6 +279,10 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         onStartDM={handleStartDM}
         setActiveColonyId={setActiveColonyId}
         setActiveChannelId={setActiveChannelId}
+        selectedActivityAppId={selectedActivityAppId}
+        setSelectedActivityAppId={setSelectedActivityAppId}
+        isActivityOpen={isActivityOpen}
+        setIsActivityOpen={setIsActivityOpen}
       />
     );
   }
