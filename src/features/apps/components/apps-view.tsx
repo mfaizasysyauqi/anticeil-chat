@@ -8,8 +8,11 @@ import {
   Menu,
   Flame,
   Radio,
+  Clock,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
@@ -84,6 +87,9 @@ const CATEGORY_TABS = [
   { id: 'game', label: 'Game' },
   { id: 'entertainment', label: 'Hiburan' },
 ] as const;
+
+const RECENT_APPS_STORAGE_KEY = 'anticeil_recent_apps';
+const DEFAULT_RECENT_IDS = ['watch-together', 'tradingview', 'chess', 'whiteboard', 'screenshare'];
 
 function ActivityCard({
   app,
@@ -210,7 +216,54 @@ export function AppsView({
     return null;
   });
 
+  // Recent Apps Tracking (Ordered from most recently opened to oldest)
+  const [recentAppIds, setRecentAppIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(RECENT_APPS_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return DEFAULT_RECENT_IDS;
+  });
+
+  const trackRecentApp = (appId: string) => {
+    setRecentAppIds((prev) => {
+      const updated = [appId, ...prev.filter((id) => id !== appId)];
+      try {
+        localStorage.setItem(RECENT_APPS_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const handleRemoveRecentApp = (e: React.MouseEvent, appId: string) => {
+    e.stopPropagation();
+    setRecentAppIds((prev) => {
+      const updated = prev.filter((id) => id !== appId);
+      try {
+        localStorage.setItem(RECENT_APPS_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const recentApps = useMemo(() => {
+    const list: VoiceAppDefinition[] = [];
+    for (const id of recentAppIds) {
+      const found = appList.find((a) => a.id === id);
+      if (found && !list.some((item) => item.id === found.id)) {
+        list.push(found);
+      }
+    }
+    return list;
+  }, [recentAppIds, appList]);
+
   const handleOpenDetail = (app: VoiceAppDefinition) => {
+    trackRecentApp(app.id);
     setSelectedDetailApp(app);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
@@ -264,6 +317,7 @@ export function AppsView({
       ? appList.find((a) => a.id === appOrId) || ANTICEIL_APPS.find((a) => a.id === appOrId) || null
       : appOrId;
     if (app) {
+      trackRecentApp(app.id);
       if (activeCallChannelId && socket) {
         socket.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
           channelId: activeCallChannelId,
@@ -292,6 +346,7 @@ export function AppsView({
     member?: ColonyMember;
   }) => {
     // Auto-close standalone session when sending/launching into channel
+    trackRecentApp(options.appId);
     setStandaloneApp(null);
     const url = new URL(window.location.href);
     url.searchParams.delete('activity');
@@ -461,6 +516,83 @@ export function AppsView({
               <p className="text-xs sm:text-sm text-zinc-200/90 leading-relaxed font-medium line-clamp-2 drop-shadow-xs max-w-xl">
                 {featuredApp.description}
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Aplikasi yang Digunakan Sebelumnya (Recent Apps Strip matching Image 1) ── */}
+        {!searchQuery && activeCategory === 'all' && recentApps.length > 0 && (
+          <div className="space-y-3.5 pt-1">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-primary shrink-0" />
+                <h3 className={TEXT_STYLES.SECTION_TITLE}>
+                  {t('Aplikasi yang Digunakan Sebelumnya')}
+                </h3>
+                <span className={TEXT_STYLES.COUNTER_LABEL}>
+                  ({recentApps.length})
+                </span>
+              </div>
+              <span className="text-[11px] text-muted-foreground">
+                {t('Diurutkan dari yang paling baru dibuka')}
+              </span>
+            </div>
+
+            {/* Horizontal Row of Squircle Icon Buttons (100% Match to User Screenshot) */}
+            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1 touch-pan-x">
+              {recentApps.map((app) => {
+                const AppIcon = app.icon || Gamepad2;
+                return (
+                  <TooltipProvider key={app.id} delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          onClick={() => handleOpenDetail(app)}
+                          className="group relative flex flex-col items-center cursor-pointer shrink-0"
+                        >
+                          {/* Squircle Button matching Discord Style */}
+                          <div
+                            className={cn(
+                              'w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-card border border-border/80 flex items-center justify-center transition-all duration-200 group-hover:scale-105 active:scale-95 group-hover:border-primary/50 group-hover:shadow-lg shadow-xs relative overflow-hidden',
+                            )}
+                          >
+                            {/* Inner Colored Squircle Icon Container */}
+                            <div
+                              className={cn(
+                                'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shadow-xs transition-transform group-hover:scale-105',
+                                app.iconBg || 'bg-primary',
+                                app.iconColor || 'text-white'
+                              )}
+                            >
+                              <AppIcon className="w-5 h-5 sm:w-5 sm:h-5" />
+                            </div>
+
+                            {/* Remove from Recents / Quick Uninstall Action */}
+                            <button
+                              type="button"
+                              onClick={(e) => handleRemoveRecentApp(e, app.id)}
+                              className="absolute top-1 right-1 size-4 rounded-full bg-background/80 hover:bg-destructive hover:text-destructive-foreground text-muted-foreground items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 flex shadow-2xs"
+                              title={t('Hapus dari riwayat')}
+                              aria-label={t('Hapus dari riwayat')}
+                            >
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+
+                          {/* App Title Label */}
+                          <span className="text-[11px] font-semibold text-foreground/90 group-hover:text-primary transition-colors truncate max-w-[70px] sm:max-w-[76px] text-center mt-1.5 drop-shadow-2xs">
+                            {app.title}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs font-semibold p-2">
+                        <p className="font-bold text-foreground">{app.title}</p>
+                        <p className="text-[10px] text-muted-foreground font-normal max-w-[200px]">{app.tagline || app.description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })}
             </div>
           </div>
         )}
