@@ -579,7 +579,10 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                   }
                 }}
                 placeholder="Ketik perintah (contoh: 'buka whiteboard', 'kirim pesan ke #general colony as: halo')..."
-                className="min-h-[36px] max-h-32 flex-1 resize-none border-0 bg-transparent py-2 px-2 text-xs focus:outline-hidden placeholder:text-muted-foreground/60 leading-relaxed"
+                className={cn(
+                  "min-h-[36px] max-h-32 flex-1 resize-none border-0 bg-transparent py-2 px-2 text-xs focus:outline-hidden placeholder:text-muted-foreground/60 leading-relaxed placeholder:truncate placeholder:whitespace-nowrap placeholder:overflow-hidden placeholder:text-ellipsis",
+                  !inputPrompt && "truncate whitespace-nowrap overflow-hidden text-ellipsis"
+                )}
                 rows={1}
               />
 
