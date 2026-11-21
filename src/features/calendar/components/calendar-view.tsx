@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
+import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -188,20 +189,7 @@ export function CalendarView({
         )}
       >
         <div className="flex items-center gap-2 shrink-0">
-          {/* Mobile burger menu: Fixed non-scrollable */}
-          {onOpenSidebar && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              onClick={onOpenSidebar}
-              className="md:hidden sidebar-toggle-btn h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
-              title="Buka Menu Sidebar"
-              aria-label="Buka Menu Sidebar"
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-          )}
+          <SidebarNavToggle onClick={onOpenSidebar} />
 
           {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
           <div className="hidden sm:flex items-center gap-1.5 shrink-0">

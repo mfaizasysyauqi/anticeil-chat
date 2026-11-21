@@ -228,13 +228,14 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
   } = state;
 
   const handleOpenSidebar = () => {
-    if (window.innerWidth < 768) {
-      setIsMobileChannelsOpen(true);
-    } else {
+    if (isDesktopSidebarCollapsed) {
       setIsDesktopSidebarCollapsed(false);
       try {
         localStorage.setItem('anticeil_desktop_sidebar_collapsed', 'false');
       } catch {}
+    }
+    if (window.innerWidth < 1024) {
+      setIsMobileChannelsOpen(true);
     }
   };
 

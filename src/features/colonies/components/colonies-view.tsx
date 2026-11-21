@@ -26,6 +26,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Input } from '@/components/ui/input';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
+import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import {
   CHANNEL_HORIZONTAL_PADDING,
   CHANNEL_VERTICAL_PADDING,
@@ -272,20 +273,7 @@ export function ColoniesView({
         )}
       >
         <div className="flex items-center gap-2 shrink-0">
-          {/* Mobile burger menu: Fixed non-scrollable */}
-          {onOpenSidebar && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              onClick={onOpenSidebar}
-              className="md:hidden sidebar-toggle-btn h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
-              title={t('Buka Menu Sidebar')}
-              aria-label={t('Buka Menu Sidebar')}
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-          )}
+          <SidebarNavToggle onClick={onOpenSidebar} />
 
           {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">

@@ -14,6 +14,7 @@ import {
   Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import {
   Tooltip,
@@ -114,16 +115,8 @@ export function ChannelTopHeaderBar({
   return (
     <div className={`sticky top-0 z-20 h-12 border-b border-sidebar-border ${channelPaddingClass} flex items-center justify-between shrink-0 bg-background overflow-hidden`}>
       <div className="flex items-center gap-2 min-w-0 flex-1 mr-2 overflow-hidden">
-        {/* Burger Menu Button (Visible only on Mobile: md:hidden) */}
-        <button
-          type="button"
-          onClick={onOpenMobileChannels}
-          className="md:hidden sidebar-toggle-btn h-8 w-8 flex items-center justify-center rounded-md text-[#949ba4] hover:text-white hover:bg-white/10 transition-colors mr-0.5 cursor-pointer shrink-0"
-          title={t('Buka Menu Sidebar')}
-          aria-label={t('Buka Menu Sidebar')}
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+        {/* Responsive Sidebar Nav Toggle (Burger on Mobile/Tablet, PanelLeftOpen on Desktop when collapsed) */}
+        <SidebarNavToggle onClick={onOpenMobileChannels} />
 
         {activeChannel?.isGroupDm ? (
           <Users className="w-5 h-5 text-muted-foreground shrink-0" />

@@ -2,6 +2,7 @@ import React from 'react';
 import { Users, MessageSquare, Menu, Plus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -39,20 +40,7 @@ export function FriendsHeader({
       className={`sticky top-0 z-20 h-12 border-b border-sidebar-border ${horizontalPadding} flex items-center justify-between shrink-0 bg-background overflow-hidden`}
     >
       <div className="flex items-center gap-2 shrink-0">
-        {/* Burger Menu Button (Visible on Mobile: md:hidden) */}
-        {onOpenSidebar && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            onClick={onOpenSidebar}
-            className="md:hidden sidebar-toggle-btn h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
-            title={t('Buka Menu Sidebar')}
-            aria-label={t('Buka Menu Sidebar')}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-        )}
+        <SidebarNavToggle onClick={onOpenSidebar} />
 
         {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
         <div className="hidden sm:flex items-center gap-2 shrink-0">

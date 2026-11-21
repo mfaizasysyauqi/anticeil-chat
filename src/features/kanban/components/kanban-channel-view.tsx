@@ -33,6 +33,7 @@ import type { KanbanCard, KanbanColumn, KanbanPriority } from '../types';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 import { assignmentsApi } from '@/features/assignments/api/assignments-api';
 import { KanbanCardDialog } from './kanban-card-dialog';
+import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { toast } from 'sonner';
 
 export interface KanbanChannelViewProps {
@@ -227,15 +228,8 @@ export function KanbanChannelView({
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
       {/* ── Top Header Bar ────────────────────────────────────────── */}
       <div className={cn('h-12 border-b border-border flex items-center justify-between shrink-0 bg-background z-10', horizontalPadding)}>
-        <div className="flex items-center gap-3 min-w-0">
-          <button
-            type="button"
-            onClick={onOpenSidebar}
-            className="md:hidden sidebar-toggle-btn h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
-            title="Buka Menu Sidebar"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+        <div className="flex items-center gap-2 min-w-0">
+          <SidebarNavToggle onClick={onOpenSidebar} />
           <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <Columns3 className="w-4 h-4" />
           </div>

@@ -1117,7 +1117,7 @@ body {
   .recurring-chip-gradient { animation: none; }
 }
 
-/* When desktop sidebar is collapsed, reveal the sidebar burger toggle in top app bar */
+/* When desktop sidebar is collapsed, reveal the sidebar expand toggle (PanelLeftOpen) in top app bar */
 [data-sidebar-collapsed="true"] .sidebar-toggle-btn {
   display: inline-flex !important;
 }

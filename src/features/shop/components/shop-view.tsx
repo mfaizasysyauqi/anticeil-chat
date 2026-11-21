@@ -27,6 +27,7 @@ import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { FilterToggleButton } from '@/components/ui/filter-toggle-button';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
+import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { EmptyState } from '@/components/ui/empty';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -992,19 +993,7 @@ export function ShopView({
         )}
       >
         <div className="flex items-center gap-2 shrink-0">
-          {onOpenSidebar && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              onClick={onOpenSidebar}
-              className="md:hidden sidebar-toggle-btn h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
-              title={t('Buka Menu Sidebar')}
-              aria-label={t('Buka Menu Sidebar')}
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-          )}
+          <SidebarNavToggle onClick={onOpenSidebar} />
 
           {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop (100% Consistent with Apps & Colonies) */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">

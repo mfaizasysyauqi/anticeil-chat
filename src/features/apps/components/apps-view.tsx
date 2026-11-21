@@ -31,6 +31,7 @@ import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 import { ActivityDestinationDialog } from './activity-destination-dialog';
 import { StandaloneAppStage } from './standalone-app-stage';
 import { AppDetailView } from './app-detail-view';
+import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 
 export interface AppsViewProps {
   channels: ColonyChannel[];
@@ -391,18 +392,7 @@ export function AppsView({
       {/* ── Single App Bar (h-12) ─────────────────────────── */}
       <div className={cn('sticky top-0 z-20 h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background gap-2 overflow-hidden', horizontalPadding)}>
         <div className="flex items-center gap-2 shrink-0">
-          {onOpenSidebar && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              onClick={onOpenSidebar}
-              className="md:hidden sidebar-toggle-btn h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
-              title="Buka Menu Sidebar"
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-          )}
+          <SidebarNavToggle onClick={onOpenSidebar} />
 
           {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">

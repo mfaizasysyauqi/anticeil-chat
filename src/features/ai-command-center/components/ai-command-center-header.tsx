@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, Menu, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
@@ -38,19 +39,7 @@ export function AiCommandCenterHeader({
     >
       {/* Left: Mobile Sidebar Trigger + Title & Icon */}
       <div className="flex items-center gap-2 shrink-0">
-        {onOpenSidebar && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            onClick={onOpenSidebar}
-            className="md:hidden sidebar-toggle-btn h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
-            title={t('Buka Menu Sidebar')}
-            aria-label={t('Buka Menu Sidebar')}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-        )}
+        <SidebarNavToggle onClick={onOpenSidebar} />
 
         <div className="flex items-center gap-2 shrink-0">
           <Sparkles className="w-5 h-5 text-muted-foreground" />
