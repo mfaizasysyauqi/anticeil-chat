@@ -54,19 +54,39 @@ export const channelsApi = {
     isAnnouncement?: boolean;
     defaultAutoArchiveDuration?: number;
   }): Promise<ColonyChannel> {
+    const isAnnouncement = Boolean(payload.isAnnouncement || payload.type === 'announcement');
+    const defaultOverwrites: ChannelPermissionOverwrite[] = isAnnouncement
+      ? [
+          {
+            id: '@everyone',
+            type: 'role',
+            name: '@everyone',
+            allow: payload.isPrivate ? [] : ['VIEW_CHANNEL'],
+            deny: payload.isPrivate ? ['VIEW_CHANNEL', 'SEND_MESSAGES'] : ['SEND_MESSAGES'],
+          },
+        ]
+      : [];
+
     try {
       const targetColonyId = payload.colonyId || 'anticeil';
       const body = {
         ...payload,
+        isAnnouncement,
+        permissionOverwrites: defaultOverwrites,
         hubId: targetColonyId,
         colonyId: targetColonyId,
       };
       const res = await api.post<ColonyChannel>('/v1/colony/channels', body);
       if (res && res.id) {
+        if (isAnnouncement && defaultOverwrites.length > 0) {
+          channelsApi.updateChannelPermission(res.id, defaultOverwrites[0]).catch(() => {});
+        }
         const stored = loadStoredChannels();
         const resAny = res as any;
         const merged: ColonyChannel = {
           ...res,
+          isAnnouncement,
+          permissionOverwrites: res.permissionOverwrites?.length ? res.permissionOverwrites : defaultOverwrites,
           colonyId: res.colonyId || resAny.hubId || targetColonyId,
           hubId: resAny.hubId || res.colonyId || targetColonyId,
           categoryId: payload.categoryId || res.categoryId,
@@ -87,8 +107,9 @@ export const channelsApi = {
       isPrivate: payload.isPrivate || false,
       categoryId: payload.categoryId,
       categoryName: payload.categoryName,
-      isAnnouncement: payload.isAnnouncement || payload.type === 'announcement',
+      isAnnouncement,
       defaultAutoArchiveDuration: payload.defaultAutoArchiveDuration,
+      permissionOverwrites: defaultOverwrites,
     };
     const stored = loadStoredChannels();
     const updated = [...stored.filter((c) => c.id !== newChannel.id), newChannel];
@@ -100,8 +121,25 @@ export const channelsApi = {
     id: string,
     payload: Partial<ColonyChannel>,
   ): Promise<ColonyChannel> {
+    const isNowAnnouncement = Boolean(payload.isAnnouncement || payload.type === 'announcement');
+    let effectivePayload = { ...payload };
+    if (isNowAnnouncement && payload.permissionOverwrites) {
+      const everyoneIdx = payload.permissionOverwrites.findIndex((o) => o.id === '@everyone');
+      if (everyoneIdx === -1) {
+        effectivePayload.permissionOverwrites = [
+          ...payload.permissionOverwrites,
+          {
+            id: '@everyone',
+            type: 'role',
+            name: '@everyone',
+            allow: payload.isPrivate ? [] : ['VIEW_CHANNEL'],
+            deny: Array.from(new Set([...(payload.isPrivate ? ['VIEW_CHANNEL'] : []), 'SEND_MESSAGES'])),
+          },
+        ];
+      }
+    }
     try {
-      const res = await api.put<ColonyChannel>(`/v1/colony/channels/${id}`, payload);
+      const res = await api.put<ColonyChannel>(`/v1/colony/channels/${id}`, effectivePayload);
       if (res && res.id) {
         const stored = loadStoredChannels();
         saveStoredChannels(stored.map((c) => (c.id === id ? res : c)));
@@ -111,7 +149,7 @@ export const channelsApi = {
     const stored = loadStoredChannels();
     let target = stored.find((c) => c.id === id);
     if (target) {
-      target = { ...target, ...payload };
+      target = { ...target, ...effectivePayload };
       saveStoredChannels(stored.map((c) => (c.id === id ? target! : c)));
       return target;
     }

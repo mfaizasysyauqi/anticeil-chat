@@ -257,12 +257,43 @@ export function ChannelPermissionsTab({
   onUpdateChannel,
   t,
 }: ChannelPermissionsTabProps) {
+  const isVoice = channel.type === 'voice' || channel.type === 'stage';
+  const isAnnouncement = channel.type === 'announcement' || channel.isAnnouncement;
+
+  // Helper to ensure @everyone has SEND_MESSAGES set to deny by default in announcement channels
+  const withAnnouncementDefaults = (initialList: ChannelPermissionOverwrite[] = []): ChannelPermissionOverwrite[] => {
+    if (!isAnnouncement) return initialList;
+    const everyoneIndex = initialList.findIndex((o) => o.id === '@everyone');
+    if (everyoneIndex === -1) {
+      return [
+        ...initialList,
+        {
+          id: '@everyone',
+          type: 'role',
+          name: '@everyone',
+          allow: Boolean(channel.isPrivate) ? [] : ['VIEW_CHANNEL'],
+          deny: Array.from(new Set([...(Boolean(channel.isPrivate) ? ['VIEW_CHANNEL'] : []), 'SEND_MESSAGES'])),
+        },
+      ];
+    }
+    const everyone = initialList[everyoneIndex];
+    if (!everyone.allow.includes('SEND_MESSAGES') && !everyone.deny.includes('SEND_MESSAGES')) {
+      const updated = [...initialList];
+      updated[everyoneIndex] = {
+        ...everyone,
+        deny: Array.from(new Set([...everyone.deny, 'SEND_MESSAGES'])),
+      };
+      return updated;
+    }
+    return initialList;
+  };
+
   // Overwrites & Baseline for unsaved detection
-  const [overwrites, setOverwrites] = useState<ChannelPermissionOverwrite[]>(
-    channel.permissionOverwrites || [],
+  const [overwrites, setOverwrites] = useState<ChannelPermissionOverwrite[]>(() =>
+    withAnnouncementDefaults(channel.permissionOverwrites || [])
   );
-  const [savedOverwrites, setSavedOverwrites] = useState<ChannelPermissionOverwrite[]>(
-    channel.permissionOverwrites || [],
+  const [savedOverwrites, setSavedOverwrites] = useState<ChannelPermissionOverwrite[]>(() =>
+    withAnnouncementDefaults(channel.permissionOverwrites || [])
   );
 
   // Private channel state
@@ -284,12 +315,13 @@ export function ChannelPermissionsTab({
     const loadData = async () => {
       try {
         const perms = await channelsApi.getChannelPermissions(channel.id);
-        if (isMounted && Array.isArray(perms) && perms.length > 0) {
-          setOverwrites(perms);
-          setSavedOverwrites(perms);
-        } else if (isMounted && channel.permissionOverwrites) {
-          setOverwrites(channel.permissionOverwrites);
-          setSavedOverwrites(channel.permissionOverwrites);
+        if (isMounted) {
+          const list = Array.isArray(perms) && perms.length > 0
+            ? perms
+            : (channel.permissionOverwrites || []);
+          const normalized = withAnnouncementDefaults(list);
+          setOverwrites(normalized);
+          setSavedOverwrites(normalized);
         }
 
         if (channel.colonyId && colonyRoles.length === 0) {
@@ -306,7 +338,7 @@ export function ChannelPermissionsTab({
     return () => {
       isMounted = false;
     };
-  }, [channel.id, channel.colonyId, channel.permissionOverwrites]);
+  }, [channel.id, channel.colonyId, channel.permissionOverwrites, isAnnouncement]);
 
   // Keep private state in sync
   useEffect(() => {
@@ -324,14 +356,20 @@ export function ChannelPermissionsTab({
   const activeOverwrite: ChannelPermissionOverwrite = useMemo(() => {
     const existing = overwrites.find((o) => o.id === selectedTargetId);
     if (existing) return existing;
+    const defaultDeny = Array.from(
+      new Set([
+        ...(isPrivate ? ['VIEW_CHANNEL'] : []),
+        ...(selectedTargetId === '@everyone' && isAnnouncement ? ['SEND_MESSAGES'] : []),
+      ])
+    );
     return {
       id: selectedTargetId,
       type: 'role',
       name: selectedTargetId === '@everyone' ? '@everyone' : selectedTargetId,
       allow: selectedTargetId === '@everyone' && !isPrivate ? ['VIEW_CHANNEL'] : [],
-      deny: selectedTargetId === '@everyone' && isPrivate ? ['VIEW_CHANNEL'] : [],
+      deny: selectedTargetId === '@everyone' ? defaultDeny : [],
     };
-  }, [overwrites, selectedTargetId, isPrivate]);
+  }, [overwrites, selectedTargetId, isPrivate, isAnnouncement]);
 
   // 3-way permission getter: 'allow' | 'deny' | 'inherit'
   const getPermissionState = (permKey: string): 'allow' | 'deny' | 'inherit' => {
@@ -381,7 +419,7 @@ export function ChannelPermissionsTab({
       type: 'role' as const,
       name: '@everyone',
       allow: [],
-      deny: [],
+      deny: isAnnouncement ? ['SEND_MESSAGES'] : [],
     };
 
     let updatedEveryone: ChannelPermissionOverwrite;
@@ -389,13 +427,18 @@ export function ChannelPermissionsTab({
       updatedEveryone = {
         ...everyoneOw,
         allow: everyoneOw.allow.filter((k) => k !== 'VIEW_CHANNEL'),
-        deny: Array.from(new Set([...everyoneOw.deny, 'VIEW_CHANNEL'])),
+        deny: Array.from(new Set([...everyoneOw.deny, 'VIEW_CHANNEL', ...(isAnnouncement ? ['SEND_MESSAGES'] : [])])),
       };
     } else {
       updatedEveryone = {
         ...everyoneOw,
         allow: Array.from(new Set([...everyoneOw.allow, 'VIEW_CHANNEL'])),
-        deny: everyoneOw.deny.filter((k) => k !== 'VIEW_CHANNEL'),
+        deny: Array.from(
+          new Set([
+            ...everyoneOw.deny.filter((k) => k !== 'VIEW_CHANNEL'),
+            ...(isAnnouncement && !everyoneOw.allow.includes('SEND_MESSAGES') ? ['SEND_MESSAGES'] : []),
+          ]),
+        ),
       };
     }
 
@@ -467,7 +510,12 @@ export function ChannelPermissionsTab({
         type: 'role',
         name: '@everyone',
         allow: isPrivate ? [] : ['VIEW_CHANNEL'],
-        deny: isPrivate ? ['VIEW_CHANNEL'] : [],
+        deny: Array.from(
+          new Set([
+            ...(isPrivate ? ['VIEW_CHANNEL'] : []),
+            ...(isAnnouncement ? ['SEND_MESSAGES'] : []),
+          ]),
+        ),
       };
       const nextOverwrites = [
         ...overwrites.filter((o) => o.id !== '@everyone'),
@@ -485,9 +533,6 @@ export function ChannelPermissionsTab({
       await channelsApi.deleteChannelPermission(channel.id, targetId);
     } catch {}
   };
-
-  const isVoice = channel.type === 'voice' || channel.type === 'stage';
-  const isAnnouncement = channel.type === 'announcement' || channel.isAnnouncement;
 
   // Active channel categories based on channel type
   const categories: PermissionCategory[] = useMemo(() => {
