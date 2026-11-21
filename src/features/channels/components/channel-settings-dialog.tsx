@@ -62,6 +62,8 @@ export function ChannelSettingsDialog({
   const [topic, setTopic] = useState('');
   const [slowmode, setSlowmode] = useState(0);
   const [contentVisibility, setContentVisibility] = useState<'default' | 'spoiler' | 'nsfw'>('default');
+  const [isAnnouncement, setIsAnnouncement] = useState(false);
+  const [defaultAutoArchiveDuration, setDefaultAutoArchiveDuration] = useState(4320); // 3 Days
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasCopiedInvite, setHasCopiedInvite] = useState(false);
 
@@ -73,6 +75,8 @@ export function ChannelSettingsDialog({
     topic: channel ? (channel.description || '') : '',
     slowmode: channel ? (channel.slowmode || 0) : 0,
     contentVisibility: channel ? (channel.contentVisibility || 'default') : ('default' as 'default' | 'spoiler' | 'nsfw'),
+    isAnnouncement: channel ? Boolean(channel.isAnnouncement) : false,
+    defaultAutoArchiveDuration: channel?.defaultAutoArchiveDuration ?? 4320,
   }));
 
   // Sync state when channel changes or dialog opens
@@ -86,6 +90,8 @@ export function ChannelSettingsDialog({
         topic: channel.description || '',
         slowmode: channel.slowmode || 0,
         contentVisibility: channel.contentVisibility || 'default',
+        isAnnouncement: Boolean(channel.isAnnouncement),
+        defaultAutoArchiveDuration: channel.defaultAutoArchiveDuration ?? 4320,
       };
       setName(initial.name);
       setChannelType(initial.channelType);
@@ -93,6 +99,8 @@ export function ChannelSettingsDialog({
       setTopic(initial.topic);
       setSlowmode(initial.slowmode);
       setContentVisibility(initial.contentVisibility);
+      setIsAnnouncement(initial.isAnnouncement);
+      setDefaultAutoArchiveDuration(initial.defaultAutoArchiveDuration);
       setBaseline(initial);
       setActiveTab('overview');
     }
@@ -106,7 +114,9 @@ export function ChannelSettingsDialog({
     categoryId !== baseline.categoryId ||
     topic !== baseline.topic ||
     slowmode !== baseline.slowmode ||
-    contentVisibility !== baseline.contentVisibility;
+    contentVisibility !== baseline.contentVisibility ||
+    isAnnouncement !== baseline.isAnnouncement ||
+    defaultAutoArchiveDuration !== baseline.defaultAutoArchiveDuration;
 
   const handleReset = () => {
     setName(baseline.name);
@@ -115,6 +125,8 @@ export function ChannelSettingsDialog({
     setTopic(baseline.topic);
     setSlowmode(baseline.slowmode);
     setContentVisibility(baseline.contentVisibility);
+    setIsAnnouncement(baseline.isAnnouncement);
+    setDefaultAutoArchiveDuration(baseline.defaultAutoArchiveDuration);
   };
 
   const handleSave = async () => {
@@ -134,6 +146,8 @@ export function ChannelSettingsDialog({
         topic: cleanTopic,
         slowmode,
         contentVisibility,
+        isAnnouncement,
+        defaultAutoArchiveDuration,
       };
 
       await onUpdateChannel(channel.id, {
@@ -144,6 +158,8 @@ export function ChannelSettingsDialog({
         contentVisibility: newSaved.contentVisibility,
         categoryId: newSaved.categoryId || undefined,
         categoryName: selectedCat ? selectedCat.name : undefined,
+        isAnnouncement: newSaved.isAnnouncement,
+        defaultAutoArchiveDuration: newSaved.defaultAutoArchiveDuration,
       });
 
       setName(finalName);
@@ -269,6 +285,10 @@ export function ChannelSettingsDialog({
             setSlowmode={setSlowmode}
             contentVisibility={contentVisibility}
             setContentVisibility={setContentVisibility}
+            isAnnouncement={isAnnouncement}
+            setIsAnnouncement={setIsAnnouncement}
+            defaultAutoArchiveDuration={defaultAutoArchiveDuration}
+            setDefaultAutoArchiveDuration={setDefaultAutoArchiveDuration}
           />
         )}
 

@@ -116,6 +116,8 @@ export function useChannelModals({
         contentVisibility: updates.contentVisibility,
         categoryId: updates.categoryId,
         categoryName: updates.categoryName,
+        isAnnouncement: updates.isAnnouncement,
+        defaultAutoArchiveDuration: updates.defaultAutoArchiveDuration,
       });
       const merged = { ...updated, ...updates };
       setChannels((prev) =>

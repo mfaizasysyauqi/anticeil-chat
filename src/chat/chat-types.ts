@@ -54,6 +54,8 @@ export type ColonyChannel = {
   isMuted?: boolean;
   mutedUntil?: string | null;
   permissionOverwrites?: ChannelPermissionOverwrite[];
+  isAnnouncement?: boolean;
+  defaultAutoArchiveDuration?: number;
 };
 
 export function resolveChannelType(channel?: Partial<ColonyChannel> | null): ColonyChannelType {
