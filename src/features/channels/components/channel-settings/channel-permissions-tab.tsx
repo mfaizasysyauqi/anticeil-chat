@@ -307,6 +307,22 @@ export function ChannelPermissionsTab({
   };
 
   const isVoice = channel.type === 'voice';
+  const isAnnouncement = channel.type === 'announcement' || channel.isAnnouncement;
+
+  const activeTextPermissions = useMemo(() => {
+    return TEXT_PERMISSIONS.map((perm) => {
+      if (perm.key === 'SEND_MESSAGES' && isAnnouncement) {
+        return {
+          ...perm,
+          name: t('Send Messages'),
+          description: t(
+            'Allows members to publish their own messages to all servers following this Announcement Channel.',
+          ),
+        };
+      }
+      return perm;
+    });
+  }, [isAnnouncement, t]);
 
   return (
     <div className="space-y-6">
@@ -457,7 +473,7 @@ export function ChannelPermissionsTab({
               {isVoice ? t('Izin Saluran Suara') : t('Izin Saluran Teks')}
             </h4>
             <div className="divide-y divide-border/50 border border-border/60 rounded-xl bg-background/50 overflow-hidden">
-              {(isVoice ? VOICE_PERMISSIONS : TEXT_PERMISSIONS).map((perm) => (
+              {(isVoice ? VOICE_PERMISSIONS : activeTextPermissions).map((perm) => (
                 <PermissionRow
                   key={perm.key}
                   perm={perm}

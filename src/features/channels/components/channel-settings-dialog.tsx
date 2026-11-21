@@ -4,6 +4,8 @@ import {
   Volume2,
   MessagesSquare,
   Columns3,
+  Megaphone,
+  Podcast,
   Trash2,
   Shield,
   UserPlus,
@@ -179,6 +181,8 @@ export function ChannelSettingsDialog({
     }
   };
 
+  const isAnnouncementCh = channel.type === 'announcement' || channel.isAnnouncement;
+
   const channelTypeLabel =
     channel.type === 'voice'
       ? t('VOICE CHANNELS')
@@ -186,13 +190,23 @@ export function ChannelSettingsDialog({
       ? t('FORUM CHANNELS')
       : channel.type === 'kanban'
       ? t('KANBAN BOARDS')
+      : isAnnouncementCh
+      ? t('ANNOUNCEMENT CHANNELS')
+      : channel.type === 'stage'
+      ? t('STAGE CHANNELS')
       : t('TEXT CHANNELS');
+
+  const channelTitle = channel?.name
+    ? isAnnouncementCh
+      ? `📢 ${channel.name}`
+      : `# ${channel.name}`
+    : t('Pengaturan Channel');
 
   const channelGroups: SettingsNavGroup[] = useMemo(
     () => [
       {
         key: 'CHANNEL_SETTINGS',
-        title: channel?.name ? `#${channel.name}` : t('Pengaturan Channel'),
+        title: channelTitle,
         items: [
           {
             id: 'overview',
@@ -204,6 +218,10 @@ export function ChannelSettingsDialog({
                 <MessagesSquare className="w-4 h-4 shrink-0" />
               ) : channel?.type === 'kanban' ? (
                 <Columns3 className="w-4 h-4 shrink-0" />
+              ) : isAnnouncementCh ? (
+                <Megaphone className="w-4 h-4 shrink-0" />
+              ) : channel?.type === 'stage' ? (
+                <Podcast className="w-4 h-4 shrink-0" />
               ) : (
                 <Hash className="w-4 h-4 shrink-0" />
               ),
@@ -226,7 +244,7 @@ export function ChannelSettingsDialog({
         ],
       },
     ],
-    [channel?.name, channel?.type, t],
+    [channel?.name, channel?.type, channel?.isAnnouncement, isAnnouncementCh, channelTitle, t],
   );
 
   return (
@@ -247,6 +265,10 @@ export function ChannelSettingsDialog({
               <MessagesSquare className="w-4 h-4 text-muted-foreground" />
             ) : channel.type === 'kanban' ? (
               <Columns3 className="w-4 h-4 text-muted-foreground" />
+            ) : isAnnouncementCh ? (
+              <Megaphone className="w-4 h-4 text-muted-foreground" />
+            ) : channel.type === 'stage' ? (
+              <Podcast className="w-4 h-4 text-muted-foreground" />
             ) : (
               <Hash className="w-4 h-4 text-muted-foreground" />
             )}

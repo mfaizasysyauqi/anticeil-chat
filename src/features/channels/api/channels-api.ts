@@ -51,6 +51,8 @@ export const channelsApi = {
     isPrivate?: boolean;
     categoryId?: string;
     categoryName?: string;
+    isAnnouncement?: boolean;
+    defaultAutoArchiveDuration?: number;
   }): Promise<ColonyChannel> {
     try {
       const targetColonyId = payload.colonyId || 'anticeil';
@@ -85,6 +87,8 @@ export const channelsApi = {
       isPrivate: payload.isPrivate || false,
       categoryId: payload.categoryId,
       categoryName: payload.categoryName,
+      isAnnouncement: payload.isAnnouncement || payload.type === 'announcement',
+      defaultAutoArchiveDuration: payload.defaultAutoArchiveDuration,
     };
     const stored = loadStoredChannels();
     const updated = [...stored.filter((c) => c.id !== newChannel.id), newChannel];

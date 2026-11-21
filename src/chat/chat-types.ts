@@ -21,7 +21,7 @@ export type {
   Colony,
 } from '@/lib/colony';
 
-export type ColonyChannelType = 'text' | 'voice' | 'forum' | 'kanban';
+export type ColonyChannelType = 'text' | 'voice' | 'forum' | 'kanban' | 'announcement' | 'stage';
 
 export interface ChannelPermissionOverwrite {
   id: string; // role ID or member ID (e.g. '@everyone', 'role-admin', 'user-123')
@@ -60,11 +60,24 @@ export type ColonyChannel = {
 
 export function resolveChannelType(channel?: Partial<ColonyChannel> | null): ColonyChannelType {
   if (!channel) return 'text';
+  if (channel.isAnnouncement) return 'announcement';
   const rawType = (channel.type || '').toLowerCase();
-  if (rawType === 'voice' || rawType === 'forum' || rawType === 'kanban') {
-    return rawType;
+  if (
+    rawType === 'voice' ||
+    rawType === 'forum' ||
+    rawType === 'kanban' ||
+    rawType === 'announcement' ||
+    rawType === 'stage'
+  ) {
+    return rawType as ColonyChannelType;
   }
   const identifier = ((channel.name || '') + ' ' + (channel.id || '')).toLowerCase();
+  if (identifier.includes('announcement') || identifier.includes('pengumuman') || identifier.includes('broadcast')) {
+    return 'announcement';
+  }
+  if (identifier.includes('stage') || identifier.includes('panggung')) {
+    return 'stage';
+  }
   if (identifier.includes('voice') || identifier.includes('suara')) {
     return 'voice';
   }

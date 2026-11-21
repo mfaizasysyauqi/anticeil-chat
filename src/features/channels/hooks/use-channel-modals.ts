@@ -77,6 +77,7 @@ export function useChannelModals({
         category: newChannelCategory,
         colonyId: activeColonyId === 'direct-messages' ? 'anticeil' : activeColonyId,
         type: newChannelType,
+        isAnnouncement: newChannelType === 'announcement',
         isPrivate: newChannelIsPrivate,
         categoryId: targetCategoryId || undefined,
         categoryName: categories.find((c) => c.id === targetCategoryId)?.name || undefined,

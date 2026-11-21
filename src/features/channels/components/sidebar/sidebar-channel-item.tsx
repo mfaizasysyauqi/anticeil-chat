@@ -8,6 +8,8 @@ import {
   MessagesSquare,
   Columns3,
   Hash,
+  Megaphone,
+  Podcast,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ColonyChannel } from '@/chat/chat-types';
@@ -254,7 +256,14 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
     );
   }
 
-  // Default: text
+  // Default: text, announcement, or stage
+  const ChannelIcon =
+    ch.type === 'announcement' || ch.isAnnouncement
+      ? Megaphone
+      : ch.type === 'stage'
+      ? Podcast
+      : Hash;
+
   return (
     <div key={ch.id} className="space-y-0.5">
       <div
@@ -269,7 +278,7 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
             : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
         )}
       >
-        <Hash
+        <ChannelIcon
           className={cn(
             'w-4 h-4 shrink-0 transition-colors',
             isActiveCh ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',

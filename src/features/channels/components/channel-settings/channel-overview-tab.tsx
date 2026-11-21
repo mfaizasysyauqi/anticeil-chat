@@ -4,6 +4,8 @@ import {
   Volume2,
   MessagesSquare,
   Columns3,
+  Megaphone,
+  Podcast,
   Bold,
   Italic,
   Underline,
@@ -127,12 +129,16 @@ export function ChannelOverviewTab({
         </label>
         <div className="relative flex items-center">
           <span className="absolute left-3.5 text-muted-foreground font-semibold">
-            {channel.type === 'voice' ? (
+            {channelType === 'voice' ? (
               <Volume2 className="w-4 h-4" />
-            ) : channel.type === 'forum' ? (
+            ) : channelType === 'forum' ? (
               <MessagesSquare className="w-4 h-4" />
-            ) : channel.type === 'kanban' ? (
+            ) : channelType === 'kanban' ? (
               <Columns3 className="w-4 h-4" />
+            ) : channelType === 'announcement' ? (
+              <Megaphone className="w-4 h-4" />
+            ) : channelType === 'stage' ? (
+              <Podcast className="w-4 h-4" />
             ) : (
               <Hash className="w-4 h-4" />
             )}
@@ -206,6 +212,12 @@ export function ChannelOverviewTab({
               </SelectItem>
               <SelectItem value="forum" className="text-xs">
                 💬 Forum Channel
+              </SelectItem>
+              <SelectItem value="announcement" className="text-xs">
+                📢 Announcement Channel
+              </SelectItem>
+              <SelectItem value="stage" className="text-xs">
+                🎙️ Stage Channel
               </SelectItem>
               <SelectItem value="kanban" className="text-xs">
                 📋 Kanban Board

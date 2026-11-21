@@ -1,5 +1,14 @@
 import React from 'react';
-import { Hash, Volume2, MessagesSquare, Smile, Lock, Columns3 } from 'lucide-react';
+import {
+  Hash,
+  Volume2,
+  MessagesSquare,
+  Smile,
+  Lock,
+  Columns3,
+  Megaphone,
+  Podcast,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
-import type { Colony } from '@/chat/chat-types';
+import type { Colony, ColonyChannelType } from '@/chat/chat-types';
 import type { ColonyCategory } from '../api/categories-api';
 
 export interface CreateChannelDialogProps {
@@ -29,8 +38,8 @@ export interface CreateChannelDialogProps {
   onOpenChange: (open: boolean) => void;
   activeColony: Colony | null;
   newChannelCategory: string;
-  newChannelType: 'text' | 'voice' | 'forum' | 'kanban';
-  setNewChannelType: (type: 'text' | 'voice' | 'forum' | 'kanban') => void;
+  newChannelType: ColonyChannelType;
+  setNewChannelType: (type: ColonyChannelType) => void;
   newChannelName: string;
   setNewChannelName: (name: string) => void;
   newChannelIsPrivate: boolean;
@@ -64,7 +73,7 @@ export function CreateChannelDialog({
       type: 'text' as const,
       icon: Hash,
       title: t('Text'),
-      description: t('Send messages, images, GIFs, emoji, and opinions'),
+      description: t('Send messages, images, GIFs, emoji, opinions, and puns'),
     },
     {
       type: 'voice' as const,
@@ -79,10 +88,16 @@ export function CreateChannelDialog({
       description: t('Create a space for organized discussions'),
     },
     {
-      type: 'kanban' as const,
-      icon: Columns3,
-      title: t('Kanban Board'),
-      description: t('Collaborate on tasks, sprints, cards, and team assignments'),
+      type: 'announcement' as const,
+      icon: Megaphone,
+      title: t('Announcement'),
+      description: t('Important updates for people in and out of the server'),
+    },
+    {
+      type: 'stage' as const,
+      icon: Podcast,
+      title: t('Stage'),
+      description: t('Host events, panels, and Q&As for an audience'),
     },
   ];
 
@@ -199,6 +214,8 @@ export function CreateChannelDialog({
                   {newChannelType === 'voice' && <Volume2 className="w-3.5 h-3.5" />}
                   {newChannelType === 'forum' && <MessagesSquare className="w-3.5 h-3.5" />}
                   {newChannelType === 'kanban' && <Columns3 className="w-3.5 h-3.5" />}
+                  {newChannelType === 'announcement' && <Megaphone className="w-3.5 h-3.5" />}
+                  {newChannelType === 'stage' && <Podcast className="w-3.5 h-3.5" />}
                 </div>
                 <Input
                   value={newChannelName}

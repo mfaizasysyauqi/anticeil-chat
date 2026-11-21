@@ -1,5 +1,5 @@
 import React from 'react';
-import { Hash, Volume2, MessagesSquare, Columns3 } from 'lucide-react';
+import { Hash, Volume2, MessagesSquare, Columns3, Megaphone, Podcast } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,13 +11,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { ColonyChannel } from '@/chat/chat-types';
+import type { ColonyChannel, ColonyChannelType } from '@/chat/chat-types';
 
 export interface EditChannelDialogProps {
   channelToEdit: ColonyChannel | null;
   onClose: () => void;
-  editChannelType: 'text' | 'voice' | 'forum' | 'kanban';
-  setEditChannelType: (type: 'text' | 'voice' | 'forum' | 'kanban') => void;
+  editChannelType: ColonyChannelType;
+  setEditChannelType: (type: ColonyChannelType) => void;
   editChannelName: string;
   setEditChannelName: (name: string) => void;
   editChannelDesc: string;
@@ -52,7 +52,7 @@ export function EditChannelDialog({
           <div className="grid gap-4 py-4">
             <div className="grid gap-1.5">
               <label className="text-xs font-semibold">{t('Tipe Channel')}</label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 <button
                   type="button"
                   onClick={() => setEditChannelType('text')}
@@ -94,16 +94,29 @@ export function EditChannelDialog({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEditChannelType('kanban')}
+                  onClick={() => setEditChannelType('announcement')}
                   className={cn(
                     'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
-                    editChannelType === 'kanban'
+                    editChannelType === 'announcement'
                       ? 'bg-primary/10 border-primary text-primary font-semibold'
                       : 'border-border/60 text-muted-foreground hover:bg-muted/50'
                   )}
                 >
-                  <Columns3 className="w-4 h-4" />
-                  <span>Kanban</span>
+                  <Megaphone className="w-4 h-4" />
+                  <span>Announce</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditChannelType('stage')}
+                  className={cn(
+                    'flex flex-col items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer',
+                    editChannelType === 'stage'
+                      ? 'bg-primary/10 border-primary text-primary font-semibold'
+                      : 'border-border/60 text-muted-foreground hover:bg-muted/50'
+                  )}
+                >
+                  <Podcast className="w-4 h-4" />
+                  <span>Stage</span>
                 </button>
               </div>
             </div>

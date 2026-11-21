@@ -163,8 +163,8 @@ export function ColonyChannelsSidebar({
         const defaultForumId = `cat_forum_${activeColony?.id || 'anticeil'}`;
         const defaultKanbanId = `cat_kanban_${activeColony?.id || 'anticeil'}`;
 
-        if (cat.id === defaultTextId && c.type === 'text') return true;
-        if (cat.id === defaultVoiceId && c.type === 'voice') return true;
+        if (cat.id === defaultTextId && (c.type === 'text' || c.type === 'announcement' || c.isAnnouncement)) return true;
+        if (cat.id === defaultVoiceId && (c.type === 'voice' || c.type === 'stage')) return true;
         if (cat.id === defaultForumId && c.type === 'forum') return true;
         if (cat.id === defaultKanbanId && c.type === 'kanban') return true;
       }
@@ -182,8 +182,8 @@ export function ColonyChannelsSidebar({
         const defaultForumId = `cat_forum_${activeColony?.id || 'anticeil'}`;
         const defaultKanbanId = `cat_kanban_${activeColony?.id || 'anticeil'}`;
 
-        if (cat.id === defaultTextId && c.type === 'text') return true;
-        if (cat.id === defaultVoiceId && c.type === 'voice') return true;
+        if (cat.id === defaultTextId && (c.type === 'text' || c.type === 'announcement' || c.isAnnouncement)) return true;
+        if (cat.id === defaultVoiceId && (c.type === 'voice' || c.type === 'stage')) return true;
         if (cat.id === defaultForumId && c.type === 'forum') return true;
         if (cat.id === defaultKanbanId && c.type === 'kanban') return true;
       }
