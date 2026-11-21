@@ -596,7 +596,14 @@ export function ChatChannelView({
                 }
                 clearChannelWatchCache();
                 if (typeof window !== 'undefined') {
-                  window.dispatchEvent(new CustomEvent('anticeil_activity_close', { detail: { channelId: channelToLeave } }));
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete('activity');
+                  window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+                  window.dispatchEvent(
+                    new CustomEvent('anticeil_activity_close', {
+                      detail: { channelId: channelToLeave },
+                    }),
+                  );
                 }
                 setActiveCallChannelId(null);
                 setSelectedActivityAppId(null);
@@ -604,7 +611,10 @@ export function ChatChannelView({
                 const defaultTextChannel = colonyChannels.find(
                   (c) => (c.type === 'text' || !c.type) && !c.isDirectMessage,
                 );
-                if (defaultTextChannel && (activeChannel?.type === 'voice' || !selectedActivityAppId)) {
+                if (
+                  defaultTextChannel &&
+                  (activeChannel?.type === 'voice' || !selectedActivityAppId)
+                ) {
                   setActiveChannelId(defaultTextChannel.id);
                 }
               }}

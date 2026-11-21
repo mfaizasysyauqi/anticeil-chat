@@ -58,6 +58,13 @@ export function useCallActivitySync({
         setActiveAppId(null);
         onToggleActivity?.(false);
         onActivityChange?.(null);
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          if (url.searchParams.has('activity')) {
+            url.searchParams.delete('activity');
+            window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+          }
+        }
         if (wasActive) {
           toast.info('Aktivitas dihentikan', {
             id: `activity-stop-${channelId}`,

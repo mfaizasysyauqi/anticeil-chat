@@ -62,6 +62,13 @@ export function useVoiceCallState({ socket }: UseVoiceCallStateOptions = {}) {
       } else if (data.action === 'ACTIVITY_STOP') {
         setSelectedActivityAppId(null);
         setIsActivityOpen(false);
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          if (url.searchParams.has('activity')) {
+            url.searchParams.delete('activity');
+            window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+          }
+        }
       }
     };
 
@@ -70,6 +77,23 @@ export function useVoiceCallState({ socket }: UseVoiceCallStateOptions = {}) {
       socket.off('COMMUNITY_CALL_ACTIVITY_EVENT', handleRemoteActivity);
     };
   }, [socket]);
+
+  // Global activity close event listener to purge URL and state
+  useEffect(() => {
+    const handleClose = () => {
+      setSelectedActivityAppId(null);
+      setIsActivityOpen(false);
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('activity')) {
+          url.searchParams.delete('activity');
+          window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+        }
+      }
+    };
+    window.addEventListener('anticeil_activity_close', handleClose);
+    return () => window.removeEventListener('anticeil_activity_close', handleClose);
+  }, []);
 
   return {
     activeCallChannelId,

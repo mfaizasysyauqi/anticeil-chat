@@ -145,7 +145,14 @@ export function useCallWebRTC({
   const handleStopActivity = () => {
     clearChannelWatchCache(channel.id);
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('anticeil_activity_close', { detail: { channelId: channel.id } }));
+      const url = new URL(window.location.href);
+      url.searchParams.delete('activity');
+      window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+      window.dispatchEvent(
+        new CustomEvent('anticeil_activity_close', {
+          detail: { channelId: channel.id },
+        }),
+      );
     }
     setActiveAppId(null);
     onToggleActivity?.(false);
