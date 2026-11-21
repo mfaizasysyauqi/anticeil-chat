@@ -218,27 +218,6 @@ export function ColonyRail({
           </Tooltip>
         </div>
 
-        {/* 1b. Button Expand Sidebar (Ditaruh di sidebar tepat di bawah logo Anticeil) */}
-        {isSidebarCollapsed && onToggleCollapseSidebar && (
-          <div className="relative group w-full flex items-center justify-center animate-in fade-in zoom-in-75 duration-150">
-            <Tooltip delayDuration={150}>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={onToggleCollapseSidebar}
-                  className="group relative size-10 rounded-[14px] bg-sidebar-accent hover:bg-sidebar-accent/80 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold text-muted-foreground hover:text-foreground shadow-xs"
-                  aria-label={t('Buka Sidebar (Ctrl+B)')}
-                >
-                  <PanelLeftOpen className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-                {t('Buka Sidebar')} <kbd className="ml-1 text-[10px] text-muted-foreground font-mono">Ctrl+B</kbd>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        )}
-
         {/* 2. Dedicated Button: Direct Messages & Home Activities (Pesan Langsung & Aktivitas) */}
         <div className="relative group w-full flex items-center justify-center">
           <span
@@ -278,6 +257,27 @@ export function ColonyRail({
             </TooltipContent>
           </Tooltip>
         </div>
+
+        {/* 3. Button Expand Sidebar (Ditaruh tepat di bawah tombol 4 kotak dan di atas button switch colony/teman) */}
+        {isSidebarCollapsed && onToggleCollapseSidebar && (
+          <div className="relative group w-full flex items-center justify-center animate-in fade-in zoom-in-75 duration-150">
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={onToggleCollapseSidebar}
+                  className="group relative size-10 rounded-[14px] bg-sidebar-accent hover:bg-sidebar-accent/80 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 font-bold text-muted-foreground hover:text-foreground shadow-xs"
+                  aria-label={t('Buka Sidebar (Ctrl+B)')}
+                >
+                  <PanelLeftOpen className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+                {t('Buka Sidebar')} <kbd className="ml-1 text-[10px] text-muted-foreground font-mono">Ctrl+B</kbd>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        )}
       </div>
 
       {/* Scrollable lower rail: Switcher, Add (+), then list */}
