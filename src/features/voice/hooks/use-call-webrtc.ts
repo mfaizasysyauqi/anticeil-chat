@@ -236,7 +236,6 @@ export function useCallWebRTC({
 
     let isMakingOffer = false;
     const sendOffer = async () => {
-      if (!isInitiator) return;
       try {
         if (pc.signalingState !== 'stable' || isMakingOffer) return;
         isMakingOffer = true;
@@ -244,10 +243,12 @@ export function useCallWebRTC({
           offerToReceiveAudio: true,
           offerToReceiveVideo: true,
         });
+        if (pc.signalingState !== 'stable') return;
         await pc.setLocalDescription(offer);
         socket?.emit('COMMUNITY_CALL_SIGNAL', {
           channelId: channel.id,
           targetSocketId,
+          fromSocketId: socket?.id,
           signal: offer,
         });
       } catch (err) {
@@ -264,17 +265,28 @@ export function useCallWebRTC({
         socket.emit('COMMUNITY_CALL_SIGNAL', {
           channelId: channel.id,
           targetSocketId,
+          fromSocketId: socket.id,
           signal: { candidate: event.candidate },
         });
       }
     };
 
     pc.ontrack = (event) => {
-      const remoteStream = event.streams[0] || new MediaStream([event.track]);
+      const track = event.track;
+      const remoteStream = event.streams[0] || new MediaStream([track]);
       setParticipants((prev) =>
         prev.map((p) => {
           if (p.socketId === targetSocketId) {
-            return { ...p, stream: remoteStream };
+            const existingTracks = p.stream
+              ? p.stream.getTracks().filter((t) => t.id !== track.id && t.kind !== track.kind)
+              : [];
+            const mergedStream = new MediaStream([...existingTracks, track]);
+            return {
+              ...p,
+              stream: mergedStream,
+              hasVideo: mergedStream.getVideoTracks().some((t) => t.readyState === 'live'),
+              hasAudio: mergedStream.getAudioTracks().some((t) => t.readyState === 'live'),
+            };
           }
           return p;
         }),
@@ -451,19 +463,26 @@ export function useCallWebRTC({
 
     const handleSignal = async (data: {
       fromSocketId: string;
+      targetSocketId?: string;
       fromUserId?: string;
       signal: any;
     }) => {
-      let pc = peerConnections.current[data.fromSocketId];
+      if (data.targetSocketId && socket?.id && data.targetSocketId !== socket.id) {
+        return;
+      }
+      const peerSocketId = data.fromSocketId;
+      if (!peerSocketId || peerSocketId === socket?.id) return;
+
+      let pc = peerConnections.current[peerSocketId];
       if (!pc) {
         const dummyPeer: CallParticipant = {
-          socketId: data.fromSocketId,
+          socketId: peerSocketId,
           userId: data.fromUserId || 'unknown',
           userName: 'Rekan Panggilan',
           hasVideo: true,
           hasAudio: true,
         };
-        pc = createPeerConnection(data.fromSocketId, dummyPeer, false, localMediaStream);
+        pc = createPeerConnection(peerSocketId, dummyPeer, false, localMediaStream);
       }
 
       if (data.signal?.type === 'offer') {
@@ -475,37 +494,38 @@ export function useCallWebRTC({
           }
         }
         await pc.setRemoteDescription(new RTCSessionDescription(data.signal));
-        if (iceCandidateQueues.current[data.fromSocketId]) {
-          for (const cand of iceCandidateQueues.current[data.fromSocketId]) {
+        if (iceCandidateQueues.current[peerSocketId]) {
+          for (const cand of iceCandidateQueues.current[peerSocketId]) {
             try {
               await pc.addIceCandidate(new RTCIceCandidate(cand));
             } catch (e) {}
           }
-          delete iceCandidateQueues.current[data.fromSocketId];
+          delete iceCandidateQueues.current[peerSocketId];
         }
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         socket.emit('COMMUNITY_CALL_SIGNAL', {
           channelId: channel.id,
-          targetSocketId: data.fromSocketId,
+          targetSocketId: peerSocketId,
+          fromSocketId: socket.id,
           signal: answer,
         });
       } else if (data.signal?.type === 'answer') {
         await pc.setRemoteDescription(new RTCSessionDescription(data.signal));
-        if (iceCandidateQueues.current[data.fromSocketId]) {
-          for (const cand of iceCandidateQueues.current[data.fromSocketId]) {
+        if (iceCandidateQueues.current[peerSocketId]) {
+          for (const cand of iceCandidateQueues.current[peerSocketId]) {
             try {
               await pc.addIceCandidate(new RTCIceCandidate(cand));
             } catch (e) {}
           }
-          delete iceCandidateQueues.current[data.fromSocketId];
+          delete iceCandidateQueues.current[peerSocketId];
         }
       } else if (data.signal?.candidate) {
         if (!pc.remoteDescription) {
-          if (!iceCandidateQueues.current[data.fromSocketId]) {
-            iceCandidateQueues.current[data.fromSocketId] = [];
+          if (!iceCandidateQueues.current[peerSocketId]) {
+            iceCandidateQueues.current[peerSocketId] = [];
           }
-          iceCandidateQueues.current[data.fromSocketId].push(data.signal.candidate);
+          iceCandidateQueues.current[peerSocketId].push(data.signal.candidate);
         } else {
           try {
             await pc.addIceCandidate(new RTCIceCandidate(data.signal.candidate));

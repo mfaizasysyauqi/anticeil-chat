@@ -56,9 +56,25 @@ export function useCallMediaToggles({
         });
         setLocalStream(camStream);
         setIsVideoOff(false);
+        for (const sId in peerConnections.current) {
+          const pc = peerConnections.current[sId];
+          camStream.getTracks().forEach((track) => pc.addTrack(track, camStream));
+          if (pc.signalingState === 'stable') {
+            pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true }).then((offer) => {
+              pc.setLocalDescription(offer);
+              socket?.emit('COMMUNITY_CALL_SIGNAL', {
+                channelId: channel.id,
+                targetSocketId: sId,
+                fromSocketId: socket?.id,
+                signal: offer,
+              });
+            }).catch(() => {});
+          }
+        }
         socket?.emit('COMMUNITY_CALL_TOGGLE_MEDIA', {
           channelId: channel.id,
           hasVideo: true,
+          hasAudio: true,
         });
         toast.success('Kamera diaktifkan');
       } catch (err) {
@@ -75,6 +91,7 @@ export function useCallMediaToggles({
         track.stop();
         localStream.removeTrack(track);
       });
+      setLocalStream(new MediaStream(localStream.getTracks()));
 
       for (const sId in peerConnections.current) {
         const pc = peerConnections.current[sId];
@@ -100,6 +117,7 @@ export function useCallMediaToggles({
       const newTrack = camStream.getVideoTracks()[0];
       if (newTrack) {
         localStream.addTrack(newTrack);
+        setLocalStream(new MediaStream(localStream.getTracks()));
         for (const sId in peerConnections.current) {
           const pc = peerConnections.current[sId];
           const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
@@ -108,11 +126,12 @@ export function useCallMediaToggles({
           } else {
             pc.addTrack(newTrack, localStream);
             if (pc.signalingState === 'stable') {
-              pc.createOffer().then((offer) => {
+              pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true }).then((offer) => {
                 pc.setLocalDescription(offer);
                 socket?.emit('COMMUNITY_CALL_SIGNAL', {
                   channelId: channel.id,
                   targetSocketId: sId,
+                  fromSocketId: socket?.id,
                   signal: offer,
                 });
               }).catch(() => {});
@@ -204,6 +223,7 @@ export function useCallMediaToggles({
               socket?.emit('COMMUNITY_CALL_SIGNAL', {
                 channelId: channel.id,
                 targetSocketId: sId,
+                fromSocketId: socket?.id,
                 signal: offer,
               });
             }

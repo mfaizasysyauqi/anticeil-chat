@@ -14,6 +14,7 @@ import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { toast } from 'sonner';
 
 import { useCallWebRTC } from '../hooks/use-call-webrtc';
+import { RemoteAudioView } from './video-views';
 import { CallParticipantGrid } from './call-participant-grid';
 import { CallControlsBar } from './call-controls-bar';
 import { ActivityLauncherDialog } from './activity-launcher-dialog';
@@ -399,6 +400,10 @@ export function CallStage({
         onCopyCallLink={handleExecuteCopyCallLink}
         currentActiveApp={currentActiveApp}
       />
+      {/* Continuous Audio Streams for Remote Participants */}
+      {participants.map((p) => (
+        <RemoteAudioView key={`call-audio-${p.socketId}`} stream={p.stream} isMuted={!p.hasAudio} />
+      ))}
     </div>
   );
 }

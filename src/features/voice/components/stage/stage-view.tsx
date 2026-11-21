@@ -54,7 +54,7 @@ import { api } from '@/lib/api';
 import { useTranslation } from '@/core/i18n';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
 import { useCallWebRTC } from '../../hooks/use-call-webrtc';
-import { LocalVideoView, RemoteVideoView, ScreenVideoView } from '../video-views';
+import { LocalVideoView, RemoteVideoView, RemoteAudioView, ScreenVideoView } from '../video-views';
 
 export interface StageViewProps {
   channel: ColonyChannel;
@@ -1205,6 +1205,11 @@ export function StageView({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Continuous Audio Streams for Stage Participants */}
+        {participants.map((p) => (
+          <RemoteAudioView key={`stage-audio-${p.socketId}`} stream={p.stream} isMuted={!p.hasAudio} />
+        ))}
       </div>
     </TooltipProvider>
   );

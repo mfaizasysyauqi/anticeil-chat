@@ -39,7 +39,7 @@ export interface RemoteVideoViewProps {
 
 export function RemoteVideoView({
   stream,
-  isMuted = false,
+  isMuted = true,
   className,
 }: RemoteVideoViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -47,31 +47,24 @@ export function RemoteVideoView({
   useEffect(() => {
     const video = videoRef.current;
     if (video && stream) {
-      video.srcObject = stream;
+      if (video.srcObject !== stream) {
+        video.srcObject = stream;
+      }
       video.play().catch((err) => {
         console.warn('Remote video play error:', err);
       });
 
-      const applyAudioOutputSettings = () => {
-        try {
-          const vs = loadVoiceSettings();
-          if (typeof (video as any).setSinkId === 'function') {
-            const sink =
-              vs.outputDeviceId && vs.outputDeviceId !== 'default' && !vs.outputDeviceId.startsWith('hw-')
-                ? vs.outputDeviceId
-                : '';
-            (video as any).setSinkId(sink).catch(console.warn);
-          }
-          if (typeof vs.outputVolume === 'number') {
-            video.volume = Math.max(0, Math.min(1, vs.outputVolume / 100));
-          }
-        } catch {}
+      const handleTrackChange = () => {
+        if (videoRef.current) {
+          videoRef.current.play().catch(() => {});
+        }
       };
+      stream.addEventListener('addtrack', handleTrackChange);
+      stream.addEventListener('removetrack', handleTrackChange);
 
-      applyAudioOutputSettings();
-      window.addEventListener('anticeil_voice_settings_changed', applyAudioOutputSettings);
       return () => {
-        window.removeEventListener('anticeil_voice_settings_changed', applyAudioOutputSettings);
+        stream.removeEventListener('addtrack', handleTrackChange);
+        stream.removeEventListener('removetrack', handleTrackChange);
       };
     }
   }, [stream]);
@@ -83,6 +76,69 @@ export function RemoteVideoView({
       playsInline
       muted={isMuted}
       className={cn('w-full h-full object-cover', className)}
+    />
+  );
+}
+
+export interface RemoteAudioViewProps {
+  stream: MediaStream | null | undefined;
+  isMuted?: boolean;
+}
+
+export function RemoteAudioView({ stream, isMuted = false }: RemoteAudioViewProps) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio && stream) {
+      if (audio.srcObject !== stream) {
+        audio.srcObject = stream;
+      }
+      audio.play().catch((err) => {
+        console.warn('Remote audio play error:', err);
+      });
+
+      const applyAudioOutputSettings = () => {
+        try {
+          const vs = loadVoiceSettings();
+          if (typeof (audio as any).setSinkId === 'function') {
+            const sink =
+              vs.outputDeviceId && vs.outputDeviceId !== 'default' && !vs.outputDeviceId.startsWith('hw-')
+                ? vs.outputDeviceId
+                : '';
+            (audio as any).setSinkId(sink).catch(console.warn);
+          }
+          if (typeof vs.outputVolume === 'number') {
+            audio.volume = Math.max(0, Math.min(1, vs.outputVolume / 100));
+          }
+        } catch {}
+      };
+
+      applyAudioOutputSettings();
+      window.addEventListener('anticeil_voice_settings_changed', applyAudioOutputSettings);
+
+      const handleTrackChange = () => {
+        audioRef.current?.play().catch(() => {});
+      };
+      stream.addEventListener('addtrack', handleTrackChange);
+      stream.addEventListener('removetrack', handleTrackChange);
+
+      return () => {
+        window.removeEventListener('anticeil_voice_settings_changed', applyAudioOutputSettings);
+        stream.removeEventListener('addtrack', handleTrackChange);
+        stream.removeEventListener('removetrack', handleTrackChange);
+      };
+    }
+  }, [stream]);
+
+  return (
+    <audio
+      ref={audioRef}
+      autoPlay
+      playsInline
+      muted={isMuted}
+      className="hidden"
+      aria-hidden="true"
     />
   );
 }
