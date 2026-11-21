@@ -169,6 +169,7 @@ body {
   --color-destructive-900: hsl(var(--destructive-900));
   --color-destructive-950: hsl(var(--destructive-950));
   --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: #ffffff;
 
   --color-warning-50: hsl(var(--warning-50));
   --color-warning-100: hsl(var(--warning-100));
@@ -559,6 +560,7 @@ body {
     --destructive-900: 342 75% 30%;
     --destructive-950: 341 84% 17%;
     --destructive: var(--destructive-500);
+    --destructive-foreground: 0 0% 100%;
 
     /* Warning — Amber */
     --warning-50: 48 100% 96%;

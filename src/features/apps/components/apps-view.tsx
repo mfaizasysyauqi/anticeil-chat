@@ -598,7 +598,7 @@ export function AppsView({
                             <button
                               type="button"
                               onClick={(e) => handleRemoveRecentApp(e, app.id)}
-                              className="absolute top-1 right-1 size-4 rounded-full bg-background/80 hover:bg-destructive hover:text-destructive-foreground text-muted-foreground items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 flex shadow-2xs"
+                              className="absolute top-1 right-1 size-4 rounded-full bg-background/90 hover:bg-red-600 hover:text-white text-muted-foreground border border-border/80 hover:border-red-600 items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20 flex shadow-2xs"
                               title={t('Hapus dari riwayat')}
                               aria-label={t('Hapus dari riwayat')}
                             >

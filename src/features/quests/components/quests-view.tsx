@@ -672,7 +672,7 @@ export function QuestsView({
                       size="sm"
                       variant="outline"
                       onClick={(e) => handleDeleteQuest(e, heroQuest.id)}
-                      className="h-11 px-3 text-xs font-semibold gap-1 cursor-pointer text-destructive hover:bg-destructive hover:text-destructive-foreground bg-card/60 backdrop-blur-xs"
+                      className="h-11 px-3 text-xs font-semibold gap-1 cursor-pointer bg-card/80 hover:bg-red-600 border border-border/70 hover:border-red-600 text-red-400 hover:text-white backdrop-blur-xs transition-colors shadow-xs"
                       title={t('Hapus Quest')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -810,10 +810,10 @@ export function QuestsView({
                             <button
                               type="button"
                               onClick={(e) => handleDeleteQuest(e, quest.id)}
-                              className="size-7 rounded-md bg-destructive/20 hover:bg-destructive hover:text-destructive-foreground text-destructive border border-destructive/30 flex items-center justify-center transition-colors cursor-pointer shadow-xs backdrop-blur-md"
+                              className="size-7 rounded-md bg-background/90 hover:bg-red-600 border border-border/80 hover:border-red-600 text-red-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm hover:shadow-red-950/40 backdrop-blur-md"
                               title={t('Hapus Quest')}
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
 

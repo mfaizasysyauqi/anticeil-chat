@@ -1671,7 +1671,7 @@ export function ShopView({
                         <button
                           type="button"
                           onClick={(e) => handleDeleteProduct(e, item.id)}
-                          className="size-6 rounded-md bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                          className="size-6 rounded-md bg-background/90 hover:bg-red-600 border border-border/80 hover:border-red-600 text-red-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs backdrop-blur-md"
                           title={t('Hapus Item ini dari Database Shop')}
                         >
                           <Trash2 className="w-3 h-3" />
@@ -1964,7 +1964,7 @@ export function ShopView({
                           handleDeleteProduct(e, activeModalItem.id);
                           setActiveModalItem(null);
                         }}
-                        className="h-9 px-3 cursor-pointer text-destructive hover:bg-destructive hover:text-destructive-foreground shrink-0"
+                        className="h-9 px-3 cursor-pointer text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 border border-border/80 bg-background/80 shrink-0 transition-colors"
                         title={t('Hapus Item')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
