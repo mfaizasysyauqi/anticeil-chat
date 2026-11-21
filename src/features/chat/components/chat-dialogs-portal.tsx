@@ -462,24 +462,26 @@ export function ChatDialogsPortal({
       />
 
       {/* Channel Settings Dialog */}
-      <ChannelSettingsDialog
-        categories={channelModals.categories}
-        channel={channelModals.channelForSettings}
-        activeColony={activeColony}
-        channels={channels}
-        members={members}
-        isOpen={!!channelModals.channelForSettings}
-        onClose={() => channelModals.setChannelForSettings(null)}
-        onUpdateChannel={channelModals.handleUpdateChannelSettings}
-        onDeleteChannel={(ch) => {
-          channelModals.setChannelForSettings(null);
-          channelModals.handleOpenDeleteChannel(ch, { stopPropagation: () => {} } as any);
-        }}
-        onOpenWebhooks={(chId) => {
-          setActiveChannelId(chId);
-          channelModals.setIsWebhookDialogOpen(true);
-        }}
-      />
+      {Boolean(channelModals.channelForSettings) && (
+        <ChannelSettingsDialog
+          categories={channelModals.categories}
+          channel={channelModals.channelForSettings}
+          activeColony={activeColony}
+          channels={channels}
+          members={members}
+          isOpen={!!channelModals.channelForSettings}
+          onClose={() => channelModals.setChannelForSettings(null)}
+          onUpdateChannel={channelModals.handleUpdateChannelSettings}
+          onDeleteChannel={(ch) => {
+            channelModals.setChannelForSettings(null);
+            channelModals.handleOpenDeleteChannel(ch, { stopPropagation: () => {} } as any);
+          }}
+          onOpenWebhooks={(chId) => {
+            setActiveChannelId(chId);
+            channelModals.setIsWebhookDialogOpen(true);
+          }}
+        />
+      )}
 
       {/* Floating PiP Call Stage */}
       {isCallPiP && (Boolean(activeCallChannelId) || Boolean(selectedActivityAppId)) && (() => {

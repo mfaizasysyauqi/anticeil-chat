@@ -115,8 +115,6 @@ export function ChannelSettingsDialog({
     }
   }, [channel?.id, isOpen]);
 
-  if (!channel) return null;
-
   const hasChanges =
     name !== baseline.name ||
     channelType !== baseline.channelType ||
@@ -139,6 +137,7 @@ export function ChannelSettingsDialog({
   };
 
   const handleSave = async () => {
+    if (!channel) return;
     if (!name.trim()) {
       toast.error(t('Nama channel tidak boleh kosong.'));
       return;
@@ -181,18 +180,18 @@ export function ChannelSettingsDialog({
     }
   };
 
-  const isAnnouncementCh = channel.type === 'announcement' || channel.isAnnouncement;
+  const isAnnouncementCh = Boolean(channel?.type === 'announcement' || channel?.isAnnouncement);
 
   const channelTypeLabel =
-    channel.type === 'voice'
+    channel?.type === 'voice'
       ? t('VOICE CHANNELS')
-      : channel.type === 'forum'
+      : channel?.type === 'forum'
       ? t('FORUM CHANNELS')
-      : channel.type === 'kanban'
+      : channel?.type === 'kanban'
       ? t('KANBAN BOARDS')
       : isAnnouncementCh
       ? t('ANNOUNCEMENT CHANNELS')
-      : channel.type === 'stage'
+      : channel?.type === 'stage'
       ? t('STAGE CHANNELS')
       : t('TEXT CHANNELS');
 
@@ -246,6 +245,8 @@ export function ChannelSettingsDialog({
     ],
     [channel?.name, channel?.type, channel?.isAnnouncement, isAnnouncementCh, channelTitle, t],
   );
+
+  if (!channel || !isOpen) return null;
 
   return (
     <TwoPaneSettingsDialog
