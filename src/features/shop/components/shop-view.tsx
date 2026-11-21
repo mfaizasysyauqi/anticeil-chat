@@ -137,6 +137,7 @@ export function ShopView({
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [expandedMoreSubmenu, setExpandedMoreSubmenu] = useState<'browse' | 'app_shops' | null>(null);
 
   // Responsive dynamic tabs container (collapse overflowing tabs to the left of More into More)
   const tabsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -1179,7 +1180,13 @@ export function ShopView({
 
           {/* 5. More Tab with Dropdown (Discord-style: displayed when tabs overflow) */}
           {hasOverflow && (
-            <DropdownMenu open={isMoreOpen} onOpenChange={setIsMoreOpen}>
+            <DropdownMenu
+              open={isMoreOpen}
+              onOpenChange={(open) => {
+                setIsMoreOpen(open);
+                if (!open) setExpandedMoreSubmenu(null);
+              }}
+            >
               <DropdownMenuTrigger asChild>
                 <TopBarTabButton data-tab-id="more" active={isMoreActive}>
                   <span>{t('More')}</span>
@@ -1191,94 +1198,116 @@ export function ShopView({
                   />
                 </TopBarTabButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-52 bg-card/95 backdrop-blur-md border-border text-foreground z-[160] p-1.5 space-y-0.5 shadow-2xl">
-                {/* A. Collapsed Browse Submenu */}
+              <DropdownMenuContent
+                align="start"
+                className="w-64 max-w-[calc(100vw-24px)] max-h-[80vh] overflow-y-auto custom-scrollbar bg-card/95 backdrop-blur-md border border-border text-foreground z-[160] p-1.5 space-y-1 shadow-2xl rounded-xl"
+              >
+                {/* A. Collapsed Browse Submenu (Accordion to prevent mobile flyout horizontal overflow) */}
                 {!showBrowse && (
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="flex items-center justify-between text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted">
+                  <div className="space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setExpandedMoreSubmenu((prev) => (prev === 'browse' ? null : 'browse'));
+                      }}
+                      className={cn(
+                        'w-full flex items-center justify-between text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted transition-colors text-left',
+                        (activeTab === 'browse' || activeTab === 'all') && 'text-primary font-bold bg-primary/10'
+                      )}
+                    >
                       <span>{t('Browse')}</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="w-52 bg-card/95 backdrop-blur-md border-border text-foreground z-[170] p-1.5 space-y-0.5 shadow-2xl">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setActiveTab('browse');
-                          setBrowseCategory('avatar_decoration');
-                          setSelectedTypes(['avatar_decoration']);
-                          setIsMoreOpen(false);
-                        }}
-                        className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
-                      >
-                        {t('Avatar Decorations')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setActiveTab('browse');
-                          setBrowseCategory('nameplate');
-                          setSelectedTypes(['nameplate']);
-                          setIsMoreOpen(false);
-                        }}
-                        className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
-                      >
-                        {t('Nameplates')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setActiveTab('browse');
-                          setBrowseCategory('profile_effect');
-                          setSelectedTypes(['profile_effect']);
-                          setIsMoreOpen(false);
-                        }}
-                        className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
-                      >
-                        {t('Profile Effects')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setActiveTab('browse');
-                          setBrowseCategory('avatar_decoration');
-                          setSelectedTypes(['avatar_decoration']);
-                          setIsMoreOpen(false);
-                        }}
-                        className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
-                      >
-                        {t('Profile Frames')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setActiveTab('browse');
-                          setBrowseCategory('bundle');
-                          setSelectedTypes(['bundle']);
-                          setIsMoreOpen(false);
-                        }}
-                        className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
-                      >
-                        {t('Bundles')}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-border/60 my-1" />
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setActiveTab('browse');
-                          setBrowseCategory('collabs');
-                          setShowOnlyFeatured(true);
-                          setIsMoreOpen(false);
-                        }}
-                        className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
-                      >
-                        {t('Collabs')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setActiveTab('all');
-                          setBrowseCategory(null);
-                          setSelectedTypes([]);
-                          setIsMoreOpen(false);
-                        }}
-                        className="text-xs cursor-pointer py-1.5 px-2.5 font-semibold text-primary rounded-md hover:bg-primary/10"
-                      >
-                        {t('Shop All')}
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
+                      <ChevronDown
+                        className={cn(
+                          'w-3.5 h-3.5 transition-transform duration-200 opacity-70',
+                          expandedMoreSubmenu === 'browse' && 'rotate-180'
+                        )}
+                      />
+                    </button>
+                    {expandedMoreSubmenu === 'browse' && (
+                      <div className="pl-2 pr-1 py-1 space-y-0.5 border-l-2 border-primary/30 ml-2 my-0.5">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setActiveTab('browse');
+                            setBrowseCategory('avatar_decoration');
+                            setSelectedTypes(['avatar_decoration']);
+                            setIsMoreOpen(false);
+                          }}
+                          className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+                        >
+                          {t('Avatar Decorations')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setActiveTab('browse');
+                            setBrowseCategory('nameplate');
+                            setSelectedTypes(['nameplate']);
+                            setIsMoreOpen(false);
+                          }}
+                          className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+                        >
+                          {t('Nameplates')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setActiveTab('browse');
+                            setBrowseCategory('profile_effect');
+                            setSelectedTypes(['profile_effect']);
+                            setIsMoreOpen(false);
+                          }}
+                          className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+                        >
+                          {t('Profile Effects')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setActiveTab('browse');
+                            setBrowseCategory('avatar_decoration');
+                            setSelectedTypes(['avatar_decoration']);
+                            setIsMoreOpen(false);
+                          }}
+                          className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+                        >
+                          {t('Profile Frames')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setActiveTab('browse');
+                            setBrowseCategory('bundle');
+                            setSelectedTypes(['bundle']);
+                            setIsMoreOpen(false);
+                          }}
+                          className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+                        >
+                          {t('Bundles')}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-border/60 my-1" />
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setActiveTab('browse');
+                            setBrowseCategory('collabs');
+                            setShowOnlyFeatured(true);
+                            setIsMoreOpen(false);
+                          }}
+                          className="text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted"
+                        >
+                          {t('Collabs')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setActiveTab('all');
+                            setBrowseCategory(null);
+                            setSelectedTypes([]);
+                            setIsMoreOpen(false);
+                          }}
+                          className="text-xs cursor-pointer py-1.5 px-2.5 font-semibold text-primary rounded-md hover:bg-primary/10"
+                        >
+                          {t('Shop All')}
+                        </DropdownMenuItem>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {/* B. Collapsed Dew Shop */}
@@ -1302,40 +1331,59 @@ export function ShopView({
                   </DropdownMenuItem>
                 )}
 
-                {/* C. Collapsed App Shops Submenu (1:1 with Discord Game Shops > submenu) */}
+                {/* C. Collapsed App Shops Submenu (Accordion to prevent mobile flyout horizontal overflow) */}
                 {!showAppShops && (
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="flex items-center justify-between text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted">
+                  <div className="space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setExpandedMoreSubmenu((prev) => (prev === 'app_shops' ? null : 'app_shops'));
+                      }}
+                      className={cn(
+                        'w-full flex items-center justify-between text-xs cursor-pointer py-1.5 px-2.5 font-medium rounded-md hover:bg-muted transition-colors text-left',
+                        activeTab === 'app_shops' && 'text-primary font-bold bg-primary/10'
+                      )}
+                    >
                       <span>{selectedApp ? `${selectedApp}` : t('App Shops')}</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="w-60 bg-card/95 backdrop-blur-md border-border text-foreground z-[170] p-1.5 space-y-1 shadow-2xl">
-                      <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">
-                        {t('Aplikasi & Aktivitas Anticeil')}
-                      </DropdownMenuLabel>
-                      {APP_SHOPS_ITEMS.map((app) => (
-                        <DropdownMenuItem
-                          key={app.id}
-                          onClick={() => {
-                            setActiveTab('app_shops');
-                            setSelectedApp(app.name);
-                            setSearchQuery(app.query);
-                            setIsMoreOpen(false);
-                          }}
-                          className="flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md cursor-pointer hover:bg-muted font-medium transition-colors"
-                        >
-                          <div className="size-6 rounded-md bg-muted/60 border border-border/80 flex items-center justify-center text-xs shrink-0 shadow-xs">
-                            {app.icon}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate text-xs font-semibold text-foreground">{app.name}</div>
-                          </div>
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
-                            {app.tag}
-                          </span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
+                      <ChevronDown
+                        className={cn(
+                          'w-3.5 h-3.5 transition-transform duration-200 opacity-70',
+                          expandedMoreSubmenu === 'app_shops' && 'rotate-180'
+                        )}
+                      />
+                    </button>
+                    {expandedMoreSubmenu === 'app_shops' && (
+                      <div className="pl-2 pr-1 py-1 space-y-0.5 border-l-2 border-primary/30 ml-2 my-0.5">
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">
+                          {t('Aplikasi & Aktivitas Anticeil')}
+                        </div>
+                        {APP_SHOPS_ITEMS.map((app) => (
+                          <DropdownMenuItem
+                            key={app.id}
+                            onClick={() => {
+                              setActiveTab('app_shops');
+                              setSelectedApp(app.name);
+                              setSearchQuery(app.query);
+                              setIsMoreOpen(false);
+                            }}
+                            className="flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md cursor-pointer hover:bg-muted font-medium transition-colors"
+                          >
+                            <div className="size-6 rounded-md bg-muted/60 border border-border/80 flex items-center justify-center text-xs shrink-0 shadow-xs">
+                              {app.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate text-xs font-semibold text-foreground">{app.name}</div>
+                            </div>
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30 shrink-0">
+                              {app.tag}
+                            </span>
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
