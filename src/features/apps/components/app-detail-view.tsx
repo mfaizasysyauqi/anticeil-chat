@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  ArrowLeft,
+  X,
   Play,
   Radio,
   Share2,
@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { YouTubeBadgeIcon } from '@/features/voice/components/call-stage';
 import {
   LAYOUT_PAGE_SPACING,
   CHANNEL_HORIZONTAL_PADDING,
@@ -99,23 +100,27 @@ export function AppDetailView({
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
       {/* ── App Bar Header (100% Symmetrical with LAYOUT_PAGE_SPACING) ── */}
       <div className={cn('sticky top-0 z-30 h-12 border-b border-sidebar-border bg-background/95 backdrop-blur-md shrink-0 w-full flex items-center justify-between gap-3 overflow-hidden', horizontalPadding)}>
+        {/* Left: App Icon + App Title */}
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            onClick={onBack}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/60 cursor-pointer shrink-0"
-            title="Kembali ke Katalog Aktivitas"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+          {app.id === 'watch-together' || app.id === 'youtube' ? (
+            <YouTubeBadgeIcon className="w-5 h-3.5 shrink-0" />
+          ) : (
+            <div
+              className={cn(
+                'w-6 h-6 rounded-md flex items-center justify-center text-white shrink-0 shadow-xs',
+                app.iconBg || 'bg-primary'
+              )}
+            >
+              <AppIcon className="w-3.5 h-3.5" />
+            </div>
+          )}
 
           <span className="text-sm font-bold text-foreground truncate tracking-wide">
             {app.title}
           </span>
         </div>
 
+        {/* Right: Actions + Close X */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Button
             size="sm"
@@ -158,6 +163,17 @@ export function AppDetailView({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            onClick={onBack}
+            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/60 cursor-pointer shrink-0 transition-colors"
+            title="Tutup Detail"
+          >
+            <X className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
