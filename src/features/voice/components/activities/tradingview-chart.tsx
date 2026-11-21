@@ -1,34 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
-import {
-  TrendingUp,
-  DollarSign,
-  ChevronDown,
-  Check,
-  Radio,
-  Users,
-  Maximize2,
-  Minimize2,
-  Sparkles,
-  ArrowUpRight,
-  ArrowDownRight,
-  X,
-  PlusCircle,
-  RotateCcw,
-} from 'lucide-react';
+import { DollarSign, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useTranslation } from '@/core/i18n';
 import type { ColonyChannel } from '@/chat/chat-types';
 
 export interface TradingViewChartProps {
@@ -86,8 +62,6 @@ export function TradingViewChart({
   currentUser: _currentUser,
   participants = [],
 }: TradingViewChartProps) {
-  const { t } = useTranslation();
-
   // State
   const [selectedAsset, setSelectedAsset] = useState<MarketAsset>(MARKET_ASSETS[0]);
   const [timeframe, setTimeframe] = useState<Timeframe>('1D');
@@ -112,22 +86,7 @@ export function TradingViewChart({
     const widgetWrapper = document.createElement('div');
     widgetWrapper.className = 'tradingview-widget-container__widget';
     widgetWrapper.style.width = '100%';
-    widgetWrapper.style.height = 'calc(100% - 24px)';
-
-    const copyrightWrapper = document.createElement('div');
-    copyrightWrapper.className = 'tradingview-widget-copyright';
-    copyrightWrapper.style.height = '24px';
-    copyrightWrapper.style.display = 'flex';
-    copyrightWrapper.style.alignItems = 'center';
-    copyrightWrapper.style.paddingLeft = '8px';
-    copyrightWrapper.style.fontSize = '11px';
-    copyrightWrapper.style.color = '#787b86';
-    copyrightWrapper.innerHTML = `
-      <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank" style="color: #2962ff; text-decoration: none; font-weight: 600;">
-        TradingView
-      </a>
-      <span style="margin-left: 6px; color: #787b86;">Real-time Live Market Data Official</span>
-    `;
+    widgetWrapper.style.height = '100%';
 
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
@@ -158,7 +117,6 @@ export function TradingViewChart({
     });
 
     container.appendChild(widgetWrapper);
-    container.appendChild(copyrightWrapper);
     container.appendChild(script);
 
     return () => {
@@ -238,135 +196,34 @@ export function TradingViewChart({
 
   return (
     <div className={cn(
-      'flex flex-col bg-[#131722] text-[#d1d4dc] border border-[#2a2e39] overflow-hidden select-none',
+      'relative w-full h-full bg-[#131722] text-[#d1d4dc] border border-[#2a2e39] overflow-hidden select-none',
       isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'w-full h-full rounded-xl'
     )}>
-      {/* ── Top Bar Controls ──────────────────────────────────────────────── */}
-      <div className="h-12 border-b border-[#2a2e39] bg-[#1a1e29] px-3 sm:px-4 flex items-center justify-between gap-2 shrink-0 overflow-x-auto no-scrollbar">
-        {/* Left: Branding & Asset Selector */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div className="flex items-center gap-1.5 font-bold text-white text-xs sm:text-sm tracking-tight shrink-0">
-            <TrendingUp className="w-4 h-4 text-blue-500" />
-            <span className="hidden sm:inline">TradingView</span>
-            <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-400 border-blue-500/30 px-1.5 py-0 font-bold uppercase tracking-wider">
-              REAL-TIME
-            </Badge>
-          </div>
+      {/* ── Main TradingView Chart Container (Edge-to-Edge) ────────────────── */}
+      <div
+        ref={containerRef}
+        className="tradingview-widget-container w-full h-full"
+        style={{ height: '100%', width: '100%' }}
+      />
 
-          <div className="h-4 w-px bg-[#2a2e39] hidden sm:block shrink-0" />
+      {/* Floating Paper Trading Toggle Pill */}
+      <button
+        type="button"
+        onClick={() => setShowPaperTrading(!showPaperTrading)}
+        className="absolute bottom-3 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1e222d]/90 hover:bg-[#2a2e39] border border-[#363a45] text-xs font-semibold text-white shadow-xl backdrop-blur-sm transition-all cursor-pointer opacity-80 hover:opacity-100"
+        title="Simulasi Virtual Trading"
+      >
+        <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+        <span className="hidden sm:inline">Paper Trading</span>
+        {positions.length > 0 && (
+          <Badge variant="default" className="text-[9px] px-1.5 py-0 h-4 bg-emerald-600 font-mono">
+            {positions.length}
+          </Badge>
+        )}
+      </button>
 
-          {/* Quick Asset Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#2a2e39] hover:bg-[#2a2e39]/80 border border-[#363a45] text-xs font-bold text-white transition-colors cursor-pointer shrink-0"
-              >
-                <span>{selectedAsset.symbol}</span>
-                <span className="text-[10px] text-[#787b86] hidden md:inline">{selectedAsset.name}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-[#787b86]" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 bg-[#1e222d] border-[#2a2e39] text-white">
-              <DropdownMenuLabel className="text-[10px] text-[#787b86] uppercase tracking-wider">
-                Pasar Kripto (Binance Real-Time)
-              </DropdownMenuLabel>
-              {MARKET_ASSETS.filter((a) => a.category === 'crypto').map((a) => (
-                <DropdownMenuItem
-                  key={a.symbol}
-                  onClick={() => handleSelectAsset(a)}
-                  className="flex items-center justify-between text-xs cursor-pointer hover:bg-[#2a2e39]"
-                >
-                  <span className="font-semibold">{a.symbol}</span>
-                  {selectedAsset.symbol === a.symbol && <Check className="w-3.5 h-3.5 text-blue-400" />}
-                </DropdownMenuItem>
-              ))}
-
-              <DropdownMenuSeparator className="bg-[#2a2e39]" />
-              <DropdownMenuLabel className="text-[10px] text-[#787b86] uppercase tracking-wider">
-                Saham & Komoditas (NASDAQ / Gold)
-              </DropdownMenuLabel>
-              {MARKET_ASSETS.filter((a) => a.category !== 'crypto').map((a) => (
-                <DropdownMenuItem
-                  key={a.symbol}
-                  onClick={() => handleSelectAsset(a)}
-                  className="flex items-center justify-between text-xs cursor-pointer hover:bg-[#2a2e39]"
-                >
-                  <span className="font-semibold">{a.symbol}</span>
-                  {selectedAsset.symbol === a.symbol && <Check className="w-3.5 h-3.5 text-blue-400" />}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Timeframe Buttons */}
-          <div className="hidden md:flex items-center gap-1 bg-[#131722] p-0.5 rounded-lg border border-[#2a2e39] shrink-0">
-            {(['1m', '5m', '15m', '1h', '4h', '1D'] as Timeframe[]).map((tf) => (
-              <button
-                key={tf}
-                type="button"
-                onClick={() => setTimeframe(tf)}
-                className={cn(
-                  'px-2 py-0.5 text-[11px] font-semibold rounded-md transition-colors cursor-pointer',
-                  timeframe === tf
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-[#787b86] hover:text-white hover:bg-[#2a2e39]'
-                )}
-              >
-                {tf}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: Paper Trading Toggle & Fullscreen */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Peer Presence */}
-          {participants.length > 0 && (
-            <div className="hidden lg:flex items-center gap-1 text-[11px] text-[#787b86] px-2 py-0.5 rounded-md bg-[#131722] border border-[#2a2e39]">
-              <Users className="w-3 h-3 text-emerald-400" />
-              <span>{participants.length} di sesi</span>
-            </div>
-          )}
-
-          {/* Paper Trading Toggle */}
-          <button
-            type="button"
-            onClick={() => setShowPaperTrading(!showPaperTrading)}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border',
-              showPaperTrading
-                ? 'bg-blue-600 border-blue-500 text-white shadow-xs'
-                : 'bg-[#2a2e39] border-[#363a45] text-white hover:bg-[#2a2e39]/80'
-            )}
-            title="Buka simulasi trading virtual"
-          >
-            <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Paper Trading</span>
-          </button>
-
-          {/* Fullscreen Button */}
-          <button
-            type="button"
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-1.5 rounded-lg bg-[#2a2e39]/60 hover:bg-[#2a2e39] text-[#787b86] hover:text-white border border-[#363a45] transition-colors cursor-pointer"
-            title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}
-          >
-            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Main TradingView Chart Container ───────────────────────────────── */}
-      <div className="flex-1 min-h-0 relative w-full h-full bg-[#131722]">
-        <div
-          ref={containerRef}
-          className="tradingview-widget-container w-full h-full"
-          style={{ height: '100%', width: '100%' }}
-        />
-
-        {/* Paper Trading Dock / Bottom Drawer */}
-        {showPaperTrading && (
+      {/* Paper Trading Dock / Bottom Drawer */}
+      {showPaperTrading && (
           <div className="absolute bottom-6 left-4 right-4 max-w-2xl mx-auto rounded-xl border border-[#363a45] bg-[#1e222d]/95 backdrop-blur-md p-3.5 shadow-2xl z-20 space-y-3">
             <div className="flex items-center justify-between border-b border-[#2a2e39] pb-2">
               <div className="flex items-center gap-2">
@@ -439,7 +296,6 @@ export function TradingViewChart({
             )}
           </div>
         )}
-      </div>
     </div>
   );
 }
