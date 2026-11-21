@@ -76,11 +76,28 @@ export function YouTubeWatchTogether({
   const isMeHost = !hostUserId || hostUserId === currentUser?.id || hostUserId === 'me';
   const canEdit = allowEveryoneEdit || isMeHost;
 
-  const handleSelectVideoRef = useRef<(video: YouTubeVideoItem) => void>(() => {});
-
-  const [ytPlaylist, setYtPlaylist] = useState<YouTubeVideoItem[]>([]);
-  const ytPlaylistRef = useRef<Array<any>>([]);
+  const [ytPlaylist, setYtPlaylist] = useState<YouTubeVideoItem[]>(() => cachedState?.playlist || []);
+  const ytPlaylistRef = useRef<YouTubeVideoItem[]>(ytPlaylist);
   ytPlaylistRef.current = ytPlaylist;
+
+  const isMeHostRef = useRef(isMeHost);
+  isMeHostRef.current = isMeHost;
+  const canEditRef = useRef(canEdit);
+  canEditRef.current = canEdit;
+  const activeVideoIdRef = useRef(activeVideoId);
+  activeVideoIdRef.current = activeVideoId;
+  const participantsRef = useRef(participants);
+  participantsRef.current = participants;
+  const hostUserIdRef = useRef(hostUserId);
+  hostUserIdRef.current = hostUserId;
+  const hostUserNameRef = useRef(hostUserName);
+  hostUserNameRef.current = hostUserName;
+  const hostUserAvatarRef = useRef(hostUserAvatar);
+  hostUserAvatarRef.current = hostUserAvatar;
+  const allowEveryoneEditRef = useRef(allowEveryoneEdit);
+  allowEveryoneEditRef.current = allowEveryoneEdit;
+
+  const handleSelectVideoRef = useRef<(video: YouTubeVideoItem) => void>(() => {});
 
   const {
     playerRef,
@@ -114,14 +131,23 @@ export function YouTubeWatchTogether({
     socket,
     currentUser,
     onVideoEnded: () => {
-      if (isMeHostRef.current && ytPlaylistRef.current.length > 0) {
-        const currentIndex = ytPlaylistRef.current.findIndex(
-          (v) => v.id === activeVideoIdRef.current,
-        );
-        if (currentIndex !== -1 && currentIndex < ytPlaylistRef.current.length - 1) {
-          const nextVideo = ytPlaylistRef.current[currentIndex + 1];
-          handleSelectVideoRef.current?.(nextVideo);
-        }
+      const playlist = ytPlaylistRef.current;
+      const currentId = activeVideoIdRef.current;
+      if (!playlist || playlist.length === 0) return;
+
+      const isSolo = !participantsRef.current || participantsRef.current.length <= 1;
+      const isAllowedToAutoPlay = isMeHostRef.current || canEditRef.current || isSolo;
+      if (!isAllowedToAutoPlay) return;
+
+      const currentIndex = playlist.findIndex((v) => v.id === currentId);
+      if (currentIndex !== -1 && currentIndex < playlist.length - 1) {
+        const nextVideo = playlist[currentIndex + 1];
+        toast.info(`Memutar video berikutnya di playlist: ${nextVideo.title}`);
+        handleSelectVideoRef.current?.(nextVideo);
+      } else if (currentIndex === -1 && playlist.length > 0) {
+        const nextVideo = playlist[0];
+        toast.info(`Memutar video di playlist: ${nextVideo.title}`);
+        handleSelectVideoRef.current?.(nextVideo);
       }
     },
     getUnmountSnapshot: () => ({
@@ -133,19 +159,6 @@ export function YouTubeWatchTogether({
     }),
   });
 
-  // Sync state refs to keep socket event handlers stable
-  const isMeHostRef = useRef(isMeHost);
-  isMeHostRef.current = isMeHost;
-  const activeVideoIdRef = useRef(activeVideoId);
-  activeVideoIdRef.current = activeVideoId;
-  const hostUserIdRef = useRef(hostUserId);
-  hostUserIdRef.current = hostUserId;
-  const hostUserNameRef = useRef(hostUserName);
-  hostUserNameRef.current = hostUserName;
-  const hostUserAvatarRef = useRef(hostUserAvatar);
-  hostUserAvatarRef.current = hostUserAvatar;
-  const allowEveryoneEditRef = useRef(allowEveryoneEdit);
-  allowEveryoneEditRef.current = allowEveryoneEdit;
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
 
@@ -227,10 +240,11 @@ export function YouTubeWatchTogether({
     setActiveVideoId(video.id);
     setIsExpandedVideo(false);
 
-    let nextPlaylist = ytPlaylist;
-    if (!ytPlaylist.some((item) => item.id === video.id)) {
+    const currentPl = ytPlaylistRef.current;
+    let nextPlaylist = currentPl;
+    if (!currentPl.some((item) => item.id === video.id)) {
       nextPlaylist = [
-        ...ytPlaylist,
+        ...currentPl,
         {
           ...video,
           addedBy: currentUserName || 'You',
@@ -259,6 +273,10 @@ export function YouTubeWatchTogether({
       payload: { playlist: nextPlaylist },
     });
   };
+
+  useEffect(() => {
+    handleSelectVideoRef.current = handleSelectVideo;
+  });
 
   const handleAddToQueue = (e: React.MouseEvent, video: YouTubeVideoItem) => {
     e.stopPropagation();

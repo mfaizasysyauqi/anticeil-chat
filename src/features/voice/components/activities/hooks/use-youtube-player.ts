@@ -77,6 +77,9 @@ export function useYouTubePlayer({
   const lastSeekTimestampRef = useRef<number>(0);
   const lastKnownTimeRef = useRef<number>(cachedState?.currentTime || 0);
   const initialSeekTimeRef = useRef<number>(cachedState?.currentTime || 0);
+  const onVideoEndedRef = useRef(onVideoEnded);
+  onVideoEndedRef.current = onVideoEnded;
+  const hasEndedTriggeredRef = useRef(false);
 
   // Load YouTube IFrame API script once
   useEffect(() => {
@@ -99,6 +102,11 @@ export function useYouTubePlayer({
     if (state === 1) {
       setIsPlaying(true);
       setNeedsUserGesture(false);
+      const currTime = playerRef.current?.getCurrentTime?.() || 0;
+      const durTime = playerRef.current?.getDuration?.() || 0;
+      if (durTime > 0 && currTime < durTime - 2) {
+        hasEndedTriggeredRef.current = false;
+      }
       // Only broadcast if not in ignore window, user has permission, and local interaction
       if (Date.now() >= ignoreLocalStateChangeUntilRef.current && canEdit) {
         const time = playerRef.current?.getCurrentTime?.() || 0;
@@ -127,12 +135,16 @@ export function useYouTubePlayer({
       }
     } else if (state === 0) {
       setIsPlaying(false);
-      onVideoEnded?.();
+      if (!hasEndedTriggeredRef.current) {
+        hasEndedTriggeredRef.current = true;
+        onVideoEndedRef.current?.();
+      }
     }
   };
 
   // Initialize or update YouTube Player when activeVideoId changes
   useEffect(() => {
+    hasEndedTriggeredRef.current = false;
     if (!activeVideoId) {
       if (playerRef.current) {
         try {
@@ -328,10 +340,28 @@ export function useYouTubePlayer({
       try {
         const curr = playerRef.current.getCurrentTime() || 0;
         const dur = playerRef.current.getDuration() || 0;
+        const playerState = playerRef.current.getPlayerState?.();
         if (dur > 0) setDuration(dur);
 
         if (!isScrubbing) {
           setCurrentTime(curr);
+        }
+
+        // Auto-detect video finished if YouTube API missed state 0 (ended)
+        if (
+          !hasEndedTriggeredRef.current &&
+          dur > 2 &&
+          curr > 0 &&
+          (playerState === 0 || curr >= dur - 0.5)
+        ) {
+          hasEndedTriggeredRef.current = true;
+          setIsPlaying(false);
+          onVideoEndedRef.current?.();
+          return;
+        }
+
+        if (curr < dur - 2) {
+          hasEndedTriggeredRef.current = false;
         }
 
         const last = lastKnownTimeRef.current;
