@@ -30,6 +30,7 @@ import { appsApi } from '../api/apps-api';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 import { ActivityDestinationDialog } from './activity-destination-dialog';
 import { StandaloneAppStage } from './standalone-app-stage';
+import { AppDetailView } from './app-detail-view';
 
 export interface AppsViewProps {
   channels: ColonyChannel[];
@@ -84,12 +85,10 @@ const CATEGORY_TABS = [
 
 function ActivityCard({
   app,
-  onLaunchStandalone,
-  onOpenSendToChannel,
+  onOpenDetail,
 }: {
   app: VoiceAppDefinition;
-  onLaunchStandalone: (app: VoiceAppDefinition) => void;
-  onOpenSendToChannel: (app: VoiceAppDefinition) => void;
+  onOpenDetail: (app: VoiceAppDefinition) => void;
 }) {
   const AppIcon = app.icon || Gamepad2;
 
@@ -103,19 +102,20 @@ function ActivityCard({
   return (
     <div
       key={app.id}
-      className="rounded-xl border border-border bg-card hover:border-primary/50 transition-all flex flex-col justify-between overflow-hidden shadow-xs group"
+      onClick={() => onOpenDetail(app)}
+      className="rounded-xl border border-border bg-card hover:border-primary/60 hover:shadow-lg transition-all flex flex-col justify-between overflow-hidden shadow-xs group cursor-pointer"
     >
       {/* Banner / Header */}
       <div
         className={cn(
-          'h-20 sm:h-24 p-2.5 sm:p-3 relative flex items-start justify-between bg-gradient-to-br',
+          'h-20 sm:h-24 p-2.5 sm:p-3 relative flex items-start justify-between bg-gradient-to-br transition-all group-hover:brightness-105',
           app.bannerGradient || 'from-muted to-card'
         )}
       >
         <div className="flex items-center gap-2 sm:gap-2.5 z-10 min-w-0">
           <div
             className={cn(
-              'size-8 sm:size-9 rounded-lg flex items-center justify-center shadow-md shrink-0',
+              'size-8 sm:size-9 rounded-lg flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform',
               app.iconBg || 'bg-primary',
               app.iconColor || 'text-white'
             )}
@@ -150,31 +150,9 @@ function ActivityCard({
             {categoryLabel}
           </span>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onOpenSendToChannel(app)}
-              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground border-border hover:bg-muted cursor-pointer"
-              title="Kirim atau buka di saluran / DM"
-            >
-              <Radio className="w-3 h-3 text-primary" />
-            </Button>
-
-            <Button
-              size="sm"
-              variant="custom"
-              onClick={() => onLaunchStandalone(app)}
-              className={cn(
-                'h-7 px-2.5 sm:px-3 text-xs font-semibold gap-1 sm:gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0',
-                app.buttonClass || 'bg-primary hover:bg-primary/80 active:bg-primary/70 text-primary-foreground'
-              )}
-              title="Buka langsung secara Standalone"
-            >
-              <Play className="w-3 h-3 fill-current shrink-0" />
-              <span>Luncurkan</span>
-            </Button>
-          </div>
+          <span className="text-[11px] font-medium text-primary group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-0.5">
+            Lihat Detail →
+          </span>
         </div>
       </div>
     </div>
@@ -210,6 +188,35 @@ export function AppsView({
     }
     return null;
   });
+
+  // Discord-style App Detail View State: Clean catalog -> detail page -> launch
+  const [selectedDetailApp, setSelectedDetailApp] = useState<VoiceAppDefinition | null>(() => {
+    if (typeof window !== 'undefined') {
+      const appParam = new URLSearchParams(window.location.search).get('app');
+      if (appParam) {
+        return ANTICEIL_APPS.find((a) => a.id === appParam) || null;
+      }
+    }
+    return null;
+  });
+
+  const handleOpenDetail = (app: VoiceAppDefinition) => {
+    setSelectedDetailApp(app);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('app', app.id);
+      window.history.replaceState(null, '', url.toString());
+    }
+  };
+
+  const handleBackFromDetail = () => {
+    setSelectedDetailApp(null);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('app');
+      window.history.replaceState(null, '', url.toString());
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -344,6 +351,34 @@ export function AppsView({
     );
   }
 
+  // If user selected an activity to view its full Discord-style App Detail page:
+  if (selectedDetailApp) {
+    return (
+      <>
+        <AppDetailView
+          app={selectedDetailApp}
+          onBack={handleBackFromDetail}
+          onLaunchStandalone={handleLaunchStandalone}
+          onOpenSendToChannel={handleOpenSendToChannel}
+          onSelectOtherApp={handleOpenDetail}
+          horizontalPadding={horizontalPadding}
+        />
+
+        {/* Modal Dialog: Kirim ke Channel / DM dari dalam detail view */}
+        <ActivityDestinationDialog
+          open={isLaunchDialogOpen}
+          onOpenChange={setIsLaunchDialogOpen}
+          app={selectedAppForLaunch}
+          colonies={colonies}
+          channels={channels}
+          members={members}
+          onConfirmLaunch={handleConfirmLaunch}
+          onLaunchStandalone={handleLaunchStandalone}
+        />
+      </>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
       {/* ── Single App Bar (h-12) ─────────────────────────── */}
@@ -398,14 +433,17 @@ export function AppsView({
       {/* ── Main Scroll Area ──────────────────────────────────────── */}
       <ScrollArea className="flex-1 min-h-0">
         <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-8', verticalPadding)}>
-        {/* Featured Hero Banner: YouTube Watch Together */}
+        {/* Featured Hero Banner: YouTube Watch Together (Clean Discord style - click opens Detail View) */}
         {!searchQuery && activeCategory === 'all' && (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-zinc-950 border border-red-500/20 p-5 sm:p-6 lg:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 lg:gap-6 shadow-xl">
+          <div
+            onClick={() => handleOpenDetail(featuredApp)}
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-zinc-950 border border-red-500/20 p-5 sm:p-6 lg:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 lg:gap-6 shadow-xl cursor-pointer group hover:border-red-500/40 transition-all"
+          >
             <div className="space-y-2 flex-1 min-w-0 max-w-xl z-10">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">
                 <Flame className="w-3 h-3" /> UNGGULAN
               </span>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight group-hover:text-red-400 transition-colors">
                 YouTube Watch Together
               </h2>
               <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
@@ -413,31 +451,10 @@ export function AppsView({
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 z-10 flex-wrap shrink-0">
-              <Button
-                size="lg"
-                variant="custom"
-                onClick={() => handleLaunchStandalone(featuredApp)}
-                className={cn(
-                  'font-bold h-10 px-4 sm:px-5 gap-2 cursor-pointer transition-colors shadow-lg text-xs sm:text-sm shrink-0',
-                  featuredApp?.buttonClass || 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white'
-                )}
-                title="Tonton video secara mandiri"
-              >
-                <Play className="w-4 h-4 fill-white" />
-                <span>Mulai Menonton</span>
-              </Button>
-
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => handleOpenSendToChannel(featuredApp)}
-                className="font-semibold h-10 px-3.5 gap-2 cursor-pointer bg-white/10 hover:bg-white/20 text-white border-white/20 shadow-md backdrop-blur-sm text-xs sm:text-sm shrink-0"
-                title="Buka atau kirim undangan ke saluran / DM"
-              >
-                <Radio className="w-4 h-4 text-red-400" />
-                <span>Buka di Saluran</span>
-              </Button>
+            <div className="flex items-center gap-2 z-10 shrink-0">
+              <span className="text-xs sm:text-sm font-semibold text-white/90 group-hover:text-white bg-white/10 group-hover:bg-white/20 px-4 py-2.5 rounded-xl transition-all inline-flex items-center gap-1.5 shadow-sm backdrop-blur-sm border border-white/10">
+                Lihat Detail Aktivitas →
+              </span>
             </div>
 
             {/* Background decoration */}
@@ -499,8 +516,7 @@ export function AppsView({
                     <ActivityCard
                       key={app.id}
                       app={app}
-                      onLaunchStandalone={handleLaunchStandalone}
-                      onOpenSendToChannel={handleOpenSendToChannel}
+                      onOpenDetail={handleOpenDetail}
                     />
                   ))}
                 </div>
