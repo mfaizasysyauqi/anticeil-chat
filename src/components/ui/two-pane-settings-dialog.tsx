@@ -243,10 +243,11 @@ export function TwoPaneSettingsDialog({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors cursor-pointer shrink-0"
+              className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors cursor-pointer shrink-0 flex items-center justify-center"
+              title={t('Tutup')}
               aria-label={t('Tutup')}
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 stroke-[2.2]" />
             </button>
           </div>
 
@@ -408,18 +409,15 @@ export function TwoPaneSettingsDialog({
               </div>
             </div>
 
-            {/* Right Suffix: Discord Close (X) Button with ESC Badge */}
+            {/* Right Suffix: Close (X) Button */}
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer group shrink-0"
-              title={t('Tutup (ESC)')}
+              className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              title={t('Tutup')}
               aria-label={t('Tutup')}
             >
-              <span className="hidden sm:inline-block text-[10px] font-bold tracking-wider uppercase opacity-60 group-hover:opacity-100 border border-border/80 px-1.5 py-0.5 rounded">
-                ESC
-              </span>
-              <X className="w-4 h-4 stroke-[2.2] group-hover:scale-110 transition-transform" />
+              <X className="w-4 h-4 stroke-[2.2]" />
             </button>
           </div>
 
@@ -432,7 +430,7 @@ export function TwoPaneSettingsDialog({
               contentClassName,
             )}
           >
-            <div className="max-w-3xl w-full mx-auto md:mx-0 min-w-0">
+            <div className="w-full min-w-0">
               {children}
             </div>
           </div>

@@ -97,10 +97,6 @@ export function ChannelOverviewTab({
 
   return (
     <div className="w-full space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-foreground tracking-tight">{t('Overview')}</h2>
-      </div>
-
       {/* 1. Channel Name */}
       <div className="space-y-2">
         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">

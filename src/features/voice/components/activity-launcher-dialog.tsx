@@ -109,11 +109,11 @@ export function ActivityLauncherDialog({
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="size-9 rounded-lg border border-border/60 hover:border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shrink-0"
-                title="Tutup (ESC)"
+                className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                title="Tutup"
                 aria-label="Tutup"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 stroke-[2.2]" />
               </button>
             </div>
 

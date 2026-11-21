@@ -711,10 +711,11 @@ export function EditProfileDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="size-7 rounded-lg border border-border/80 bg-muted/60 text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer"
+            className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            title={t('Tutup')}
             aria-label={t('Tutup')}
           >
-            <X className="size-4" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -761,20 +762,17 @@ export function EditProfileDialog({
           </button>
         </div>
 
-        {/* Discord-style Close Button Top-Right (with ESC hint, >= md) */}
-        <div className="hidden md:flex absolute top-3.5 right-4 z-50 flex-col items-center">
+        {/* Close Button Top-Right (>= md) */}
+        <div className="hidden md:flex absolute top-3.5 right-4 z-50">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="size-9 rounded-full border border-border/80 bg-background/90 hover:bg-muted text-muted-foreground hover:text-sidebar-primary hover:border-sidebar-primary/60 flex items-center justify-center transition-all cursor-pointer shadow-sm group"
-            title={t('Tutup (ESC)')}
+            className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            title={t('Tutup')}
             aria-label={t('Tutup')}
           >
-            <X className="size-4 group-hover:scale-110 transition-transform" />
+            <X className="w-4 h-4 stroke-[2.2]" />
           </button>
-          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mt-1">
-            ESC
-          </span>
         </div>
 
         {/* Main Profile Editor Body (Responsive: Mobile 1-Col | Tablet 2-Col | Desktop 3-Col) */}
