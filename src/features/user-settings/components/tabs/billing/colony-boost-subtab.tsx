@@ -205,8 +205,8 @@ export function ColonyBoostSubtab({
       <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
         <div className="space-y-3 max-w-md">
           <div className="flex items-center gap-2.5">
-            <div className="size-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-500 shadow-xs">
-              <Gem className="w-6 h-6 fill-pink-500/20" />
+            <div className="size-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shadow-xs">
+              <Gem className="w-6 h-6 fill-sky-500/20" />
             </div>
             <h2 className="text-2xl font-black tracking-tight text-foreground">
               {t('Colony Boosts')}
@@ -232,9 +232,9 @@ export function ColonyBoostSubtab({
           </p>
 
           {/* User's Boost Slots Status Card */}
-          <div className="p-3 rounded-2xl border border-pink-500/30 bg-pink-500/5 flex items-center justify-between gap-3 shadow-2xs">
+          <div className="p-3 rounded-2xl border border-sky-500/30 bg-sky-500/5 flex items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-center gap-2.5">
-              <div className="size-8 rounded-xl bg-pink-500 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+              <div className="size-8 rounded-xl bg-sky-500 text-white flex items-center justify-center text-xs font-bold shadow-xs">
                 <Sparkles className="w-4 h-4 fill-current" />
               </div>
               <div>
@@ -244,7 +244,7 @@ export function ColonyBoostSubtab({
                       ? t('Langganan Nectar Aktif')
                       : t('Slot Colony Boost')}
                   </span>
-                  <span className="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-400">
+                  <span className="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-sky-500/20 text-sky-400">
                     {userSub?.boostSlots ?? 0} {t('Slot Tersedia')}
                   </span>
                 </div>
@@ -263,7 +263,7 @@ export function ColonyBoostSubtab({
                   setTargetColonyForBoost(null);
                   setIsBuyBoostDialogOpen(true);
                 }}
-                className="bg-pink-500 hover:bg-pink-600 text-white font-bold text-[11px] h-7 px-3 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                className="bg-sky-500 hover:bg-sky-600 text-white font-bold text-[11px] h-7 px-3 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
                 <span>{t('Beli Slot Boost')}</span>
@@ -279,14 +279,14 @@ export function ColonyBoostSubtab({
               t('Memutar panduan interaktif: Cara kerja Colony Boost.'),
             )
           }
-          className="w-full lg:w-72 h-36 rounded-2xl bg-linear-to-br from-indigo-950 via-purple-950 to-pink-950 border border-purple-500/30 p-3.5 flex flex-col justify-between text-white relative overflow-hidden shadow-xl cursor-pointer group hover:border-purple-500/60 transition-all shrink-0"
+          className="w-full lg:w-72 h-36 rounded-2xl bg-linear-to-br from-indigo-950 via-purple-950 to-sky-950 border border-purple-500/30 p-3.5 flex flex-col justify-between text-white relative overflow-hidden shadow-xl cursor-pointer group hover:border-purple-500/60 transition-all shrink-0"
         >
           <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
           <div className="relative z-10 flex items-center justify-between">
             <span className="text-[11px] font-bold text-white/90">
               {t('How do Boosts work?')}
             </span>
-            <Gem className="w-4 h-4 text-pink-400" />
+            <Gem className="w-4 h-4 text-sky-400" />
           </div>
           {/* Centered Play Button */}
           <div className="relative z-10 size-11 rounded-full bg-white/20 group-hover:bg-white/30 backdrop-blur-md border border-white/40 flex items-center justify-center mx-auto text-white shadow-lg transition-transform group-hover:scale-110">
@@ -299,10 +299,10 @@ export function ColonyBoostSubtab({
       </div>
 
       {/* ── 2. PROMO BANNER: GET 2 BOOSTS WITH NECTAR ── */}
-      <div className="rounded-2xl p-4 bg-linear-to-r from-purple-900/30 via-indigo-900/30 to-pink-900/30 border border-purple-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+      <div className="rounded-2xl p-4 bg-linear-to-r from-purple-900/30 via-indigo-900/30 to-sky-900/30 border border-purple-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3.5">
           <div className="size-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shrink-0">
-            <Zap className="w-5 h-5 fill-current text-pink-400" />
+            <Zap className="w-5 h-5 fill-current text-sky-400" />
           </div>
           <div>
             <div className="text-sm font-bold text-foreground">
@@ -347,11 +347,11 @@ export function ColonyBoostSubtab({
           <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs relative overflow-hidden flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-wider text-pink-400 flex items-center gap-1.5">
+                <span className="text-xs font-black uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
                   <Gem className="w-4 h-4 fill-current" />
                   LEVEL 1
                 </span>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
                   {t('2 Boosts')}
                 </span>
               </div>
@@ -368,7 +368,7 @@ export function ColonyBoostSubtab({
                     key={idx}
                     className="flex items-start gap-2 leading-tight"
                   >
-                    <Check className="w-3.5 h-3.5 text-pink-400 shrink-0 mt-0.5" />
+                    <Check className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
                     <span>{item}</span>
                   </div>
                 ))}
@@ -515,7 +515,7 @@ export function ColonyBoostSubtab({
                       <span className="text-xs font-bold text-foreground">
                         {colony.name}
                       </span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-500/20">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">
                         Level {colony.boostTier || 1}
                       </span>
                     </div>
@@ -532,7 +532,7 @@ export function ColonyBoostSubtab({
                   <Button
                     size="sm"
                     onClick={() => handleBoostColony(colony)}
-                    className="bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs h-8 px-3 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    className="bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs h-8 px-3 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <Gem className="w-3.5 h-3.5 fill-current" />
                     <span>{t('Boost Colony')}</span>
@@ -552,8 +552,8 @@ export function ColonyBoostSubtab({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3 text-center shadow-xs">
-            <div className="size-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto shadow-xs">
-              <Gem className="w-6 h-6 text-pink-500" />
+            <div className="size-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mx-auto shadow-xs">
+              <Gem className="w-6 h-6 text-sky-400" />
             </div>
             <div className="text-xs font-bold text-foreground">
               {t('Display your support with a Member List icon')}
@@ -561,8 +561,8 @@ export function ColonyBoostSubtab({
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3 text-center shadow-xs">
-            <div className="size-12 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-500 mx-auto shadow-xs">
-              <Star className="w-6 h-6 fill-pink-500/40 text-pink-500 animate-pulse" />
+            <div className="size-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mx-auto shadow-xs">
+              <Star className="w-6 h-6 fill-sky-500/40 text-sky-400 animate-pulse" />
             </div>
             <div className="text-xs font-bold text-foreground">
               {t('Unlock a profile badge that evolves over time')}
@@ -570,7 +570,7 @@ export function ColonyBoostSubtab({
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3 text-center shadow-xs">
-            <div className="size-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 mx-auto shadow-xs">
+            <div className="size-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mx-auto shadow-xs">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div className="text-xs font-bold text-foreground">
@@ -579,8 +579,8 @@ export function ColonyBoostSubtab({
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3 text-center shadow-xs">
-            <div className="size-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 mx-auto shadow-xs">
-              <Heart className="w-6 h-6 fill-rose-500/40" />
+            <div className="size-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mx-auto shadow-xs">
+              <Heart className="w-6 h-6 fill-sky-500/40" />
             </div>
             <div className="text-xs font-bold text-foreground">
               {t('Show support for your community')}
@@ -667,7 +667,7 @@ export function ColonyBoostSubtab({
       <Dialog open={isBuyBoostDialogOpen} onOpenChange={setIsBuyBoostDialogOpen}>
         <DialogContent className="max-w-md p-6 bg-card border-border rounded-2xl space-y-4">
           <DialogHeader className="space-y-1 text-left">
-            <div className="flex items-center gap-2 text-pink-500">
+            <div className="flex items-center gap-2 text-sky-400">
               <Gem className="w-5 h-5 fill-current" />
               <DialogTitle className="text-base font-bold text-foreground">
                 {targetColonyForBoost
@@ -693,14 +693,14 @@ export function ColonyBoostSubtab({
                   className={cn(
                     'p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 select-none',
                     isSelected
-                      ? 'border-pink-500 bg-pink-500/10 ring-1 ring-pink-500/40 text-foreground'
+                      ? 'border-sky-500 bg-sky-500/10 ring-1 ring-sky-500/40 text-foreground'
                       : 'border-border/60 bg-muted/20 hover:bg-muted/40 text-muted-foreground',
                   )}
                 >
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-foreground">{pack.name}</span>
-                      <span className="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-400">
+                      <span className="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-sky-500/20 text-sky-400">
                         {pack.badge}
                       </span>
                     </div>
@@ -710,7 +710,7 @@ export function ColonyBoostSubtab({
                     <div className="text-xs font-black text-foreground font-mono">
                       {pack.priceFormatted}
                     </div>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-pink-500 ml-auto mt-1" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-sky-400 ml-auto mt-1" />}
                   </div>
                 </div>
               );
@@ -742,7 +742,7 @@ export function ColonyBoostSubtab({
               size="sm"
               disabled={isPurchasingBoost}
               onClick={() => handleBuyBoostCheckout(selectedBoostPack, targetColonyForBoost?.id)}
-              className="bg-pink-500 hover:bg-pink-600 text-white font-bold text-xs h-9 px-4 rounded-xl flex items-center gap-2 cursor-pointer shadow-xs"
+              className="bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs h-9 px-4 rounded-xl flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <CreditCard className="w-4 h-4" />
               <span>

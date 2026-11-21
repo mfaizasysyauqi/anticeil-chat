@@ -239,7 +239,7 @@ export function BoostTab({
                   'h-24 p-3 relative flex flex-col justify-between transition-all duration-300',
                   serverBannerUrl
                     ? 'bg-cover bg-center'
-                    : 'bg-gradient-to-r from-purple-900/60 via-pink-900/50 to-indigo-900/60',
+                    : 'bg-gradient-to-r from-purple-900/60 via-sky-900/50 to-indigo-900/60',
                 )}
                 style={
                   serverBannerUrl
@@ -270,7 +270,7 @@ export function BoostTab({
               {showBoostProgressBar && (
                 <div className="px-2.5 py-2 bg-[#2b2d31]/80 border-b border-border/40 transition-all">
                   <div className="flex items-center justify-between text-[10px] mb-1">
-                    <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
+                    <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">
                       Boost Goal
                     </span>
                     <span className="text-muted-foreground font-semibold">

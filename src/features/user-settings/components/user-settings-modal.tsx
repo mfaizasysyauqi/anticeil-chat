@@ -144,7 +144,7 @@ export function UserSettingsModal({
               </span>
             ),
           },
-          { id: 'boost', label: t('Colony Boost'), icon: <Gem className="w-4 h-4 text-pink-400" /> },
+          { id: 'boost', label: t('Colony Boost'), icon: <Gem className="w-4 h-4 text-sky-400" /> },
           { id: 'subscriptions', label: t('Subscriptions'), icon: <CreditCard className="w-4 h-4" /> },
           {
             id: 'gifts',

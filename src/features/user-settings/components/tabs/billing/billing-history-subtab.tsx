@@ -288,7 +288,7 @@ export function BillingHistorySubtab() {
                         isNectar
                           ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
                           : isBoost
-                          ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20'
+                          ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
                           : isGift
                           ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                           : 'bg-primary/10 text-primary border border-primary/20',
