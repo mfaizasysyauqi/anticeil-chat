@@ -153,107 +153,100 @@ export function DmUserProfileSidebar({
 
       {/* Scrollable Profile Body */}
       <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-        {/* Banner */}
-        <div className="h-28 w-full bg-gradient-to-r from-teal-900/40 via-sidebar-primary/20 to-emerald-900/30 relative border-b border-sidebar-border shrink-0 flex items-start justify-end p-2.5">
-          {role === 'owner' || role === 'admin' ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sidebar-primary/20 border border-sidebar-primary/40 text-sidebar-primary flex items-center gap-1 backdrop-blur-xs">
-              <ShieldCheck className="w-3 h-3" />
-              {role === 'owner' ? t('Pemilik') : t('Admin')}
-            </span>
-          ) : (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 border border-white/15 text-white/90 flex items-center gap-1 backdrop-blur-xs">
-              <Sparkles className="w-3 h-3 text-sidebar-primary" />
-              {t('Anggota')}
-            </span>
-          )}
-        </div>
+        {/* Banner (TikTok Style) */}
+        <div className="h-36 w-full bg-gradient-to-r from-teal-900/40 via-sidebar-primary/20 to-emerald-900/30 relative border-b border-sidebar-border shrink-0 flex flex-col justify-end overflow-hidden">
+          {/* Theme Gradient Overlay (TikTok style fade-to-bottom) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-sidebar via-sidebar/70 via-40% to-transparent pointer-events-none z-10" />
 
-        {/* Avatar & Display Name Overlap */}
-        <div className="px-4 pb-3 relative">
-          {/* Avatar floating over banner */}
-          <div className="-mt-10 mb-2.5 flex items-end justify-between">
-            <div className="relative rounded-full ring-4 ring-sidebar bg-sidebar">
+          {/* Top-Right: Role Badge */}
+          <div className="absolute top-2.5 right-2.5 z-20">
+            {role === 'owner' || role === 'admin' ? (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sidebar-primary/20 border border-sidebar-primary/40 text-sidebar-primary flex items-center gap-1 backdrop-blur-xs shadow-xs">
+                <ShieldCheck className="w-3 h-3" />
+                {role === 'owner' ? t('Pemilik') : t('Admin')}
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 border border-white/15 text-white/90 flex items-center gap-1 backdrop-blur-xs shadow-xs">
+                <Sparkles className="w-3 h-3 text-sidebar-primary" />
+                {t('Anggota')}
+              </span>
+            )}
+          </div>
+
+          {/* Content Over Banner: Name & Username on Left, Avatar on Right */}
+          <div className="relative z-20 px-4 pb-3 flex items-end justify-between gap-3">
+            {/* Left: Name and Username */}
+            <div className="min-w-0 flex-1 drop-shadow-md">
+              <h2 className="text-lg font-black text-white leading-tight truncate tracking-tight drop-shadow-sm">
+                {displayName}
+              </h2>
+              <div className="flex items-center gap-1.5 text-xs text-white/80 font-mono mt-0.5 truncate">
+                <span>@{username}</span>
+                <button
+                  type="button"
+                  onClick={handleCopyUsername}
+                  className="text-white/70 hover:text-white transition-colors p-0.5 rounded cursor-pointer"
+                  title={t('Salin Username')}
+                >
+                  {isCopiedUsername ? (
+                    <Check className="w-3 h-3 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Right: Avatar on the right */}
+            <div className="relative rounded-full ring-4 ring-sidebar bg-sidebar shrink-0 shadow-xl">
               <CommunityAvatar
                 name={displayName}
                 imageUrl={avatarUrl}
-                size={76}
+                size={68}
                 showStatus
                 status={status === 'offline' ? 'offline' : 'online'}
               />
             </div>
-
-            {/* Quick Call Action Buttons */}
-            {onStartCall && (
-              <div className="flex items-center gap-1.5 pb-1">
-                <Tooltip delayDuration={150}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onStartCall('voice')}
-                      className="h-8 w-8 rounded-full bg-sidebar-accent hover:bg-accent text-foreground/80 hover:text-foreground cursor-pointer"
-                    >
-                      <Phone className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs">
-                    {t('Panggilan Suara')}
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip delayDuration={150}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onStartCall('video')}
-                      className="h-8 w-8 rounded-full bg-sidebar-accent hover:bg-accent text-foreground/80 hover:text-foreground cursor-pointer"
-                    >
-                      <Video className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs">
-                    {t('Panggilan Video')}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )}
-          </div>
-
-          {/* User Names Card */}
-          <div className="bg-card/40 border border-border/50 rounded-xl p-3 shadow-2xs">
-            <h2 className="text-base font-bold text-foreground leading-tight truncate">
-              {displayName}
-            </h2>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-xs text-muted-foreground font-mono">@{username}</span>
-              <button
-                type="button"
-                onClick={handleCopyUsername}
-                className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded cursor-pointer"
-                title={t('Salin Username')}
-              >
-                {isCopiedUsername ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <Copy className="w-3 h-3" />
-                )}
-              </button>
-            </div>
-
-            {/* Custom Status / Activity */}
-            {(member?.customStatus || member?.activity) && (
-              <div className="mt-2.5 pt-2.5 border-t border-border/40 text-xs text-foreground/80 flex items-center gap-1.5">
-                <span>💬</span>
-                <span className="truncate italic">
-                  {member.customStatus || member.activity}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
-        <div className="px-4 pb-4 space-y-3.5">
+        {/* Action Buttons below Banner */}
+        {onStartCall && (
+          <div className="px-4 pt-3 flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onStartCall('voice')}
+              className="flex-1 h-8 rounded-lg bg-sidebar-accent/60 hover:bg-sidebar-accent text-foreground text-xs gap-1.5 cursor-pointer"
+            >
+              <Phone className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{t('Panggilan Suara')}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onStartCall('video')}
+              className="flex-1 h-8 rounded-lg bg-sidebar-accent/60 hover:bg-sidebar-accent text-foreground text-xs gap-1.5 cursor-pointer"
+            >
+              <Video className="w-3.5 h-3.5 text-cyan-400" />
+              <span>{t('Panggilan Video')}</span>
+            </Button>
+          </div>
+        )}
+
+        {/* Custom Status / Activity */}
+        {(member?.customStatus || member?.activity) && (
+          <div className="px-4 pt-2.5">
+            <div className="bg-card/40 border border-border/50 rounded-xl px-3 py-2 text-xs text-foreground/85 flex items-center gap-2 shadow-2xs">
+              <span className="text-sm">💬</span>
+              <span className="truncate italic">
+                {member.customStatus || member.activity}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="px-4 pt-3 pb-4 space-y-3.5">
           {/* Card: Tentang Saya (About Me) */}
           <div className="bg-card/40 border border-border/50 rounded-xl p-3 shadow-2xs space-y-2">
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">

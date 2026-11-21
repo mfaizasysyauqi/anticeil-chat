@@ -228,9 +228,9 @@ export function UserProfileDialog({
 
         {/* Scrollable Container */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {/* 1. Header Banner */}
+          {/* 1. Header Banner (TikTok Style) */}
           <div
-            className="h-28 sm:h-32 w-full relative flex items-start justify-end p-2.5 transition-all"
+            className="h-36 sm:h-44 w-full relative transition-all bg-cover bg-center overflow-hidden flex flex-col justify-end"
             style={{
               backgroundColor: bannerUrl ? undefined : bannerColor,
               backgroundImage: bannerUrl ? `url(${bannerUrl})` : undefined,
@@ -238,8 +238,11 @@ export function UserProfileDialog({
               backgroundPosition: 'center',
             }}
           >
+            {/* Theme Gradient Overlay (TikTok style fade-to-bottom) */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#111214] via-[#111214]/70 via-40% to-transparent pointer-events-none z-10" />
+
             {/* Action Buttons on Banner */}
-            <div className="flex items-center gap-1.5 z-10">
+            <div className="flex items-center gap-1.5 absolute top-2.5 right-2.5 z-20">
               {onOpenEditProfile && (
                 <Tooltip delayDuration={200}>
                   <TooltipTrigger asChild>
@@ -270,101 +273,102 @@ export function UserProfileDialog({
                 <X className="w-3.5 h-3.5" />
               </Button>
             </div>
-          </div>
 
-          {/* 2. Avatar & Badge Row */}
-          <div className="px-4 pb-2 relative">
-            <div className="-mt-11 mb-2.5 flex items-end justify-between">
-              {/* Avatar with Status Ring */}
-              <div className="relative rounded-full ring-4 ring-[#111214] bg-[#111214] shrink-0">
+            {/* Content Over Banner: Name & Username on Left, Avatar on Right */}
+            <div className="relative z-20 px-4 pb-3 flex items-end justify-between gap-3">
+              {/* Left: Name and Username */}
+              <div className="min-w-0 flex-1 drop-shadow-md">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-black text-white leading-tight truncate tracking-tight drop-shadow-sm">
+                    {currentUserName}
+                  </h2>
+                  {pronouns && (
+                    <span className="text-xs text-white/80 font-normal shrink-0">
+                      ({pronouns})
+                    </span>
+                  )}
+                </div>
+
+                <div
+                  onClick={handleCopyUsername}
+                  className="inline-flex items-center gap-1.5 text-xs text-white/85 font-mono hover:text-white cursor-pointer transition-colors group/copy mt-0.5"
+                  title="Klik untuk menyalin username"
+                >
+                  <span>@{username}</span>
+                  {isCopiedUsername ? (
+                    <Check className="w-3 h-3 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-3 h-3 opacity-0 group-hover/copy:opacity-100 transition-opacity" />
+                  )}
+                </div>
+              </div>
+
+              {/* Right: Avatar with Status Ring */}
+              <div className="relative rounded-full ring-4 ring-[#111214] bg-[#111214] shrink-0 shadow-2xl">
                 <CommunityAvatar
                   name={currentUserName}
                   imageUrl={avatarUrl}
-                  size={80}
+                  size={76}
                   showStatus
                   status={presence}
                 />
               </div>
+            </div>
+          </div>
 
-              {/* Badges Container (Top Right under Banner) */}
-              <div className="flex items-center gap-1.5 p-1 rounded-lg bg-card/60 border border-border/50 backdrop-blur-xs">
-                {isOwner && (
-                  <Tooltip delayDuration={200}>
-                    <TooltipTrigger asChild>
-                      <div className="p-1 rounded bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors cursor-pointer">
-                        <ShieldCheck className="w-4 h-4" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs font-semibold">
-                      Pengembang / Administrator Anticeil
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                {isSubscriber && (
-                  <Tooltip delayDuration={200}>
-                    <TooltipTrigger asChild>
-                      <div className="p-1 rounded bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 transition-colors cursor-pointer">
-                        <Crown className="w-4 h-4" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs font-semibold">
-                      Langganan Nectar Aktif
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
+          {/* 2. Badges & Content Row below banner */}
+          <div className="px-4 pt-2.5 pb-2 relative space-y-3">
+            {/* Badges Container */}
+            <div className="flex items-center gap-1.5 p-1 rounded-lg bg-card/60 border border-border/50 backdrop-blur-xs w-fit">
+              {isOwner && (
                 <Tooltip delayDuration={200}>
                   <TooltipTrigger asChild>
-                    <div className="p-1 rounded bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors cursor-pointer">
-                      <Sparkles className="w-4 h-4" />
+                    <div className="p-1 rounded bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors cursor-pointer">
+                      <ShieldCheck className="w-4 h-4" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs font-semibold">
-                    Early Supporter Anticeil
+                    Pengembang / Administrator Anticeil
                   </TooltipContent>
                 </Tooltip>
+              )}
 
-                {isEmailVerified && (
-                  <Tooltip delayDuration={200}>
-                    <TooltipTrigger asChild>
-                      <div className="p-1 rounded bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-colors cursor-pointer">
-                        <Check className="w-4 h-4" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs font-semibold">
-                      Email Terverifikasi
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            </div>
+              {isSubscriber && (
+                <Tooltip delayDuration={200}>
+                  <TooltipTrigger asChild>
+                    <div className="p-1 rounded bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 transition-colors cursor-pointer">
+                      <Crown className="w-4 h-4" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs font-semibold">
+                    Langganan Nectar Aktif
+                  </TooltipContent>
+                </Tooltip>
+              )}
 
-            {/* 3. Display Name & Username */}
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-foreground leading-tight truncate">
-                  {currentUserName}
-                </h2>
-                {pronouns && (
-                  <span className="text-xs text-muted-foreground/80 font-normal">
-                    ({pronouns})
-                  </span>
-                )}
-              </div>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <div className="p-1 rounded bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors cursor-pointer">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-semibold">
+                  Early Supporter Anticeil
+                </TooltipContent>
+              </Tooltip>
 
-              <div
-                onClick={handleCopyUsername}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-mono hover:text-foreground cursor-pointer transition-colors group/copy"
-                title="Klik untuk menyalin username"
-              >
-                <span>@{username}</span>
-                {isCopiedUsername ? (
-                  <Check className="w-3 h-3 text-emerald-400" />
-                ) : (
-                  <Copy className="w-3 h-3 opacity-0 group-hover/copy:opacity-100 transition-opacity" />
-                )}
-              </div>
+              {isEmailVerified && (
+                <Tooltip delayDuration={200}>
+                  <TooltipTrigger asChild>
+                    <div className="p-1 rounded bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-colors cursor-pointer">
+                      <Check className="w-4 h-4" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs font-semibold">
+                    Email Terverifikasi
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
 
             {/* 4. Custom Status Thought Card */}

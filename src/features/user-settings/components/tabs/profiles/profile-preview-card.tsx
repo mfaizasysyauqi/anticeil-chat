@@ -168,11 +168,11 @@ export function ProfilePreviewCard({
   return (
     <div className="w-full max-w-[340px] sm:max-w-[360px] 2xl:max-w-[380px] mx-auto overflow-hidden">
       <div className="rounded-2xl bg-card border border-border/80 shadow-2xl overflow-hidden">
-        {/* Banner Area */}
+        {/* Banner Area (TikTok Style with Gradient & Overlay Content) */}
         <div
-          className="h-28 relative transition-colors bg-cover bg-center"
+          className="h-36 sm:h-40 relative transition-colors bg-cover bg-center overflow-hidden flex flex-col justify-end"
           style={{
-            backgroundColor: profileBannerColor,
+            backgroundColor: profileBannerColor || '#1e1f22',
             backgroundImage: profileBannerUrl ? `url(${profileBannerUrl})` : undefined,
           }}
         >
@@ -184,16 +184,35 @@ export function ProfilePreviewCard({
               className="absolute inset-0 size-full object-cover opacity-80 mix-blend-screen pointer-events-none select-none z-10"
             />
           )}
-          <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] text-white font-semibold border border-white/10 shadow-xs z-20">
+
+          {/* Theme Gradient Overlay (TikTok style fade-to-bottom) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/70 via-40% to-transparent pointer-events-none z-10" />
+
+          {/* Top-Right Tag: Tema Profil */}
+          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] text-white font-semibold border border-white/10 shadow-xs z-20">
             <Palette className="w-3 h-3 text-sidebar-primary" />
             <span>{t('Tema Profil')}</span>
           </div>
-        </div>
 
-        {/* Avatar & Status Cloud */}
-        <div className="px-4 pb-4 relative">
-          <div className="flex items-end justify-between -mt-10 relative">
-            <div className="relative">
+          {/* Content Over Banner: Name & Username on Left, Avatar on Right */}
+          <div className="relative z-20 px-4 pb-3 flex items-end justify-between gap-3">
+            {/* Left: Name and Username sitting directly on top of banner */}
+            <div className="min-w-0 flex-1 drop-shadow-md">
+              <div
+                className={cn(
+                  "text-lg sm:text-xl font-black text-white leading-tight transition-all truncate tracking-tight drop-shadow-sm",
+                  getDisplayNameStyleClass(displayNameStyle)
+                )}
+              >
+                {currentUserName}
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-white/80 font-mono mt-0.5 truncate drop-shadow-xs">
+                <span>@{currentUserName.toLowerCase().replace(/\s+/g, '')}</span>
+              </div>
+            </div>
+
+            {/* Right: Avatar on the right overlapping banner */}
+            <div className="relative shrink-0">
               {/* Avatar Decoration / Animated Frame Overlay */}
               {avatarDecoration && avatarDecoration !== 'none' && (
                 avatarDecoration.startsWith('http') ? (
@@ -212,7 +231,7 @@ export function ProfilePreviewCard({
                 ) : null
               )}
               <div
-                className={`size-20 rounded-full border-4 border-card overflow-hidden bg-muted flex items-center justify-center text-3xl shadow-md transition-all relative ${getFrameClassName(
+                className={`size-18 sm:size-20 rounded-full border-[3px] border-card overflow-hidden bg-muted flex items-center justify-center text-3xl shadow-2xl transition-all relative ${getFrameClassName(
                   profileFrame,
                 )}`}
               >
@@ -242,42 +261,17 @@ export function ProfilePreviewCard({
                   </div>
                 )}
               </div>
-              <div className="absolute bottom-0 right-0 size-5 rounded-full border-2 border-card bg-emerald-500 shadow-sm" />
-            </div>
-
-            {/* Status Cloud Bubble */}
-            <div
-              onClick={() => setIsEditingStatusThought(true)}
-              className="mb-1 px-3 py-1 rounded-full bg-secondary/90 border border-border/80 text-[11px] text-foreground flex items-center gap-1.5 hover:border-sidebar-primary/60 cursor-pointer shadow-sm group transition-colors"
-              title={t('Klik untuk mengubah status')}
-            >
-              <span>💭</span>
-              {isEditingStatusThought ? (
-                <input
-                  type="text"
-                  value={profileStatusThought}
-                  onChange={(e) => setProfileStatusThought(e.target.value)}
-                  onBlur={() => setIsEditingStatusThought(false)}
-                  onKeyDown={(e) => e.key === 'Enter' && setIsEditingStatusThought(false)}
-                  autoFocus
-                  className="w-24 bg-transparent border-b border-sidebar-primary text-[11px] text-foreground focus:outline-none"
-                />
-              ) : (
-                <span className={cn('truncate max-w-[140px]', !profileStatusThought && 'text-muted-foreground/70 italic')}>
-                  {profileStatusThought || t('Tambah status...')}
-                </span>
-              )}
+              <div className="absolute bottom-0 right-0 size-4 sm:size-5 rounded-full border-2 border-card bg-emerald-500 shadow-sm" />
             </div>
           </div>
+        </div>
 
-          {/* Profile Header Details */}
-          <div className="mt-3 space-y-1">
-            <div className={cn("text-lg font-bold leading-tight transition-all", getDisplayNameStyleClass(displayNameStyle))}>
-              {currentUserName}
-            </div>
+        {/* Card Body below banner */}
+        <div className="px-4 py-3 space-y-3 relative">
+          {/* Status Cloud & Pronouns / Tag Row */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            {/* Pronouns & Tag */}
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-              <span>{currentUserName.toLowerCase()}</span>
-              <span>•</span>
               {isEditingPronouns ? (
                 <input
                   type="text"
@@ -302,6 +296,31 @@ export function ProfilePreviewCard({
                 {colonyName ? `@${colonyName}` : (nameplate && nameplate !== 'none' ? nameplate : 'Server Tag ⌵')}
               </span>
             </div>
+
+            {/* Status Cloud Bubble */}
+            <div
+              onClick={() => setIsEditingStatusThought(true)}
+              className="px-3 py-1 rounded-full bg-secondary/90 border border-border/80 text-[11px] text-foreground flex items-center gap-1.5 hover:border-sidebar-primary/60 cursor-pointer shadow-sm group transition-colors"
+              title={t('Klik untuk mengubah status')}
+            >
+              <span>💭</span>
+              {isEditingStatusThought ? (
+                <input
+                  type="text"
+                  value={profileStatusThought}
+                  onChange={(e) => setProfileStatusThought(e.target.value)}
+                  onBlur={() => setIsEditingStatusThought(false)}
+                  onKeyDown={(e) => e.key === 'Enter' && setIsEditingStatusThought(false)}
+                  autoFocus
+                  className="w-24 bg-transparent border-b border-sidebar-primary text-[11px] text-foreground focus:outline-none"
+                />
+              ) : (
+                <span className={cn('truncate max-w-[140px]', !profileStatusThought && 'text-muted-foreground/70 italic')}>
+                  {profileStatusThought || t('Tambah status...')}
+                </span>
+              )}
+            </div>
+          </div>
 
             {/* Badges Row */}
             <div className="flex items-center gap-1.5 pt-1.5">
@@ -330,7 +349,6 @@ export function ProfilePreviewCard({
                 ⚔️
               </span>
             </div>
-          </div>
 
           {/* Action Buttons (Live Preview) */}
           <div className="flex items-center gap-2 mt-4">
