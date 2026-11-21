@@ -11,6 +11,7 @@ import {
   Search,
   Phone,
   Video,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
@@ -62,6 +63,7 @@ export interface ChannelTopHeaderBarProps {
   onStartVoiceCall?: () => void;
   onStartVideoCall?: () => void;
   isCallActive?: boolean;
+  onOpenEditChannel?: (channel: ColonyChannel) => void;
   // Search props
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -76,6 +78,7 @@ export function ChannelTopHeaderBar({
   onStartVoiceCall,
   onStartVideoCall,
   isCallActive = false,
+  onOpenEditChannel,
   isThreadsPopoverOpen,
   setIsThreadsPopoverOpen,
   channelThreads,
@@ -135,7 +138,18 @@ export function ChannelTopHeaderBar({
         ) : (
           <Hash className="w-5 h-5 text-muted-foreground shrink-0" />
         )}
-        <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+        <div
+          onClick={() => {
+            if (!isDmMode && activeChannel && onOpenEditChannel) {
+              onOpenEditChannel(activeChannel);
+            }
+          }}
+          className={cn(
+            'flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden',
+            !isDmMode && onOpenEditChannel && 'cursor-pointer hover:opacity-85 transition-opacity',
+          )}
+          title={!isDmMode && onOpenEditChannel ? t('Klik untuk membuka Pengaturan Channel') : undefined}
+        >
           <span
             className="text-sm font-semibold text-foreground truncate min-w-0 block"
             title={activeChannel ? activeChannel.name : t('Belum ada channel')}
@@ -157,6 +171,26 @@ export function ChannelTopHeaderBar({
 
       {/* Top Bar Actions: Exactly Discord Signature (Calls, E2EE, Threads, Bell, Pin, Member List / User Profile, Search) */}
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        {/* Channel Settings Button (Server channels) */}
+        {!isDmMode && activeChannel && onOpenEditChannel && (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onOpenEditChannel(activeChannel)}
+                className="h-8 w-8 text-foreground/70 hover:text-foreground hover:bg-accent/60 transition-colors cursor-pointer"
+                title={t('Pengaturan Channel')}
+                aria-label={t('Pengaturan Channel')}
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
+              {t('Pengaturan Channel')}
+            </TooltipContent>
+          </Tooltip>
+        )}
         {/* DM Voice Call Button */}
         {isDmMode && onStartVoiceCall && (
           <Tooltip delayDuration={150}>

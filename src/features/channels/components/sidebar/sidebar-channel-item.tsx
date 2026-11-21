@@ -52,7 +52,14 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
   const isActiveCh = activeChannelId === ch.id;
 
   const renderActionButtons = () => (
-    <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
+    <div
+      className={cn(
+        'items-center gap-0.5 ml-auto shrink-0 transition-opacity',
+        isActiveCh
+          ? 'flex opacity-100'
+          : 'flex md:hidden md:group-hover:flex opacity-75 hover:opacity-100 group-hover:opacity-100',
+      )}
+    >
       <button
         type="button"
         onClick={(e) => {
@@ -60,7 +67,8 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
           onOpenInvite();
         }}
         title={t('Buat Undangan')}
-        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+        aria-label={t('Buat Undangan')}
+        className="p-1 sm:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted active:bg-muted/80 transition-colors"
       >
         <UserPlus className="w-3.5 h-3.5" />
       </button>
@@ -71,7 +79,8 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
           onOpenEditChannel(ch);
         }}
         title={t('Pengaturan Channel')}
-        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
+        aria-label={t('Pengaturan Channel')}
+        className="p-1 sm:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted active:bg-muted/80 transition-colors"
       >
         <Settings className="w-3.5 h-3.5" />
       </button>

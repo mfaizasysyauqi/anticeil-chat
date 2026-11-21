@@ -44,6 +44,7 @@ export interface ChatChannelViewProps {
   setIsMobileMembersOpen: (open: boolean) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  onOpenEditChannel?: (channel: ColonyChannel) => void;
 
   activeColony: Colony | null;
   currentUser: any;
@@ -242,6 +243,7 @@ export function ChatChannelView({
   messageRequests = [],
   handleAcceptMessageRequest,
   handleIgnoreMessageRequest,
+  onOpenEditChannel,
   t,
 }: ChatChannelViewProps) {
   const callStartTimeRef = React.useRef<number | null>(null);
@@ -424,6 +426,7 @@ export function ChatChannelView({
           channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
           isHome={isHome}
           onOpenMobileChannels={onOpenSidebar || (() => setIsMobileChannelsOpen(true))}
+          onOpenEditChannel={onOpenEditChannel}
           onStartVoiceCall={() => {
             if (activeChannel) setActiveCallChannelId(activeChannel.id);
           }}

@@ -438,6 +438,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       activeCallChannelId,
       handleLaunchActivity,
       handleStartDM,
+      onOpenEditChannel: handleOpenEditChannel,
       isColoniesView,
       requireAuth,
       setIsCreateHubOpen,

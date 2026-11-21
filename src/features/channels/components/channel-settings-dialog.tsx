@@ -159,7 +159,7 @@ export function ChannelSettingsDialog({
       : t('TEXT CHANNELS');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs animate-in fade-in duration-150 p-3 sm:p-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-xs animate-in fade-in duration-150 p-3 sm:p-4">
       <div className={cn('relative flex overflow-hidden', LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER)}>
         {/* ── Left Navigation Sidebar (Discord Style) ──────────────────────── */}
         <div className={cn(LAYOUT_DIALOG_SPACING.SIDEBAR_WIDTH, LAYOUT_DIALOG_SPACING.SIDEBAR_PADDING, 'bg-muted/40 border-r border-border flex flex-col justify-between shrink-0 select-none')}>
