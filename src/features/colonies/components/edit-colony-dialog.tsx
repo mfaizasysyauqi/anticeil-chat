@@ -55,7 +55,7 @@ export function EditColonyDialog({
 
   return (
     <Dialog open={!!targetServer} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent size="md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{t('Ganti Nama Server')}</DialogTitle>
@@ -70,7 +70,7 @@ export function EditColonyDialog({
               <Input
                 value={serverName}
                 onChange={(e) => setServerName(e.target.value)}
-                placeholder="Nama server..."
+                placeholder={t('Nama server...')}
                 className="text-xs"
                 required
                 autoFocus
@@ -82,7 +82,7 @@ export function EditColonyDialog({
               <Input
                 value={serverDesc}
                 onChange={(e) => setServerDesc(e.target.value)}
-                placeholder="Deskripsi server..."
+                placeholder={t('Deskripsi server...')}
                 className="text-xs"
               />
             </div>

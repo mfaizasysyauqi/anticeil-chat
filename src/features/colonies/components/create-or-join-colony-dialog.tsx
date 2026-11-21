@@ -88,7 +88,7 @@ export function CreateOrJoinColonyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent size="md">
         <Tabs defaultValue="create" className="w-full">
           <DialogHeader className="pb-2">
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
@@ -155,7 +155,7 @@ export function CreateOrJoinColonyDialog({
                   <Input
                     value={serverName}
                     onChange={(e) => setServerName(e.target.value)}
-                    placeholder="contoh: Komunitas AI & Bot / Proyek Alpha"
+                    placeholder={t('contoh: Komunitas AI & Bot / Proyek Alpha')}
                     className="text-xs focus-visible:ring-primary/40 focus-visible:border-primary/80"
                     required
                     autoFocus
@@ -167,7 +167,7 @@ export function CreateOrJoinColonyDialog({
                   <Input
                     value={serverDesc}
                     onChange={(e) => setServerDesc(e.target.value)}
-                    placeholder="Ruang diskusi untuk alur kerja dan bot..."
+                    placeholder={t('Ruang diskusi untuk alur kerja dan bot...')}
                     className="text-xs focus-visible:ring-primary/40 focus-visible:border-primary/80"
                   />
                 </div>
@@ -239,7 +239,7 @@ export function CreateOrJoinColonyDialog({
                 <Input
                   value={joinInviteCode}
                   onChange={(e) => setJoinInviteCode(e.target.value)}
-                  placeholder="contoh: inv_9f2a1b atau tpl-k9x2m1..."
+                  placeholder={t('contoh: inv_9f2a1b atau tpl-k9x2m1...')}
                   className="text-xs focus-visible:ring-primary/40 focus-visible:border-primary/80"
                   autoFocus
                 />

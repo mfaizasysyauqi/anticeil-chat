@@ -204,7 +204,7 @@ export function UserProfileDialog({
   const handleCopyUsername = () => {
     navigator.clipboard.writeText(`@${username}`);
     setIsCopiedUsername(true);
-    toast.success(`Username @${username} berhasil disalin!`);
+    toast.success(t('Username @{{username}} berhasil disalin!', { username }));
     setTimeout(() => setIsCopiedUsername(false), 2000);
   };
 
@@ -212,7 +212,7 @@ export function UserProfileDialog({
     if (currentUser?.id) {
       navigator.clipboard.writeText(currentUser.id);
       setIsCopiedId(true);
-      toast.success('ID Pengguna berhasil disalin!');
+      toast.success(t('ID Pengguna berhasil disalin!'));
       setTimeout(() => setIsCopiedId(false), 2000);
     }
   };
@@ -221,9 +221,10 @@ export function UserProfileDialog({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="p-0 gap-0 overflow-hidden rounded-2xl border border-border/60 bg-[#111214] text-foreground shadow-2xl w-full max-w-[390px] sm:max-w-[420px] max-h-[92vh] flex flex-col select-none"
+        size="md"
+        className="p-0 gap-0 overflow-hidden rounded-2xl border border-border/60 bg-[#111214] text-foreground shadow-2xl w-full max-h-[92vh] flex flex-col select-none"
       >
-        <DialogTitle className="sr-only">Profil Pengguna Anticeil</DialogTitle>
+        <DialogTitle className="sr-only">{t('Profil Pengguna Anticeil')}</DialogTitle>
 
         {/* Scrollable Container */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -374,7 +375,7 @@ export function UserProfileDialog({
                   <Input
                     value={statusThoughtInput}
                     onChange={(e) => setStatusThoughtInput(e.target.value)}
-                    placeholder="Apa yang sedang Anda pikirkan?"
+                    placeholder={t('Apa yang sedang Anda pikirkan?')}
                     maxLength={100}
                     className="h-7 text-xs bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-1 text-foreground"
                     autoFocus
@@ -389,7 +390,7 @@ export function UserProfileDialog({
                     disabled={isSavingThought}
                     className="h-6 px-2 text-[10px] bg-primary text-primary-foreground font-semibold shrink-0 cursor-pointer"
                   >
-                    {isSavingThought ? '...' : 'Simpan'}
+                    {isSavingThought ? '...' : t('Simpan')}
                   </Button>
                   <Button
                     size="sm"

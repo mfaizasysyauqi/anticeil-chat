@@ -1,20 +1,12 @@
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { ColonyChannel } from '@/chat/chat-types';
 
 export interface DeleteChannelDialogProps {
   channelToDelete: ColonyChannel | null;
   onClose: () => void;
   onDeleteConfirm: () => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, any>) => string;
 }
 
 export function DeleteChannelDialog({
@@ -24,30 +16,18 @@ export function DeleteChannelDialog({
   t,
 }: DeleteChannelDialogProps) {
   return (
-    <Dialog open={!!channelToDelete} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <DialogTitle className="text-red-500">{t('Hapus Channel?')}</DialogTitle>
-          <DialogDescription>
-            Apakah Anda yakin ingin menghapus channel #{channelToDelete?.name}? Semua pesan di dalamnya akan terhapus permanen.
-          </DialogDescription>
-        </DialogHeader>
-
-        <DialogFooter className="mt-4">
-          <Button
-            variant="outline"
-            onClick={onClose}
-          >
-            Batal
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={onDeleteConfirm}
-          >
-            Hapus Channel
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      open={!!channelToDelete}
+      onClose={onClose}
+      onConfirm={onDeleteConfirm}
+      title={t('Hapus Channel?')}
+      description={t(
+        'Apakah Anda yakin ingin menghapus channel #{{name}}? Semua pesan di dalamnya akan terhapus permanen.',
+        { name: channelToDelete?.name }
+      )}
+      confirmLabel={t('Hapus Channel')}
+      cancelLabel={t('Batal')}
+      variant="destructive"
+    />
   );
 }

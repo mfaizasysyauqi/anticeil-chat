@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useTranslation } from '@/core/i18n';
 import { cn } from '@/lib/utils';
 import type { VoiceAppDefinition } from '@/features/voice/data/voice-activities';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
@@ -56,6 +57,7 @@ export function ActivityDestinationDialog({
   onLaunchStandalone,
   onConfirmLaunch,
 }: ActivityDestinationDialogProps) {
+  const { t } = useTranslation();
   const [targetType, setTargetType] = useState<'server' | 'dm'>('server');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -191,7 +193,7 @@ export function ActivityDestinationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border border-border bg-background shadow-2xl">
+      <DialogContent size="lg" className="p-0 overflow-hidden border border-border bg-background shadow-2xl">
         {/* ── App Header Banner ─────────────────────────────────── */}
         <div
           className={cn(
@@ -231,7 +233,7 @@ export function ActivityDestinationDialog({
         <div className="p-4 sm:p-5 space-y-4">
           <div>
             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-              Pilih Tempat Peluncuran
+              {t('Pilih Tempat Peluncuran')}
             </label>
             <div className="grid grid-cols-2 gap-2 p-1 bg-muted/50 rounded-xl border border-border/60">
               <button
@@ -245,7 +247,7 @@ export function ActivityDestinationDialog({
                 )}
               >
                 <Server className="w-4 h-4" />
-                <span>Ke Colony</span>
+                <span>{t('Ke Colony')}</span>
               </button>
               <button
                 type="button"
@@ -258,7 +260,7 @@ export function ActivityDestinationDialog({
                 )}
               >
                 <MessageSquare className="w-4 h-4" />
-                <span>Pesan Langsung</span>
+                <span>{t('Pesan Langsung')}</span>
               </button>
             </div>
           </div>
@@ -395,7 +397,7 @@ export function ActivityDestinationDialog({
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari teman atau percakapan langsung..."
+                  placeholder={t('Cari teman atau percakapan langsung...')}
                   className="h-8 pl-8 text-xs bg-muted/40"
                 />
               </div>
@@ -459,10 +461,10 @@ export function ActivityDestinationDialog({
                   onLaunchStandalone(app);
                 }}
                 className="text-xs h-8 font-medium gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
-                title="Buka mandiri tanpa masuk ke saluran"
+                title={t('Buka mandiri tanpa masuk ke saluran')}
               >
                 <Laptop className="w-3.5 h-3.5 text-primary" />
-                <span>Buka Standalone</span>
+                <span>{t('Buka Standalone')}</span>
               </Button>
             ) : <div />}
 
@@ -474,7 +476,7 @@ export function ActivityDestinationDialog({
                 onClick={() => onOpenChange(false)}
                 className="text-xs h-8 text-muted-foreground hover:text-foreground cursor-pointer"
               >
-                Batal
+                {t('Batal')}
               </Button>
 
               <Button
@@ -488,7 +490,7 @@ export function ActivityDestinationDialog({
                 )}
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Luncurkan ke Saluran</span>
+                <span>{t('Luncurkan ke Saluran')}</span>
               </Button>
             </div>
           </div>

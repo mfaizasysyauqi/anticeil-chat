@@ -63,32 +63,32 @@ export function CreateChannelDialog({
     {
       type: 'text' as const,
       icon: Hash,
-      title: 'Text',
-      description: 'Send messages, images, GIFs, emoji, and opinions',
+      title: t('Text'),
+      description: t('Send messages, images, GIFs, emoji, and opinions'),
     },
     {
       type: 'voice' as const,
       icon: Volume2,
-      title: 'Voice',
-      description: 'Hang out together with voice, video, and screen share',
+      title: t('Voice'),
+      description: t('Hang out together with voice, video, and screen share'),
     },
     {
       type: 'forum' as const,
       icon: MessagesSquare,
-      title: 'Forum',
-      description: 'Create a space for organized discussions',
+      title: t('Forum'),
+      description: t('Create a space for organized discussions'),
     },
     {
       type: 'kanban' as const,
       icon: Columns3,
-      title: 'Kanban Board',
-      description: 'Collaborate on tasks, sprints, cards, and team assignments',
+      title: t('Kanban Board'),
+      description: t('Collaborate on tasks, sprints, cards, and team assignments'),
     },
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn('sm:max-w-[420px]', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
+      <DialogContent size="md" className={cn(LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
         <form onSubmit={onCreateChannelSubmit} className="flex flex-col h-full min-h-0">
           {/* Header */}
           <DialogHeader>
@@ -96,7 +96,7 @@ export function CreateChannelDialog({
               {t('Create Channel')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              in {newChannelCategory === 'CHANNELS' ? (activeColony?.name || 'Channels') : 'Direct Messages'}
+              {t('in')} {newChannelCategory === 'CHANNELS' ? (activeColony?.name || t('Channels')) : t('Direct Messages')}
             </DialogDescription>
           </DialogHeader>
 
@@ -206,7 +206,7 @@ export function CreateChannelDialog({
                     const val = e.target.value;
                     setNewChannelName(newChannelType === 'voice' ? val : val.toLowerCase().replace(/\s+/g, '-'));
                   }}
-                  placeholder="new-channel"
+                  placeholder={t('new-channel')}
                   className="pl-8 pr-8 bg-muted/40 border border-border text-foreground placeholder:text-muted-foreground rounded-lg h-9 text-xs focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
                   required
                 />
@@ -221,10 +221,10 @@ export function CreateChannelDialog({
                   <Lock className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
                     <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                      Private Channel
+                      {t('Private Channel')}
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-tight">
-                      Only selected members and roles will be able to view this channel.
+                      {t('Only selected members and roles will be able to view this channel.')}
                     </p>
                   </div>
                 </div>
@@ -246,7 +246,7 @@ export function CreateChannelDialog({
               onClick={() => onOpenChange(false)}
               className="text-xs font-semibold h-8 px-3"
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               type="submit"
@@ -254,7 +254,7 @@ export function CreateChannelDialog({
               disabled={!newChannelName.trim()}
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 rounded-lg shadow-xs transition-all cursor-pointer"
             >
-              Create Channel
+              {t('Create Channel')}
             </Button>
           </DialogFooter>
         </form>

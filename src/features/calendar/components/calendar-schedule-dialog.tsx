@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useTranslation } from '@/core/i18n';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
 import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,7 @@ export function CalendarScheduleDialog({
   onCreateEvent,
   defaultDate,
 }: CalendarScheduleDialogProps) {
+  const { t } = useTranslation();
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newType, setNewType] = useState<'meeting' | 'task' | 'activity'>('meeting');
@@ -60,9 +62,9 @@ export function CalendarScheduleDialog({
       startTime: startDateTime,
       type: newType,
       colonyId: selectedColonyId,
-      hubName: selectedColony?.name || 'Komunitas Anticeil',
+      hubName: selectedColony?.name || t('Komunitas Anticeil'),
       channelId: selectedChannelId || undefined,
-      channelName: selectedChannel?.name || 'General Voice',
+      channelName: selectedChannel?.name || t('General Voice'),
       status: 'scheduled',
     });
 
@@ -73,28 +75,28 @@ export function CalendarScheduleDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md p-0 overflow-hidden bg-card border-border">
-        <DialogTitle className="sr-only">Jadwalkan Acara Baru</DialogTitle>
+      <DialogContent size="md" className="p-0 overflow-hidden bg-card border-border">
+        <DialogTitle className="sr-only">{t('Jadwalkan Acara Baru')}</DialogTitle>
         <form onSubmit={handleSubmit}>
           <div className={cn('py-4 border-b border-border bg-muted/20', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
             <h3 className="text-base font-bold text-foreground flex items-center gap-2">
               <CalendarIcon className="w-4 h-4 text-primary" />
-              Jadwalkan Acara / Meeting
+              {t('Jadwalkan Acara / Meeting')}
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Rencanakan panggilan suara atau pertemuan komunitas dengan rekan tim
+              {t('Rencanakan panggilan suara atau pertemuan komunitas dengan rekan tim')}
             </p>
           </div>
 
           <div className={cn('py-4 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                Judul Acara / Meeting *
+                {t('Judul Acara / Meeting *')}
               </label>
               <Input
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="Contoh: Sprint Planning Minggu 4"
+                placeholder={t('Contoh: Sprint Planning Minggu 4')}
                 className="h-9 text-xs"
                 required
               />
@@ -103,7 +105,7 @@ export function CalendarScheduleDialog({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Tanggal
+                  {t('Tanggal')}
                 </label>
                 <Input
                   type="date"
@@ -115,7 +117,7 @@ export function CalendarScheduleDialog({
               </div>
               <div>
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Waktu (WIB)
+                  {t('Waktu (WIB)')}
                 </label>
                 <Input
                   type="time"
@@ -130,7 +132,7 @@ export function CalendarScheduleDialog({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Pilih Server / Komunitas
+                  {t('Pilih Server / Komunitas')}
                 </label>
                 <Select
                   value={selectedColonyId}
@@ -140,7 +142,7 @@ export function CalendarScheduleDialog({
                   }}
                 >
                   <SelectTrigger className="w-full h-9 text-xs">
-                    <SelectValue placeholder="Pilih Colony..." />
+                    <SelectValue placeholder={t('Pilih Colony...')} />
                   </SelectTrigger>
                   <SelectContent>
                     {colonies.map((h) => (
@@ -153,19 +155,19 @@ export function CalendarScheduleDialog({
               </div>
               <div>
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Saluran Suara (Voice)
+                  {t('Saluran Suara (Voice)')}
                 </label>
                 <Select
                   value={selectedChannelId}
                   onValueChange={(val) => setSelectedChannelId(val)}
                 >
                   <SelectTrigger className="w-full h-9 text-xs">
-                    <SelectValue placeholder="Pilih Saluran..." />
+                    <SelectValue placeholder={t('Pilih Saluran...')} />
                   </SelectTrigger>
                   <SelectContent>
                     {voiceChannels.length === 0 ? (
                       <SelectItem value="_empty" disabled>
-                        Tidak ada saluran suara
+                        {t('Tidak ada saluran suara')}
                       </SelectItem>
                     ) : (
                       voiceChannels.map((c) => (
@@ -181,12 +183,12 @@ export function CalendarScheduleDialog({
 
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                Deskripsi / Agenda Pembahasan
+                {t('Deskripsi / Agenda Pembahasan')}
               </label>
               <textarea
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
-                placeholder="Tuliskan topik agenda meeting yang akan dibahas..."
+                placeholder={t('Tuliskan topik agenda meeting yang akan dibahas...')}
                 className="w-full rounded-md border border-input bg-background p-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none min-h-[80px]"
               />
             </div>
@@ -200,14 +202,14 @@ export function CalendarScheduleDialog({
               onClick={() => onOpenChange(false)}
               className="h-8 text-xs cursor-pointer"
             >
-              Batal
+              {t('Batal')}
             </Button>
             <Button
               type="submit"
               size="sm"
               className="h-8 text-xs font-semibold cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              Simpan Jadwal
+              {t('Simpan Jadwal')}
             </Button>
           </div>
         </form>

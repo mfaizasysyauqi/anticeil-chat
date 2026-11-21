@@ -31,7 +31,7 @@ export function CreateCategoryDialog({
 }: CreateCategoryDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
+      <DialogContent size="md" className="bg-card border-border text-foreground">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -55,7 +55,7 @@ export function CreateCategoryDialog({
               <Input
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value.toUpperCase())}
-                placeholder="misal: INFORMASI atau GAMING"
+                placeholder={t('misal: INFORMASI atau GAMING')}
                 className="bg-muted/40 border-border text-foreground placeholder:text-muted-foreground text-xs uppercase"
                 autoFocus
                 required
