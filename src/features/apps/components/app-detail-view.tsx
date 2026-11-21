@@ -7,13 +7,10 @@ import {
   MoreHorizontal,
   Users,
   ShieldCheck,
-  ExternalLink,
   ChevronLeft,
   ChevronRight,
   Check,
-  Sparkles,
   Gamepad2,
-  Tv,
   Globe,
   HelpCircle,
   FileText,
@@ -54,9 +51,13 @@ export function AppDetailView({
   const [isCopied, setIsCopied] = useState(false);
 
   const AppIcon = app.icon || Gamepad2;
-  const screenshots = app.screenshots && app.screenshots.length > 0
-    ? app.screenshots
-    : [app.bannerImage || 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=1200&q=80'];
+  const screenshots =
+    app.screenshots && app.screenshots.length > 0
+      ? app.screenshots
+      : [
+          app.bannerImage ||
+            'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=1200&q=80',
+        ];
 
   const categoryLabel =
     app.category === 'productivity'
@@ -89,79 +90,81 @@ export function AppDetailView({
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
-      {/* ── App Bar Header (Discord style: Back arrow + Title) ─────────────── */}
-      <div className={cn('sticky top-0 z-30 h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background/95 backdrop-blur-md gap-3', horizontalPadding)}>
-        <div className="flex items-center gap-3 min-w-0">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            onClick={onBack}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/60 cursor-pointer shrink-0"
-            title="Kembali ke Katalog Aktivitas"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+      {/* ── App Bar Header (Symmetrical with max-w-6xl body) ─────────────── */}
+      <div className="sticky top-0 z-30 h-12 border-b border-sidebar-border bg-background/95 backdrop-blur-md shrink-0 w-full">
+        <div className={cn('h-full max-w-6xl mx-auto flex items-center justify-between gap-3', horizontalPadding)}>
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={onBack}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/60 cursor-pointer shrink-0"
+              title="Kembali ke Katalog Aktivitas"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
 
-          <span className="text-sm font-bold text-foreground truncate tracking-wide">
-            {app.title}
-          </span>
-        </div>
+            <span className="text-sm font-bold text-foreground truncate tracking-wide">
+              {app.title}
+            </span>
+          </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleShare}
-            className="h-8 px-2.5 sm:px-3 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground border-border"
-            title="Salin tautan aplikasi"
-          >
-            {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{isCopied ? 'Tersalin' : 'Bagikan'}</span>
-          </Button>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleShare}
+              className="h-8 px-2.5 sm:px-3 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground border-border"
+              title="Salin tautan aplikasi"
+            >
+              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{isCopied ? 'Tersalin' : 'Bagikan'}</span>
+            </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="icon-xs"
-                variant="ghost"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
-                title="Opsi lainnya"
-              >
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={handleShare} className="gap-2 cursor-pointer text-xs">
-                <Share2 className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>Salin Tautan Aktivitas</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenSendToChannel(app)} className="gap-2 cursor-pointer text-xs">
-                <Radio className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>Buka di Saluran Lain</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => toast.info('Aplikasi ini terverifikasi aman oleh tim Anticeil.')}
-                className="gap-2 cursor-pointer text-xs"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Status Keamanan: Terverifikasi</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon-xs"
+                  variant="ghost"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                  title="Opsi lainnya"
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={handleShare} className="gap-2 cursor-pointer text-xs">
+                  <Share2 className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span>Salin Tautan Aktivitas</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onOpenSendToChannel(app)} className="gap-2 cursor-pointer text-xs">
+                  <Radio className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span>Buka di Saluran Lain</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => toast.info('Aplikasi ini terverifikasi aman oleh tim Anticeil.')}
+                  className="gap-2 cursor-pointer text-xs"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Status Keamanan: Terverifikasi</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
       {/* ── Main Scroll Area ──────────────────────────────────────────────── */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className={cn('py-6 max-w-6xl mx-auto space-y-6', horizontalPadding)}>
-          {/* Hero Banner with Landscape Cover */}
+        <div className={cn('py-4 sm:py-6 max-w-6xl mx-auto space-y-6', horizontalPadding)}>
+          {/* Hero Banner with Landscape Cover (Mobile / Tablet / Desktop Responsive) */}
           <div className="relative w-full rounded-2xl overflow-hidden border border-border shadow-2xl bg-zinc-950">
             {/* Landscape Backdrop */}
             <div
               className={cn(
-                'h-52 sm:h-64 md:h-76 w-full relative bg-cover bg-center overflow-hidden',
+                'h-44 sm:h-56 md:h-64 lg:h-76 w-full relative bg-cover bg-center overflow-hidden transition-all duration-300',
                 app.bannerGradient || 'bg-gradient-to-r from-zinc-900 to-zinc-950'
               )}
               style={
@@ -174,23 +177,23 @@ export function AppDetailView({
               <div className="absolute inset-0 bg-gradient-to-t from-background via-black/40 to-transparent" />
             </div>
 
-            {/* Overlapping App Header & Meta */}
-            <div className="px-5 sm:px-8 pb-6 pt-0 -mt-12 sm:-mt-14 relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-5">
-              <div className="flex items-end gap-4 min-w-0">
-                {/* Large App Icon */}
+            {/* Overlapping App Header & Meta: Mobile stacks, Tablet/Desktop flex-row */}
+            <div className="px-4 sm:px-6 md:px-8 pb-5 sm:pb-6 pt-0 -mt-8 sm:-mt-11 md:-mt-14 relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-5">
+              <div className="flex items-end gap-3 sm:gap-4 min-w-0">
+                {/* Responsive App Icon */}
                 <div
                   className={cn(
-                    'size-20 sm:size-24 rounded-2xl flex items-center justify-center shadow-2xl shrink-0 border-4 border-background',
+                    'size-16 sm:size-20 md:size-24 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-2xl shrink-0 border-4 border-background',
                     app.iconBg || 'bg-primary',
                     app.iconColor || 'text-white'
                   )}
                 >
-                  <AppIcon className="w-10 h-10 sm:w-12 sm:h-12" />
+                  <AppIcon className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12" />
                 </div>
 
                 <div className="space-y-1 min-w-0 pb-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight truncate">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-foreground tracking-tight truncate">
                       {app.title}
                     </h1>
                     {app.badge && (
@@ -205,13 +208,13 @@ export function AppDetailView({
                 </div>
               </div>
 
-              {/* Action Buttons: Primary [Launch] + Secondary [Add/Send] */}
-              <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+              {/* Action Buttons: Stacked full-width on mobile, inline on tablet & desktop */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full md:w-auto shrink-0 pt-1 md:pt-0">
                 <Button
                   size="default"
                   onClick={() => onLaunchStandalone(app)}
                   className={cn(
-                    'h-10 px-5 sm:px-6 font-bold text-sm gap-2 cursor-pointer shadow-lg transition-transform active:scale-95 shrink-0',
+                    'h-11 sm:h-10 px-5 sm:px-6 font-bold text-sm gap-2 cursor-pointer shadow-lg transition-transform active:scale-95 justify-center shrink-0 w-full sm:w-auto',
                     app.buttonClass || 'bg-indigo-600 hover:bg-indigo-500 text-white'
                   )}
                   title="Mulai dan jalankan aktivitas ini"
@@ -224,7 +227,7 @@ export function AppDetailView({
                   size="default"
                   variant="outline"
                   onClick={() => onOpenSendToChannel(app)}
-                  className="h-10 px-4 font-semibold text-sm gap-2 cursor-pointer bg-card hover:bg-accent border-border text-foreground shrink-0 shadow-xs"
+                  className="h-11 sm:h-10 px-4 font-semibold text-sm gap-2 cursor-pointer bg-card hover:bg-accent border-border text-foreground justify-center shrink-0 shadow-xs w-full sm:w-auto"
                   title="Buka atau kirim undangan aktivitas ke saluran colony"
                 >
                   <Radio className="w-4 h-4 text-primary" />
@@ -234,10 +237,44 @@ export function AppDetailView({
             </div>
           </div>
 
-          {/* ── 2-Column Content Layout (Discord App Directory Style) ──────── */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-2">
+          {/* ── Mobile & Tablet Quick Stats Grid (< lg) ─────────────── */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 lg:hidden">
+            <div className="p-3 rounded-xl bg-card/60 border border-border/60 flex items-center gap-2.5">
+              <Users className="w-4 h-4 text-primary shrink-0" />
+              <div className="min-w-0">
+                <span className="text-[10px] uppercase font-semibold text-muted-foreground block truncate">Colony</span>
+                <span className="text-xs font-bold text-foreground block truncate">{app.serverCount || 'In 48 colonies'}</span>
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-card/60 border border-border/60 flex items-center gap-2.5">
+              <Gamepad2 className="w-4 h-4 text-emerald-500 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-[10px] uppercase font-semibold text-muted-foreground block truncate">Kategori</span>
+                <span className="text-xs font-bold text-foreground block truncate">{categoryLabel}</span>
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-card/60 border border-border/60 flex items-center gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-blue-500 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-[10px] uppercase font-semibold text-muted-foreground block truncate">Pengembang</span>
+                <span className="text-xs font-bold text-foreground block truncate">{app.developer}</span>
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-card/60 border border-border/60 flex items-center gap-2.5">
+              <Globe className="w-4 h-4 text-amber-500 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-[10px] uppercase font-semibold text-muted-foreground block truncate">Bahasa</span>
+                <span className="text-xs font-bold text-foreground block truncate">
+                  {app.supportedLanguages?.[0] || 'ID, EN'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── 2-Column Content Layout (Responsive: 1-col on mobile/tablet, 2-col on desktop) ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 pt-1">
             {/* Left Column: Media Carousel + Overview + Permissions + You Might Like */}
-            <div className="lg:col-span-2 space-y-8 min-w-0">
+            <div className="lg:col-span-2 space-y-6 sm:space-y-8 min-w-0">
               {/* Media Carousel / Screenshot Preview */}
               {screenshots.length > 0 && (
                 <div className="space-y-3">
@@ -296,7 +333,7 @@ export function AppDetailView({
                 <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Overview
                 </h3>
-                <div className="space-y-3 text-sm text-foreground/90 leading-relaxed font-normal bg-card/40 border border-border/50 rounded-xl p-5">
+                <div className="space-y-3 text-sm text-foreground/90 leading-relaxed font-normal bg-card/40 border border-border/50 rounded-xl p-4 sm:p-5">
                   <h4 className="font-bold text-base text-foreground">
                     APA ITU {app.title.toUpperCase()}?
                   </h4>
@@ -329,13 +366,13 @@ export function AppDetailView({
                 </div>
               </div>
 
-              {/* Section: You Might Also Like */}
+              {/* Section: You Might Also Like (Responsive 1/2/3 cols) */}
               {relatedApps.length > 0 && (
                 <div className="space-y-3 pt-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Aktivitas Serupa Lainnya
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {relatedApps.map((rel) => {
                       const RelIcon = rel.icon || Gamepad2;
                       return (
@@ -373,10 +410,38 @@ export function AppDetailView({
                   </div>
                 </div>
               )}
+
+              {/* Mobile & Tablet Bottom Links (< lg) */}
+              <div className="lg:hidden pt-4 border-t border-border/40 flex items-center justify-center gap-5 text-xs text-muted-foreground flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => toast.info('Ketentuan Layanan Anticeil Community Standard')}
+                  className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Ketentuan Layanan</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info('Kebijakan Privasi & Keamanan Data')}
+                  className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Kebijakan Privasi</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info('Pusat Bantuan & Komunitas')}
+                  className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors"
+                >
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  <span>Bantuan</span>
+                </button>
+              </div>
             </div>
 
-            {/* Right Column: Metadata Sidebar */}
-            <div className="space-y-6 lg:border-l lg:border-border/60 lg:pl-6">
+            {/* Right Column: Desktop Metadata Sidebar (>= lg) */}
+            <div className="hidden lg:block space-y-6 lg:border-l lg:border-border/60 lg:pl-6">
               {/* Server Count */}
               <div className="space-y-1.5">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
