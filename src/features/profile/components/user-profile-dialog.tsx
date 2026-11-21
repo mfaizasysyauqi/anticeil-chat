@@ -219,7 +219,10 @@ export function UserProfileDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="p-0 gap-0 overflow-hidden rounded-2xl border border-border/60 bg-[#111214] text-foreground shadow-2xl w-full max-w-[390px] sm:max-w-[420px] max-h-[92vh] flex flex-col select-none">
+      <DialogContent
+        showCloseButton={false}
+        className="p-0 gap-0 overflow-hidden rounded-2xl border border-border/60 bg-[#111214] text-foreground shadow-2xl w-full max-w-[390px] sm:max-w-[420px] max-h-[92vh] flex flex-col select-none"
+      >
         <DialogTitle className="sr-only">Profil Pengguna Anticeil</DialogTitle>
 
         {/* Scrollable Container */}
