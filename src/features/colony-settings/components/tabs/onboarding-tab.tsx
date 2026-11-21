@@ -439,7 +439,7 @@ export function OnboardingTab({
 
       {/* ── MODAL: Onboarding Setup Builder ── */}
       <Dialog open={isBuilderOpen} onOpenChange={setIsBuilderOpen}>
-        <DialogContent className="sm:max-w-[620px] max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card border-border text-foreground shadow-2xl">
+        <DialogContent size="md" className="max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card border-border text-foreground shadow-2xl">
           <DialogHeader className="p-5 border-b border-border/60 shrink-0">
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
               <Sparkles className="w-4 h-4 text-sidebar-primary" />

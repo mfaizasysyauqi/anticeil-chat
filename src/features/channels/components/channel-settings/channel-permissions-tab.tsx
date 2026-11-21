@@ -796,7 +796,7 @@ export function ChannelPermissionsTab({
 
       {/* Add Target Modal (Roles / Members) */}
       <Dialog open={isAddTargetOpen} onOpenChange={setIsAddTargetOpen}>
-        <DialogContent className="sm:max-w-[420px] bg-card border border-border/80 text-foreground">
+        <DialogContent size="md" className="bg-card border border-border/80 text-foreground">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-foreground">
               {t('Tambahkan Peran atau Anggota')}
@@ -867,7 +867,7 @@ export function ChannelPermissionsTab({
 
       {/* Permissions Help Modal */}
       <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
-        <DialogContent className="sm:max-w-[460px] bg-card border border-border/80 text-foreground">
+        <DialogContent size="md" className="bg-card border border-border/80 text-foreground">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
               <HelpCircle className="w-5 h-5 text-[#5865F2]" />

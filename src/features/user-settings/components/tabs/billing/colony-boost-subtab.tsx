@@ -665,7 +665,7 @@ export function ColonyBoostSubtab({
 
       {/* ── 7. BUY BOOST PACKS DIALOG (MIDTRANS SNAP) ── */}
       <Dialog open={isBuyBoostDialogOpen} onOpenChange={setIsBuyBoostDialogOpen}>
-        <DialogContent className="max-w-md p-6 bg-card border-border rounded-2xl space-y-4">
+        <DialogContent size="md" className="p-6 bg-card border-border rounded-2xl space-y-4">
           <DialogHeader className="space-y-1 text-left">
             <div className="flex items-center gap-2 text-sky-400">
               <Gem className="w-5 h-5 fill-current" />

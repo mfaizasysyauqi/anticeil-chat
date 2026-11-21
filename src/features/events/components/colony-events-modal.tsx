@@ -131,8 +131,9 @@ export function ColonyEventsModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
+        size="md"
         aria-describedby={undefined}
-        className="max-w-[480px] p-0 bg-background border-border text-foreground rounded-2xl overflow-hidden shadow-2xl focus:outline-none"
+        className="p-0 bg-background border-border text-foreground rounded-2xl overflow-hidden shadow-2xl focus:outline-none"
       >
         <DialogTitle className="sr-only">Server Events</DialogTitle>
 

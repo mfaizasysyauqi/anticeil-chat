@@ -70,28 +70,35 @@ export const BUTTON_STYLES = {
 } as const;
 
 /**
- * Dialog & Modal Style Tokens
+ * Dialog & Modal Style Tokens (3-Tier Standard Architecture)
+ * - Large: Two-pane settings modals (User Settings, Edit Profile, Colony Settings)
+ * - Medium: Single-pane feature modals (Colony Komunitas, Forms, Tabs - all dialogs smaller than Large)
+ * - Small: Confirmation & Delete modals (Delete Channel, Delete Colony, Alerts)
  */
 export const DIALOG_STYLES = {
-  // Standard Single-Pane Modal (Form / CRUD / Schedule)
+  // Dialog Besar (Two-Pane / Large Viewport Settings)
+  MODAL_LARGE:
+    'p-0 w-full h-full sm:w-[96vw] sm:h-[94dvh] md:w-[94vw] md:h-[92vh] lg:w-[92vw] lg:max-w-6xl xl:w-[90vw] xl:max-w-7xl xl:h-[90vh] xl:max-h-[900px] overflow-hidden bg-background border-0 sm:border border-border flex flex-col md:flex-row rounded-none sm:rounded-2xl shadow-2xl gap-0 select-none',
+
+  // Dialog Sedang (Standard Single-Pane Modal: Colony Komunitas, Forms, CRUD, Schedules)
+  MODAL_MEDIUM:
+    'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[88vh] overflow-y-auto custom-scrollbar',
+
+  // Dialog Kecil (Confirmation, Delete, Alerts)
+  MODAL_SMALL:
+    'w-[calc(100vw-2rem)] sm:w-full sm:max-w-sm p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] overflow-y-auto custom-scrollbar',
+
+  // Aliases for 100% backward compatibility
   MODAL_STANDARD:
-    'w-[92vw] sm:w-[500px] p-5 rounded-xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] overflow-y-auto custom-scrollbar',
-  
-  // Compact Modal (Confirmation, Delete, Mini Form)
+    'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[88vh] overflow-y-auto custom-scrollbar',
   MODAL_COMPACT:
-    'w-[92vw] sm:w-[420px] p-5 rounded-xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] overflow-y-auto custom-scrollbar',
-    
-  // Wide Modal (Complex multi-field forms, wizard)
+    'w-[calc(100vw-2rem)] sm:w-full sm:max-w-sm p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] overflow-y-auto custom-scrollbar',
   MODAL_WIDE:
-    'w-[94vw] sm:w-[600px] p-6 rounded-xl bg-card border border-border shadow-2xl z-[160] max-h-[88vh] overflow-y-auto custom-scrollbar',
-    
-  // Product & Cosmetic Preview Modal
+    'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[88vh] overflow-y-auto custom-scrollbar',
   MODAL_PREVIEW:
-    'w-[92vw] sm:w-[480px] p-0 overflow-hidden rounded-xl bg-card border border-border shadow-2xl z-[150]',
-    
-  // Two-Pane Settings Modal Container (Colony/User Settings)
+    'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md p-0 overflow-hidden rounded-2xl bg-card border border-border shadow-2xl z-[150]',
   MODAL_TWO_PANE:
-    'p-0 w-[94vw] md:w-[90vw] max-w-[90vw] h-[94dvh] md:h-[90vh] max-h-[90vh] overflow-hidden bg-background border border-border flex flex-col md:flex-row rounded-2xl shadow-2xl gap-0 select-none',
+    'p-0 w-full h-full sm:w-[96vw] sm:h-[94dvh] md:w-[94vw] md:h-[92vh] lg:w-[92vw] lg:max-w-6xl xl:w-[90vw] xl:max-w-7xl xl:h-[90vh] xl:max-h-[900px] overflow-hidden bg-background border-0 sm:border border-border flex flex-col md:flex-row rounded-none sm:rounded-2xl shadow-2xl gap-0 select-none',
   
   // Modal Header & Titles
   HEADER_TITLE: 'text-sm font-bold flex items-center gap-2 text-foreground',

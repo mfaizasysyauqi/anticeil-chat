@@ -760,7 +760,7 @@ export function AppDirectoryTab({
       {/* ── App Detail & Add to Server Modal ── */}
       <Dialog open={!!selectedApp} onOpenChange={(open) => !open && setSelectedApp(null)}>
         {selectedApp && (
-          <DialogContent className="sm:max-w-[540px] p-0 overflow-hidden bg-[#1e1f22] border-border/80 text-foreground">
+          <DialogContent size="md" className="p-0 overflow-hidden bg-[#1e1f22] border-border/80 text-foreground">
             {/* Modal Banner */}
             <div className="relative h-40 w-full overflow-hidden">
               {selectedApp.bannerImage ? (
@@ -889,7 +889,7 @@ export function AppDirectoryTab({
       {/* ── Manage Bot Permissions & Scope Modal ── */}
       <Dialog open={!!managingApp} onOpenChange={(open) => !open && setManagingApp(null)}>
         {managingApp && (
-          <DialogContent className="sm:max-w-[620px] max-h-[88vh] overflow-y-auto p-0 bg-[#1e1f22] border-border/80 text-foreground custom-scrollbar">
+          <DialogContent size="md" className="max-h-[88vh] overflow-y-auto p-0 bg-[#1e1f22] border-border/80 text-foreground custom-scrollbar">
             <DialogHeader className="p-6 pb-4 border-b border-border/60">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">

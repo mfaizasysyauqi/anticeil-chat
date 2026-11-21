@@ -89,8 +89,9 @@ export function ActivityLauncherDialog({
       {/* ── DISCORD-STYLE ACTIVITIES LAUNCHER MODAL (100% Match to Discord Screenshot) ── */}
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
+          size="md"
           showCloseButton={false}
-          className="w-[95vw] sm:w-[500px] max-w-[500px] p-0 bg-background border border-border text-foreground overflow-hidden shadow-2xl rounded-[16px] flex flex-col max-h-[82vh] h-[520px] focus:outline-none"
+          className="p-0 bg-background border border-border text-foreground overflow-hidden shadow-2xl rounded-2xl flex flex-col max-h-[82vh] h-[520px] focus:outline-none"
         >
           <DialogTitle className="sr-only">{t('Aktivitas')}</DialogTitle>
           <DialogDescription className="sr-only">{t('Jelajahi dan jalankan aktivitas dalam panggilan suara ini.')}</DialogDescription>
@@ -369,7 +370,7 @@ export function ActivityLauncherDialog({
 
       {/* ── Anticeil Nectar Paywall Modal ──────────────────── */}
       <Dialog open={isUpgradeModalOpen} onOpenChange={setIsUpgradeModalOpen}>
-        <DialogContent className="sm:max-w-[480px] p-0 bg-background border border-border text-foreground overflow-hidden shadow-2xl">
+        <DialogContent size="md" className="p-0 bg-background border border-border text-foreground overflow-hidden shadow-2xl">
           <div className="relative h-32 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-6 flex flex-col justify-end">
             <div className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-amber-300 animate-spin-slow" />

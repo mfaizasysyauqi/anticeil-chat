@@ -40,7 +40,7 @@ export function EditChannelDialog({
 }: EditChannelDialogProps) {
   return (
     <Dialog open={!!channelToEdit} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent size="md">
         <form onSubmit={onEditChannelSubmit}>
           <DialogHeader>
             <DialogTitle>{t('Edit Channel')}</DialogTitle>

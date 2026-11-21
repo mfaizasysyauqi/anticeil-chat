@@ -8,11 +8,17 @@ import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | 'two-pane';
 
+/**
+ * 3-Tier Standard Dialog Sizes:
+ * - 'sm': Dialog Kecil (Confirmations, Delete dialogs, Alerts, Mini Prompts)
+ * - 'md': Dialog Sedang (Colony Komunitas, Forms, Feature dialogs - all dialogs smaller than Dialog Besar)
+ * - 'lg' / 'two-pane': Dialog Besar (User Settings, Edit Profile, Colony Settings, Channel Settings)
+ */
 export const dialogSizeClasses: Record<DialogSize, string> = {
-  sm: 'sm:max-w-sm',
-  md: 'sm:max-w-md',
-  lg: 'sm:max-w-lg',
-  xl: 'sm:max-w-xl',
+  sm: 'w-[calc(100vw-2rem)] sm:w-full sm:max-w-sm',
+  md: 'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md',
+  lg: cn(LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER, 'p-0'),
+  xl: cn(LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER, 'p-0'),
   'two-pane': cn(LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER, 'p-0'),
 };
 
@@ -68,10 +74,13 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & DialogContentProps) {
   const isTwoPane =
     size === 'two-pane' ||
+    size === 'lg' ||
+    size === 'xl' ||
     (typeof className === 'string' &&
       (className.includes('TWO_PANE_CONTAINER') ||
-        className.includes('MODAL_TWO_PANE')));
-  const resolvedSize: DialogSize = size ?? (isTwoPane ? 'two-pane' : 'lg');
+        className.includes('MODAL_TWO_PANE') ||
+        className.includes('MODAL_LARGE')));
+  const resolvedSize: DialogSize = size ?? (isTwoPane ? 'two-pane' : 'md');
 
   return (
     <DialogPortal data-slot="dialog-portal">
@@ -81,7 +90,7 @@ function DialogContent({
         className={cn(
           isTwoPane
             ? 'fixed top-[50%] left-[50%] z-50 flex flex-col translate-x-[-50%] translate-y-[-50%] duration-200 outline-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]'
-            : 'fixed top-[50%] left-[50%] z-50 flex flex-col w-[calc(100vw-1.5rem)] sm:w-full max-h-[calc(100svh-2.5rem)] translate-x-[-50%] translate-y-[-50%] rounded-[16px] border border-border bg-background px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 text-foreground shadow-2xl duration-200 outline-hidden overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
+            : 'fixed top-[50%] left-[50%] z-50 flex flex-col max-h-[calc(100svh-2.5rem)] translate-x-[-50%] translate-y-[-50%] rounded-2xl border border-border bg-card p-5 sm:p-6 text-foreground shadow-2xl duration-200 outline-hidden overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
           dialogSizeClasses[resolvedSize],
           className,
         )}
@@ -200,6 +209,9 @@ export {
 };
 
 export * from './confirm-dialog';
+export * from './small-dialog';
+export * from './medium-dialog';
+export * from './large-dialog';
 
 export type DialogContentProps = {
   showCloseButton?: boolean;

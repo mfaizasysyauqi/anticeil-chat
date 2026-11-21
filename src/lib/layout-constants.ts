@@ -98,11 +98,11 @@ export const LAYOUT_DIALOG_SPACING = {
     'p-0 w-full h-full max-w-full max-h-full sm:w-[96vw] sm:h-[94dvh] sm:max-w-[96vw] sm:max-h-[94dvh] md:w-[94vw] md:max-w-[94vw] md:h-[92vh] md:max-h-[860px] lg:w-[92vw] lg:max-w-6xl xl:w-[90vw] xl:max-w-7xl xl:h-[90vh] xl:max-h-[900px] overflow-hidden bg-background border-0 sm:border border-border flex flex-col md:flex-row rounded-none sm:rounded-2xl shadow-2xl gap-0 select-none',
 
   /**
-   * Single-pane dialog standard container (e.g. Create Channel, Add Friend, Schedule, etc.)
-   * Symmetrical horizontal padding matching the app bar (px-3.5 sm:px-4 md:px-5 lg:px-6)
+   * Single-pane dialog standard container (Dialog Sedang: e.g. Colony Komunitas, Create Channel, Schedule, etc.)
+   * Symmetrical horizontal padding matching the app bar (px-3.5 sm:px-4 md:px-5 lg:px-6) and max-w-md
    */
   STANDARD_CONTAINER:
-    'w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[calc(100svh-2.5rem)] px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5',
+    'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md max-h-[calc(100svh-2.5rem)] p-5 sm:p-6 rounded-2xl',
 
   /** Symmetrical horizontal padding for dialog headers & body content matching App Bar */
   PANE_HORIZONTAL: LAYOUT_PAGE_SPACING.HORIZONTAL,

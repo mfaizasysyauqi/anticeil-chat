@@ -121,7 +121,7 @@ export function AddFriendDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-background border-border">
+      <DialogContent size="md" className="p-0 overflow-hidden bg-background border-border">
         <div className={cn('py-4 pb-3 border-b border-border/50', LAYOUT_DIALOG_SPACING.PANE_HORIZONTAL)}>
           <DialogHeader className="pb-1 text-left">
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">

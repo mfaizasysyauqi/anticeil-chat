@@ -217,7 +217,7 @@ export function AccountTwoFactorModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-6 bg-background border border-border shadow-2xl">
+      <DialogContent size="md" className="p-6 bg-background border border-border shadow-2xl">
         <DialogHeader className="space-y-1.5 text-left">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary">

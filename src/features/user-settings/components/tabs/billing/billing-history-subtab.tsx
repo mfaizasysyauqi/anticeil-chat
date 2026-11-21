@@ -383,7 +383,7 @@ export function BillingHistorySubtab() {
         open={Boolean(selectedTxForReceipt)}
         onOpenChange={(open) => !open && setSelectedTxForReceipt(null)}
       >
-        <DialogContent className="max-w-md p-6 bg-card border-border rounded-2xl space-y-5">
+        <DialogContent size="md" className="p-6 bg-card border-border rounded-2xl space-y-5">
           <DialogHeader className="space-y-1 text-left">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

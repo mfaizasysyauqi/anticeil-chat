@@ -742,7 +742,7 @@ export function AccountTab({
 
             {/* Disable Account Confirmation Dialog */}
             <Dialog open={showDisableDialog} onOpenChange={setShowDisableDialog}>
-              <DialogContent className="max-w-md bg-card border-border text-foreground">
+              <DialogContent size="sm" className="bg-card border-border text-foreground">
                 <DialogHeader>
                   <DialogTitle className="text-base font-bold text-foreground">
                     {t('Nonaktifkan Akun Anda?')}
@@ -786,7 +786,7 @@ export function AccountTab({
 
             {/* Permanent Delete Account Dialog */}
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-              <DialogContent className="max-w-md bg-card border-destructive/30 text-foreground">
+              <DialogContent size="sm" className="bg-card border-destructive/30 text-foreground">
                 <DialogHeader>
                   <div className="flex items-center gap-2 text-destructive mb-1">
                     <AlertTriangle className="w-5 h-5 text-destructive" />
@@ -851,7 +851,7 @@ export function AccountTab({
 
             {/* Family Center Setup Dialog */}
             <Dialog open={showFamilyCenterDialog} onOpenChange={setShowFamilyCenterDialog}>
-              <DialogContent className="max-w-md bg-card border-border text-foreground shadow-2xl p-6">
+              <DialogContent size="md" className="bg-card border-border text-foreground shadow-2xl p-6">
                 <DialogHeader className="space-y-2">
                   <div className="flex items-center gap-2.5">
                     <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">

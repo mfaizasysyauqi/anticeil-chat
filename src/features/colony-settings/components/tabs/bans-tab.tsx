@@ -339,7 +339,7 @@ export function BansTab({
 
       {/* ── Ban Member Dialog ── */}
       <Dialog open={isBanDialogOpen} onOpenChange={setIsBanDialogOpen}>
-        <DialogContent className="sm:max-w-[420px] bg-card border border-border/80 text-foreground">
+        <DialogContent size="md" className="bg-card border border-border/80 text-foreground">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
               <ShieldAlert className="w-4 h-4 text-destructive" />

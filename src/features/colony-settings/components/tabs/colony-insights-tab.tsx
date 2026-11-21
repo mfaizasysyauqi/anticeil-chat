@@ -564,7 +564,7 @@ export function ColonyInsightsTab({
 
       {/* ── Interactive Deep-Dive Dashboard Dialog ── */}
       <Dialog open={showDashboardModal} onOpenChange={setShowDashboardModal}>
-        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto custom-scrollbar">
+        <DialogContent size="md" className="max-h-[85vh] overflow-y-auto custom-scrollbar">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
               <LineChart className="w-5 h-5 text-primary" />

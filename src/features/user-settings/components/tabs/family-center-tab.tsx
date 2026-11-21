@@ -623,7 +623,7 @@ export function FamilyCenterTab({ onBack }: FamilyCenterTabProps) {
 
       {/* ── QR CODE PAIRING DIALOG ── */}
       <Dialog open={showQrModal} onOpenChange={setShowQrModal}>
-        <DialogContent className="max-w-sm bg-card border-border text-foreground shadow-2xl p-6 text-center">
+        <DialogContent size="sm" className="bg-card border-border text-foreground shadow-2xl p-6 text-center">
           <DialogHeader className="space-y-1">
             <DialogTitle className="text-base font-bold text-foreground">
               {t('QR Code Pairing Keluarga')}
@@ -655,7 +655,7 @@ export function FamilyCenterTab({ onBack }: FamilyCenterTabProps) {
 
       {/* ── CONNECT TEEN DIALOG ── */}
       <Dialog open={showConnectModal} onOpenChange={setShowConnectModal}>
-        <DialogContent className="max-w-sm bg-card border-border text-foreground shadow-2xl p-6">
+        <DialogContent size="md" className="bg-card border-border text-foreground shadow-2xl p-6">
           <DialogHeader className="space-y-1">
             <DialogTitle className="text-base font-bold text-foreground">
               {t('Hubungkan Remaja')}

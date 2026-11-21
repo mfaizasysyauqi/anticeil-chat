@@ -396,7 +396,7 @@ export function ChannelInvitesTab({
 
       {/* ── Security Actions Modal (Image 4, 5, 6) ─────────────────────────── */}
       <Dialog open={isSecurityModalOpen} onOpenChange={setIsSecurityModalOpen}>
-        <DialogContent className="max-w-md bg-[#1e1f22] text-foreground border-border/70 p-5 rounded-2xl shadow-2xl">
+        <DialogContent size="md" className="bg-[#1e1f22] text-foreground border-border/70 p-5 rounded-2xl shadow-2xl">
           <DialogHeader className="space-y-1">
             <DialogTitle className="text-base font-bold text-foreground">
               {t('Security Actions')}
@@ -474,7 +474,7 @@ export function ChannelInvitesTab({
 
       {/* ── Invite Friends Modal (Image 2) ─────────────────────────────────── */}
       <Dialog open={isInviteFriendsOpen} onOpenChange={setIsInviteFriendsOpen}>
-        <DialogContent className="max-w-md bg-[#1e1f22] text-foreground border-border/70 p-5 rounded-2xl shadow-2xl space-y-3.5">
+        <DialogContent size="md" className="bg-[#1e1f22] text-foreground border-border/70 p-5 rounded-2xl shadow-2xl space-y-3.5">
           <DialogHeader className="space-y-1">
             <DialogTitle className="text-base font-bold text-foreground">
               {t(`Invite friends to ${serverName}'s server`)}

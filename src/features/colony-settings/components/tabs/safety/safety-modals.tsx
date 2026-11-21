@@ -110,7 +110,7 @@ export function SafetyModals({
     <>
       {/* ── MODAL 1: Raid Protection & CAPTCHA ── */}
       <Dialog open={activeModal === 'raid'} onOpenChange={(open) => !open && onCloseModal()}>
-        <DialogContent className="sm:max-w-[480px] bg-background border-border text-foreground">
+        <DialogContent size="md" className="bg-background border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-primary">
               <ShieldAlert className="w-4 h-4" />
@@ -186,7 +186,7 @@ export function SafetyModals({
 
       {/* ── MODAL 2: DM and Spam Protection ── */}
       <Dialog open={activeModal === 'dm'} onOpenChange={(open) => !open && onCloseModal()}>
-        <DialogContent className="sm:max-w-[480px] bg-background border-border text-foreground">
+        <DialogContent size="md" className="bg-background border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-emerald-400">
               <MessageSquare className="w-4 h-4" />
@@ -292,7 +292,7 @@ export function SafetyModals({
 
       {/* ── MODAL 3: AutoMod ── */}
       <Dialog open={activeModal === 'automod'} onOpenChange={(open) => !open && onCloseModal()}>
-        <DialogContent className="sm:max-w-[480px] bg-background border-border text-foreground">
+        <DialogContent size="md" className="bg-background border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-teal-400">
               <Bot className="w-4 h-4" />
@@ -430,7 +430,7 @@ export function SafetyModals({
 
       {/* ── MODAL 4: Permissions ── */}
       <Dialog open={activeModal === 'permissions'} onOpenChange={(open) => !open && onCloseModal()}>
-        <DialogContent className="sm:max-w-[480px] bg-background border-border text-foreground">
+        <DialogContent size="md" className="bg-background border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-rose-400">
               <ShieldCheck className="w-4 h-4" />

@@ -206,7 +206,7 @@ export function ColonyInviteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-background border-border">
+      <DialogContent size="md" className="p-0 overflow-hidden bg-background border-border">
         {/* Header */}
         <div className="p-5 pb-3 border-b border-border/50">
           <DialogHeader className="pb-1 text-left">

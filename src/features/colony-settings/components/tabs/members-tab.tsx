@@ -459,7 +459,7 @@ export function MembersTab({
 
       {/* Prune Confirmation Dialog */}
       <Dialog open={isPruning} onOpenChange={setIsPruning}>
-        <DialogContent className="sm:max-w-md bg-[#1e1f22] border-border/80">
+        <DialogContent size="sm" className="bg-[#1e1f22] border-border/80">
           <DialogHeader>
             <DialogTitle className="text-foreground">
               {t('Prune Inactive Members')}

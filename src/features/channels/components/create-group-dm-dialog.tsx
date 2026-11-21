@@ -84,7 +84,7 @@ export function CreateGroupDmDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={cn('sm:max-w-[480px] p-0 gap-0 overflow-hidden', LAYOUT_DIALOG_SPACING.STANDARD_CONTAINER)}>
+      <DialogContent size="md" className="p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-5 pt-5 pb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">

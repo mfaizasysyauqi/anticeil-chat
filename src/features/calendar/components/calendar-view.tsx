@@ -642,7 +642,7 @@ export function CalendarView({
 
       {/* ── Dialog Edit Agenda ─────────────────────────── */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[460px] p-6 bg-card border-border text-foreground">
+        <DialogContent size="md" className="p-6 bg-card border-border text-foreground">
           <DialogTitle className="text-lg font-bold text-foreground">Edit Agenda</DialogTitle>
           <form onSubmit={handleSaveEdit} className="space-y-4 mt-2">
             <div>

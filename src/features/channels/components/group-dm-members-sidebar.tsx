@@ -195,7 +195,7 @@ export function GroupDmMembersSidebar({
 
       {/* Dialog: Tambah Teman ke Grup */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className={cn('sm:max-w-[420px] p-0 gap-0 overflow-hidden', LAYOUT_DIALOG_SPACING.STANDARD_CONTAINER)}>
+        <DialogContent size="md" className="p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-5 pt-5 pb-3">
             <DialogTitle className="text-sm font-bold text-foreground">
               {t('Tambah Teman ke Grup')}
@@ -289,7 +289,7 @@ export function GroupDmMembersSidebar({
 
       {/* Dialog: Konfirmasi Tinggalkan Grup */}
       <Dialog open={isLeaveConfirmOpen} onOpenChange={setIsLeaveConfirmOpen}>
-        <DialogContent className={cn('sm:max-w-[400px] p-5 gap-4', LAYOUT_DIALOG_SPACING.STANDARD_CONTAINER)}>
+        <DialogContent size="sm" className="p-5 gap-4">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold text-foreground">
               {t('Tinggalkan Grup')}

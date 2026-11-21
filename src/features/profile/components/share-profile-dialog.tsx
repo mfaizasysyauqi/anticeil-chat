@@ -197,7 +197,8 @@ export function ShareProfileDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-[92vw] sm:w-[460px] p-0 gap-0 overflow-hidden rounded-2xl bg-[#111214] border border-border/80 shadow-2xl z-[120]"
+        size="md"
+        className="p-0 gap-0 overflow-hidden rounded-2xl bg-[#111214] border border-border/80 shadow-2xl z-[120]"
       >
         {/* Header */}
         <div className="p-4 pb-3 pr-12 flex items-start justify-between border-b border-border/50">

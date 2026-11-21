@@ -57,7 +57,7 @@ export function CustomScheduleModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px] bg-background text-foreground border border-border">
+      <DialogContent size="md" className="bg-background text-foreground border border-border">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
             <CalendarPlus className="w-5 h-5 text-primary" />

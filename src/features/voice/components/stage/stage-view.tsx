@@ -851,7 +851,7 @@ export function StageView({
         {/* MODAL 1: START THE STAGE (Screenshot 4)                      */}
         {/* ───────────────────────────────────────────────────────────── */}
         <Dialog open={isStartStageModalOpen} onOpenChange={setIsStartStageModalOpen}>
-          <DialogContent className="max-w-md bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
+          <DialogContent size="md" className="bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
             <DialogHeader className="space-y-3 text-center">
               {/* 3D Neon Studio Mic Illustration */}
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center mx-auto shadow-lg shadow-purple-500/30">
@@ -917,7 +917,7 @@ export function StageView({
         {/* MODAL 2: END STAGE CONFIRMATION (Screenshot 12)              */}
         {/* ───────────────────────────────────────────────────────────── */}
         <Dialog open={isEndStageModalOpen} onOpenChange={setIsEndStageModalOpen}>
-          <DialogContent className="max-w-md bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
+          <DialogContent size="sm" className="bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
             <DialogHeader className="space-y-2">
               <DialogTitle className="text-lg font-bold text-white">
                 {t('Do you want to also end the Stage?')}
@@ -953,7 +953,7 @@ export function StageView({
         {/* MODAL 3: CHANGE THE TOPIC                                    */}
         {/* ───────────────────────────────────────────────────────────── */}
         <Dialog open={isChangeTopicModalOpen} onOpenChange={setIsChangeTopicModalOpen}>
-          <DialogContent className="max-w-md bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
+          <DialogContent size="md" className="bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
             <DialogHeader className="space-y-1">
               <DialogTitle className="text-base font-bold text-white">
                 {t('Change the topic')}

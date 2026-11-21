@@ -83,7 +83,7 @@ export function GroqSettingsDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[480px] bg-background border border-border p-6 rounded-2xl shadow-2xl">
+      <DialogContent size="md" className="bg-background border border-border p-6 rounded-2xl shadow-2xl">
         <DialogHeader className="space-y-2">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center">

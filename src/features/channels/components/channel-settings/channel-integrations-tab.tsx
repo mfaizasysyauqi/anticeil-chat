@@ -715,7 +715,7 @@ export function ChannelIntegrationsTab({
       {/* 4. MODAL: Channels Followed Learn More                            */}
       {/* ───────────────────────────────────────────────────────────────── */}
       <Dialog open={isLearnMoreFollowedOpen} onOpenChange={setIsLearnMoreFollowedOpen}>
-        <DialogContent className="max-w-md bg-card border-border text-foreground p-6 rounded-2xl">
+        <DialogContent size="md" className="bg-card border-border text-foreground p-6 rounded-2xl">
           <DialogHeader className="space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
               <Radio className="w-6 h-6" />
@@ -758,7 +758,7 @@ export function ChannelIntegrationsTab({
       {/* 5. MODAL: Integrations Learn More                                */}
       {/* ───────────────────────────────────────────────────────────────── */}
       <Dialog open={isLearnMoreIntegrationsOpen} onOpenChange={setIsLearnMoreIntegrationsOpen}>
-        <DialogContent className="max-w-md bg-card border-border text-foreground p-6 rounded-2xl">
+        <DialogContent size="md" className="bg-card border-border text-foreground p-6 rounded-2xl">
           <DialogHeader className="space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-[#5865F2]/10 text-[#5865F2] flex items-center justify-center mx-auto">
               <WebhookIcon className="w-6 h-6" />

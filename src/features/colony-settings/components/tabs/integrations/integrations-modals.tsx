@@ -46,7 +46,7 @@ export function CreateWebhookDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px] bg-card border-border/80 text-foreground">
+      <DialogContent size="md" className="bg-card border-border/80 text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
             <Webhook className="w-4 h-4 text-sidebar-primary" />
@@ -137,7 +137,7 @@ export function FollowedChannelsDialog({
 }) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px] bg-card border-border/80 text-foreground">
+      <DialogContent size="md" className="bg-card border-border/80 text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
             <Radio className="w-4 h-4 text-sidebar-primary" />
@@ -187,7 +187,7 @@ export function TwitchIntegrationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px] bg-card border-border/80 text-foreground">
+      <DialogContent size="md" className="bg-card border-border/80 text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-[#9146FF]">
             <span>Twitch Creator Integration</span>
@@ -263,7 +263,7 @@ export function YoutubeIntegrationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px] bg-card border-border/80 text-foreground">
+      <DialogContent size="md" className="bg-card border-border/80 text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-red-500">
             <span>YouTube Creator Integration</span>

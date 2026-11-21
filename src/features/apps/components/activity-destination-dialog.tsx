@@ -193,7 +193,7 @@ export function ActivityDestinationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg" className="p-0 overflow-hidden border border-border bg-background shadow-2xl">
+      <DialogContent size="md" className="p-0 overflow-hidden border border-border bg-background shadow-2xl">
         {/* ── App Header Banner ─────────────────────────────────── */}
         <div
           className={cn(

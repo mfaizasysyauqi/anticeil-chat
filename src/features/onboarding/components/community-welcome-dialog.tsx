@@ -127,7 +127,7 @@ export function CommunityWelcomeDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[620px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card border-border/80 shadow-2xl text-foreground">
+      <DialogContent size="md" className="max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card border-border/80 shadow-2xl text-foreground">
         {/* Header Hero Banner */}
         <div className="relative p-6 bg-gradient-to-br from-sidebar-primary/20 via-background to-emerald-950/20 border-b border-border/60 shrink-0">
           {previewMode && (

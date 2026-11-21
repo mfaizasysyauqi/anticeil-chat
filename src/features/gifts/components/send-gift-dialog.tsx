@@ -21,7 +21,7 @@ export function SendGiftDialog({
 }: SendGiftDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="sm:max-w-[880px] max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <DialogContent size="md" showCloseButton={false} className="max-h-[90vh] overflow-y-auto custom-scrollbar">
         <DialogHeader className="flex flex-row items-center justify-between pb-1">
           <DialogTitle className="text-lg font-black text-foreground">Send a Gift</DialogTitle>
           <button
@@ -36,7 +36,7 @@ export function SendGiftDialog({
         </DialogHeader>
 
         <DialogBody className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
+          <div className="grid grid-cols-1 gap-3 pt-2">
             {/* 1. POLLEN CARD (BASIC) */}
             <div className="relative rounded-2xl bg-card border border-border hover:border-border/80 p-4 flex flex-col justify-between transition-all group shadow-md">
               <div>

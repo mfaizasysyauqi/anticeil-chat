@@ -499,7 +499,7 @@ export function ColonySettingsDialog({
 
       {/* DIALOG: BAN MEMBER SUB-MODAL */}
       <Dialog open={isBanningUser} onOpenChange={setIsBanningUser}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent size="md">
           <DialogHeader>
             <DialogTitle className="text-red-500 flex items-center gap-2">
               <Ban className="w-5 h-5" />

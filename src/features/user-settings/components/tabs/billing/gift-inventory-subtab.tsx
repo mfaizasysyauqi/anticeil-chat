@@ -385,8 +385,9 @@ export function GiftInventorySubtab() {
       {/* Modal: Purchase Gift via Midtrans Snap */}
       <Dialog open={isPurchaseGiftOpen} onOpenChange={setIsPurchaseGiftOpen}>
         <DialogContent
+          size="md"
           showCloseButton={false}
-          className="p-0 max-w-lg overflow-hidden bg-card border border-border rounded-2xl shadow-2xl z-[80]"
+          className="p-0 overflow-hidden bg-card border border-border rounded-2xl shadow-2xl z-[80]"
           overlayClassName="z-[80]"
         >
           <div className="p-5 border-b border-border/60 flex items-center justify-between gap-3">

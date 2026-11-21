@@ -57,7 +57,7 @@ export function DmSearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden">
+      <DialogContent size="md" className="p-0 gap-0 overflow-hidden">
         <DialogHeader className="sr-only">
           <DialogTitle>{t('Cari atau mulai percakapan')}</DialogTitle>
           <DialogDescription>{t('Cari anggota atau channel untuk memulai percakapan.')}</DialogDescription>

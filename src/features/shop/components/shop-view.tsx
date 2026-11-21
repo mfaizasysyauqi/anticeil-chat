@@ -2052,7 +2052,7 @@ export function ShopView({
 
       {/* ── 4. Reusable Dialog: Wishlist Modal ── */}
       <Dialog open={isWishlistDrawerOpen} onOpenChange={setIsWishlistDrawerOpen}>
-        <DialogContent className="w-[92vw] sm:w-[420px] p-0 overflow-hidden rounded-xl bg-card border border-border shadow-xl z-[150]">
+        <DialogContent size="md" className="p-0 overflow-hidden rounded-2xl bg-card border border-border shadow-xl z-[150]">
           <div className="p-4 pr-12 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
