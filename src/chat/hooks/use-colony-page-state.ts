@@ -27,6 +27,7 @@ import { useChatInitLoader } from './use-chat-init-loader';
 import { useChatViewModes } from './use-chat-view-modes';
 import { useSocket } from '@/providers/socket-provider';
 import { useVoiceCallState } from '@/features/voice';
+import { clearChannelWatchCache } from '@/features/voice/components/activities/hooks/use-youtube-player';
 import { toast } from 'sonner';
 import { DEFAULT_COLONIES } from '../chat-defaults';
 import type { ColonyAttachment, ColonyMessage } from '../chat-types';
@@ -416,12 +417,17 @@ export function useColonyPageState(): ChatPageContentProps {
     setIsActivityOpen(false);
     setIsCallPiP(false);
 
+    if (channelToLeave) {
+      clearChannelWatchCache(channelToLeave);
+    }
+    clearChannelWatchCache();
+
     // Clean up activity from URL and notify any standalone sessions
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.delete('activity');
       window.history.replaceState(null, '', url.toString());
-      window.dispatchEvent(new CustomEvent('anticeil_activity_close'));
+      window.dispatchEvent(new CustomEvent('anticeil_activity_close', { detail: { channelId: channelToLeave } }));
     }
 
     // Only switch to default text channel if we were actively leaving a voice channel

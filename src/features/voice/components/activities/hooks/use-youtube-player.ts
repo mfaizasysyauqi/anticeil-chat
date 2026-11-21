@@ -35,6 +35,20 @@ export interface ChannelWatchStateCache {
 // Module-level in-memory cache to preserve video playback and state
 // seamlessly when minimizing to PiP or restoring to full stage.
 export const channelWatchStateCache = new Map<string, ChannelWatchStateCache>();
+export const stoppedActivityChannelIds = new Set<string>();
+
+/**
+ * Clears cached watch together state when user exits or stops an activity
+ */
+export function clearChannelWatchCache(channelId?: string) {
+  if (channelId) {
+    stoppedActivityChannelIds.add(channelId);
+    channelWatchStateCache.delete(channelId);
+  } else {
+    channelWatchStateCache.clear();
+    stoppedActivityChannelIds.clear();
+  }
+}
 
 export interface UseYouTubePlayerOptions {
   channelId: string;
@@ -80,6 +94,23 @@ export function useYouTubePlayer({
   const onVideoEndedRef = useRef(onVideoEnded);
   onVideoEndedRef.current = onVideoEnded;
   const hasEndedTriggeredRef = useRef(false);
+  const isStoppedRef = useRef(false);
+
+  // Listen to explicit activity close / stop events across the app
+  useEffect(() => {
+    const handleCloseEvent = (e?: Event) => {
+      const customEvent = e as CustomEvent<{ channelId?: string }>;
+      if (!customEvent?.detail?.channelId || customEvent.detail.channelId === channelId) {
+        isStoppedRef.current = true;
+        channelWatchStateCache.delete(channelId);
+      }
+    };
+
+    window.addEventListener('anticeil_activity_close', handleCloseEvent);
+    return () => {
+      window.removeEventListener('anticeil_activity_close', handleCloseEvent);
+    };
+  }, [channelId]);
 
   // Load YouTube IFrame API script once
   useEffect(() => {
@@ -288,9 +319,22 @@ export function useYouTubePlayer({
     };
   }, [activeVideoId]);
 
-  // Save state to cache on unmount (for PiP / minimize restore)
+  // Save state to cache on unmount (only for ongoing PiP / minimize restore; NOT when stopped/closed)
   useEffect(() => {
     return () => {
+      // If activity was explicitly stopped, closed, or discarded, do not restore state
+      if (isStoppedRef.current || stoppedActivityChannelIds.has(channelId)) {
+        stoppedActivityChannelIds.delete(channelId);
+        channelWatchStateCache.delete(channelId);
+        if (playerRef.current) {
+          try {
+            playerRef.current.destroy();
+          } catch (e) {}
+          playerRef.current = null;
+        }
+        return;
+      }
+
       let snapshotTime = currentTime;
       let snapshotDuration = duration;
       let snapshotPlaying = isPlaying;

@@ -26,6 +26,7 @@ import {
 
 import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
 import { CallStage, UserSettingsModal } from '@/features/voice';
+import { clearChannelWatchCache } from '@/features/voice/components/activities/hooks/use-youtube-player';
 import { AuthRequiredDialog } from '@/features/auth';
 import { EditProfileDialog } from '@/features/profile';
 import { CommunityWelcomeDialog } from '@/features/onboarding/components/community-welcome-dialog';
@@ -518,6 +519,13 @@ export function ChatDialogsPortal({
                   payload: {},
                 });
                 socket.emit('COMMUNITY_VOICE_CALL_LEAVE', { channelId: channelToLeave });
+              }
+              if (channelToLeave) {
+                clearChannelWatchCache(channelToLeave);
+              }
+              clearChannelWatchCache();
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('anticeil_activity_close', { detail: { channelId: channelToLeave } }));
               }
               setActiveCallChannelId(null);
               setIsActivityOpen(false);

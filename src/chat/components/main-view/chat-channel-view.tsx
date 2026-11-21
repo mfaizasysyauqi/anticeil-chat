@@ -6,6 +6,7 @@ import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { ChannelTopHeaderBar, ForumChannelView } from '@/features/channels';
 import { KanbanChannelView, type KanbanCard } from '@/features/kanban';
 import { CallStage, StageView } from '@/features/voice';
+import { clearChannelWatchCache } from '@/features/voice/components/activities/hooks/use-youtube-player';
 import { MessagesFeed } from '@/features/chat';
 import { ChatInputBar } from '@/features/chat-input';
 import {
@@ -570,6 +571,13 @@ export function ChatChannelView({
                   });
                 }
                 callStartTimeRef.current = null;
+                if (channelToLeave) {
+                  clearChannelWatchCache(channelToLeave);
+                }
+                clearChannelWatchCache();
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('anticeil_activity_close', { detail: { channelId: channelToLeave } }));
+                }
                 setActiveCallChannelId(null);
                 setSelectedActivityAppId(null);
                 setIsActivityOpen(false);

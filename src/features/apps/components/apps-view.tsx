@@ -29,6 +29,7 @@ import {
 } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { ANTICEIL_APPS, type VoiceAppDefinition } from '@/features/voice/data/voice-activities';
+import { clearChannelWatchCache } from '@/features/voice/components/activities/hooks/use-youtube-player';
 import { appsApi } from '../api/apps-api';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
 import { ActivityDestinationDialog } from './activity-destination-dialog';
@@ -426,6 +427,12 @@ export function AppsView({
         <StandaloneAppStage
           app={standaloneApp}
           onClose={() => {
+            const standaloneId = `standalone-${standaloneApp.id}`;
+            clearChannelWatchCache(standaloneId);
+            clearChannelWatchCache();
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('anticeil_activity_close', { detail: { channelId: standaloneId } }));
+            }
             setStandaloneApp(null);
             setSelectedActivityAppId?.(null);
             setIsActivityOpen?.(false);

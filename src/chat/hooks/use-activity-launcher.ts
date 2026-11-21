@@ -11,7 +11,7 @@ import {
 import { EXTENDED_DISCORD_APPS } from '../anticeil-media-data';
 import { ANTICEIL_APPS } from '@/features/voice/data/voice-activities';
 import { colonyApi } from '../chat-api';
-import { channelWatchStateCache } from '@/features/voice/components/activities/hooks/use-youtube-player';
+import { channelWatchStateCache, clearChannelWatchCache } from '@/features/voice/components/activities/hooks/use-youtube-player';
 
 export interface UseActivityLauncherOptions {
   channels: ColonyChannel[];
@@ -144,7 +144,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
         if (voiceDest && activeCallChannelId !== voiceDest.id) {
           socket?.emit('COMMUNITY_VOICE_CALL_LEAVE', { channelId: activeCallChannelId });
         }
-        channelWatchStateCache.delete(activeCallChannelId);
+        clearChannelWatchCache(activeCallChannelId);
       }
 
       const app = ANTICEIL_APPS.find((a) => a.id === appId) || EXTENDED_DISCORD_APPS.find((a) => a.id === appId) || {

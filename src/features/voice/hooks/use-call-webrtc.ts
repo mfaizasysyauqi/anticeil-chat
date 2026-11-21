@@ -6,7 +6,7 @@ import { useCallMediaToggles } from './use-call-media-toggles';
 import { useCallActivitySync } from './use-call-activity-sync';
 import { DISCORD_APPS, DiscordAppDefinition } from '../data/voice-activities';
 import { loadVoiceSettings } from './use-voice-settings';
-import { channelWatchStateCache } from '../components/activities/hooks/use-youtube-player';
+import { channelWatchStateCache, clearChannelWatchCache } from '../components/activities/hooks/use-youtube-player';
 import type { CallParticipant } from '../types';
 import type { ColonyChannel, Colony } from '@/chat/chat-types';
 
@@ -121,12 +121,12 @@ export function useCallWebRTC({
   const handleLaunchApp = (appId: string) => {
     // If switching to a new activity, explicitly auto-stop the old activity first
     if (activeAppId && activeAppId !== appId) {
+      clearChannelWatchCache(channel.id);
       socket?.emit('COMMUNITY_CALL_ACTIVITY_EVENT', {
         channelId: channel.id,
         action: 'ACTIVITY_STOP',
         payload: { previousAppId: activeAppId },
       });
-      channelWatchStateCache.delete(channel.id);
     }
 
     setActiveAppId(appId);
@@ -143,7 +143,10 @@ export function useCallWebRTC({
   };
 
   const handleStopActivity = () => {
-    channelWatchStateCache.delete(channel.id);
+    clearChannelWatchCache(channel.id);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('anticeil_activity_close', { detail: { channelId: channel.id } }));
+    }
     setActiveAppId(null);
     onToggleActivity?.(false);
     onActivityChange?.(null);

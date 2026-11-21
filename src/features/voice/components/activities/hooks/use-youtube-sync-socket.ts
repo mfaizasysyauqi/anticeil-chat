@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Socket } from 'socket.io-client';
 import { toast } from 'sonner';
-import { YouTubeVideoItem } from './use-youtube-player';
+import { YouTubeVideoItem, clearChannelWatchCache } from './use-youtube-player';
 
 export interface UseYouTubeSyncSocketOptions {
   socket?: Socket | null;
@@ -303,6 +303,8 @@ export function useYouTubeSyncSocket(options: UseYouTubeSyncSocketOptions) {
             },
           });
         }
+      } else if (data.action === 'ACTIVITY_STOP') {
+        clearChannelWatchCache(channelId);
       }
     };
 
