@@ -898,16 +898,6 @@ export function ChatInputBar({
             </span>
           )}
 
-          {/* Mention (@) trigger button */}
-          <button
-            type="button"
-            onClick={handleOpenMentionDirectly}
-            className="w-6 h-6 text-muted-foreground/90 hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-            title={t('Sebut pengguna (@mention)')}
-          >
-            <AtSign className="w-4 h-4" />
-          </button>
-
           {/* 1. Gift Icon */}
           <button
             type="button"
