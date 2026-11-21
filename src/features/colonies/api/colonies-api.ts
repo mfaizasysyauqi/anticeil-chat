@@ -30,11 +30,28 @@ import type { DiscordEmoji, DiscordSticker } from '@/chat/anticeil-media-data';
 import { membersApi } from '@/features/members/api/members-api';
 import { coloniesInvitesAssetsApi } from './colonies-invites-assets-api';
 
+function getCurrentAuthUser() {
+  try {
+    const raw =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('user') ||
+          localStorage.getItem('currentUser') ||
+          localStorage.getItem('anticeil_current_user')
+        : null;
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export const coloniesApi = {
   // ── Hubs (Servers) & Invites ──────────────────────────────────────────
-  async getColonies(): Promise<Colony[]> {
+  async getColonies(userId?: string): Promise<Colony[]> {
     try {
-      const res = await api.get<Colony[]>('/v1/colony/colonies');
+      const user = getCurrentAuthUser();
+      const currentUserId = userId || user?.id;
+      const qs = currentUserId ? `?userId=${encodeURIComponent(currentUserId)}` : '';
+      const res = await api.get<Colony[]>(`/v1/colony/colonies${qs}`);
       if (Array.isArray(res) && res.length > 0) {
         saveStoredColonies(res);
         return res;
@@ -53,6 +70,7 @@ export const coloniesApi = {
     visibility?: 'public' | 'private';
     category?: string;
   }): Promise<Colony> {
+    const user = getCurrentAuthUser();
     const newId = `hub_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const isPublic = payload.isPublic !== undefined ? payload.isPublic : (payload.visibility === 'public');
     const newColony: Colony = {
@@ -86,6 +104,11 @@ export const coloniesApi = {
       const res = await api.post<Colony>('/v1/colony/colonies', {
         ...payload,
         id: newId,
+        ownerId: user?.id,
+        ownerName: user?.name || user?.firstName,
+        ownerUsername: user?.username || user?.email?.split('@')[0],
+        ownerAvatar: user?.avatar,
+        user,
         membersCount: 1,
         onlineCount: 1,
         tags: newColony.tags,
@@ -589,11 +612,14 @@ export const coloniesApi = {
   async joinColony(colonyOrId: Colony | string): Promise<Colony> {
     const colonyId = typeof colonyOrId === 'string' ? colonyOrId : colonyOrId.id;
     const inviteCode = typeof colonyOrId === 'object' ? colonyOrId.inviteCode : undefined;
+    const user = getCurrentAuthUser();
 
     try {
       const res = await api.post<{ success: boolean; colony: Colony }>('/v1/colony/colonies/join', {
         colonyId,
         inviteCode,
+        userId: user?.id,
+        user,
       });
       if (res?.colony && res.colony.id) {
         const stored = loadStoredColonies();
@@ -722,6 +748,7 @@ export const coloniesApi = {
 
   async joinHub(inviteCode: string, targetColonyId?: string): Promise<Colony> {
     const cleanId = inviteCode.startsWith('hub_') ? inviteCode : `hub_${inviteCode}`;
+    const user = getCurrentAuthUser();
     const stored = loadStoredColonies();
     const existing = stored.find(
       (h) =>
@@ -734,20 +761,19 @@ export const coloniesApi = {
       return existing;
     }
     try {
-      const allHubs = await api.get<Colony[]>('/v1/colony/colonies');
-      if (Array.isArray(allHubs)) {
-        const foundInDb = allHubs.find(
-          (h) =>
-            (targetColonyId && h.id === targetColonyId) ||
-            h.inviteCode === inviteCode ||
-            h.id === inviteCode ||
-            h.id === cleanId,
-        );
-        if (foundInDb) {
-          const next = [...stored.filter((h) => h.id !== foundInDb.id), foundInDb];
-          saveStoredColonies(next);
-          return foundInDb;
+      const res = await api.post<{ success: boolean; colony: Colony }>('/v1/colony/colonies/join', {
+        colonyId: targetColonyId || cleanId,
+        inviteCode,
+        userId: user?.id,
+        user,
+      });
+      if (res?.colony && res.colony.id) {
+        const next = [...stored.filter((h) => h.id !== res.colony.id), res.colony];
+        saveStoredColonies(next);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('anticeil_colonies_changed'));
         }
+        return res.colony;
       }
     } catch {}
     const newColony: Colony = {

@@ -141,13 +141,11 @@ export function ColoniesView({
       try {
         const all = await colonyApi.getDiscoverColonies();
         if (mounted && Array.isArray(all)) {
-          // Filter out DM hub and servers the current user is already member of
-          // And strictly enforce only public colonies
+          // Strictly enforce only public colonies for discovery
           const available = all.filter(
             (h) =>
               h.id !== 'anticeil' &&
               h.id !== 'direct-messages' &&
-              !colonyList.some((s) => s.id === h.id) &&
               (h.isPublic === true || h.visibility === 'public' || h.accessSettings?.joinMethod === 'discoverable') &&
               h.isPublic !== false &&
               h.visibility !== 'private'

@@ -120,7 +120,7 @@ export function useChatInitLoader({
           await Promise.all([
             colonyApi.getChannels(),
             colonyApi.getMembers(currentProjectId || undefined),
-            colonyApi.getColonies(),
+            colonyApi.getColonies(currentUser?.id),
             friendsApi.getFriends().catch(() => []),
           ]);
         if (mounted) {
@@ -188,16 +188,16 @@ export function useChatInitLoader({
           if (Array.isArray(membersRes)) {
             setMembers(membersRes);
           }
-          if (Array.isArray(hubsRes) && hubsRes.length > 0) {
-            setColonies((prev) => {
+          if (Array.isArray(hubsRes)) {
+            setColonies(() => {
               const home =
-                prev.find((h) => h.id === 'anticeil') || DEFAULT_COLONIES[0];
-              const merged = [
+                hubsRes.find((h) => h.id === 'anticeil') || DEFAULT_COLONIES[0];
+              const userColonies = [
                 home,
                 ...hubsRes.filter((s) => s.id !== 'anticeil'),
               ];
-              saveStoredColonies(merged);
-              return merged;
+              saveStoredColonies(userColonies);
+              return userColonies;
             });
           }
         }

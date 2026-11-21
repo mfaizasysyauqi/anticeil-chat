@@ -240,6 +240,22 @@ export const DEFAULT_COLONIES: Colony[] = [
 
 const STORAGE_KEY_COLONIES = 'anticeil_colony_colonies_v3';
 
+export function getStorageKeyColonies(): string {
+  try {
+    const rawUser =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('user') ||
+          localStorage.getItem('currentUser') ||
+          localStorage.getItem('anticeil_current_user')
+        : null;
+    const user = rawUser ? JSON.parse(rawUser) : null;
+    if (user?.id) {
+      return `anticeil_colony_colonies_v3_${user.id}`;
+    }
+  } catch {}
+  return STORAGE_KEY_COLONIES;
+}
+
 export function cleanLegacyStorage(): void {
   if (typeof window === 'undefined') return;
   try {
@@ -271,7 +287,8 @@ export function loadStoredColonies(): Colony[] {
     cleanLegacyStorage();
     const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
     if (!token) return DEFAULT_COLONIES;
-    const raw = localStorage.getItem(STORAGE_KEY_COLONIES);
+    const userKey = getStorageKeyColonies();
+    const raw = localStorage.getItem(userKey) || (userKey !== STORAGE_KEY_COLONIES ? localStorage.getItem(STORAGE_KEY_COLONIES) : null);
     if (!raw) return DEFAULT_COLONIES;
     const parsed = JSON.parse(raw);
     const list = Array.isArray(parsed) && parsed.length > 0
@@ -292,7 +309,11 @@ export function loadStoredColonies(): Colony[] {
 
 export function saveStoredColonies(colonies: Colony[]): void {
   try {
-    localStorage.setItem(STORAGE_KEY_COLONIES, JSON.stringify(colonies));
+    const userKey = getStorageKeyColonies();
+    localStorage.setItem(userKey, JSON.stringify(colonies));
+    if (userKey !== STORAGE_KEY_COLONIES) {
+      localStorage.setItem(STORAGE_KEY_COLONIES, JSON.stringify(colonies));
+    }
     window.dispatchEvent(new Event('anticeil_colonies_changed'));
     window.dispatchEvent(new Event('anticeil_hubs_changed'));
   } catch (err) {
