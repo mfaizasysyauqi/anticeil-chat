@@ -54,6 +54,21 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
   const [isAuthRequiredOpen, setIsAuthRequiredOpen] = useState(false);
   const [authFeatureInfo, setAuthFeatureInfo] = useState<{ title?: string; desc?: string }>({});
 
+  useEffect(() => {
+    const handleOpenAuth = (e?: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      setAuthFeatureInfo({
+        title: detail?.title || t('Login ke Anticeil'),
+        desc: detail?.desc || t('Masuk dengan Google OAuth atau Single Sign-On (SSO) perusahaan untuk mengakses seluruh fitur.'),
+      });
+      setIsAuthRequiredOpen(true);
+    };
+    window.addEventListener('anticeil_open_auth_dialog', handleOpenAuth);
+    return () => {
+      window.removeEventListener('anticeil_open_auth_dialog', handleOpenAuth);
+    };
+  }, [t]);
+
   const [currentUser, setCurrentUser] = useState<any>(() => {
     try {
       const urlToken = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('token') : null;

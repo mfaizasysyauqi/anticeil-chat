@@ -377,11 +377,18 @@ export function UserSettingsModal({
         ) : (
           <button
             type="button"
-            onClick={onGoogleSignIn}
+            onClick={() => {
+              onOpenChange(false);
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('anticeil_open_auth_dialog'));
+              } else if (onGoogleSignIn) {
+                onGoogleSignIn();
+              }
+            }}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
           >
             <AtSign className="w-4 h-4" />
-            <span>{t('Masuk')}</span>
+            <span>{t('Login')}</span>
           </button>
         )
       }

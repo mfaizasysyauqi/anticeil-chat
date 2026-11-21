@@ -371,6 +371,7 @@ export interface UserBottomDockWrapperProps {
   handleOpenEditProfile?: () => void;
   handleLogout: () => void;
   handleGoogleSignIn: () => void;
+  onOpenLoginDialog?: () => void;
   channels: ColonyChannel[];
   activeCallChannelId: string | null;
   activeColony: Colony | null;
@@ -397,6 +398,7 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
   handleOpenEditProfile,
   handleLogout,
   handleGoogleSignIn,
+  onOpenLoginDialog,
   channels,
   activeCallChannelId,
   activeColony,
@@ -426,6 +428,7 @@ export const UserBottomDockWrapper: React.FC<UserBottomDockWrapperProps> = ({
       onOpenEditProfile={handleOpenEditProfile}
       onLogout={handleLogout}
       onGoogleSignIn={handleGoogleSignIn}
+      onOpenLoginDialog={onOpenLoginDialog}
       activeCallChannelId={activeCallChannelId}
       activeCallChannelName={activeCallChannel?.name}
       activeColonyName={activeColony?.name}

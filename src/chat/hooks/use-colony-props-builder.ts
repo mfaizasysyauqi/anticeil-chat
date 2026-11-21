@@ -340,6 +340,13 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
     handleOpenEditProfile,
       handleLogout,
       handleGoogleSignIn,
+      onOpenLoginDialog: () => {
+        setAuthFeatureInfo({
+          title: t('Login ke Anticeil'),
+          desc: t('Masuk dengan Google OAuth atau Single Sign-On (SSO) perusahaan untuk mengakses seluruh fitur.'),
+        });
+        setIsAuthRequiredOpen(true);
+      },
       channels,
       activeCallChannelId,
       activeColony,
