@@ -232,7 +232,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
                   description: app.description,
                   icon: typeof (app as any).icon === 'string' 
                     ? (app as any).icon 
-                    : (appId === 'watch-together' || appId === 'youtube' ? '▶️' : appId === 'tradingview' ? '📈' : appId === 'whiteboard' ? '🎨' : appId === 'chess' ? '👑' : appId === 'screenshare' ? '🖥️' : '🎮'),
+                    : (appId === 'watch-together' || appId === 'youtube' ? 'youtube' : appId === 'tradingview' ? 'tradingview' : appId === 'whiteboard' ? 'whiteboard' : appId === 'chess' ? 'chess' : appId === 'screenshare' ? 'screenshare' : 'app'),
                   iconBg: app.iconBg,
                   bannerGradient: app.bannerGradient,
                   startedBy: currentUserName,

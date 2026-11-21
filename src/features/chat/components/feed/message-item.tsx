@@ -11,6 +11,8 @@ import {
   Palette,
   Crown,
   ScreenShare,
+  Sparkles,
+  Gamepad2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
@@ -46,6 +48,136 @@ export interface MessageItemProps {
   t: (key: string) => string;
 }
 
+interface AppVisualInfo {
+  name: string;
+  bg: string;
+  gradient: string;
+  type: 'youtube' | 'tradingview' | 'whiteboard' | 'chess' | 'screenshare' | 'platform' | 'wordle' | 'default';
+}
+
+function getAppVisualInfo(appId?: string): AppVisualInfo {
+  const id = appId?.toLowerCase() || '';
+  if (id === 'watch-together' || id === 'youtube' || id.includes('youtube')) {
+    return {
+      name: 'Watch Together',
+      bg: 'bg-[#ff0000]',
+      gradient: 'from-[#4d1014] via-[#330c0f] to-[#1f0709] border-red-500/30',
+      type: 'youtube',
+    };
+  }
+  if (id === 'tradingview' || id.includes('trading') || id.includes('chart')) {
+    return {
+      name: 'TradingView Charts',
+      bg: 'bg-[#131722]',
+      gradient: 'from-[#131722] via-[#0d1017] to-[#080a0f] border-blue-500/30',
+      type: 'tradingview',
+    };
+  }
+  if (id === 'whiteboard' || id.includes('jamspace') || id.includes('whiteboard')) {
+    return {
+      name: 'Jamspace Whiteboard',
+      bg: 'bg-[#2563eb]',
+      gradient: 'from-[#1e3a8a] via-[#172554] to-[#0f172a] border-blue-500/30',
+      type: 'whiteboard',
+    };
+  }
+  if (id === 'chess' || id.includes('chess')) {
+    return {
+      name: 'Anticeil Chess',
+      bg: 'bg-[#b45309]',
+      gradient: 'from-[#451a03] via-[#291002] to-[#120701] border-amber-500/30',
+      type: 'chess',
+    };
+  }
+  if (id === 'screenshare' || id.includes('screen')) {
+    return {
+      name: 'Share Screen',
+      bg: 'bg-[#7c3aed]',
+      gradient: 'from-[#4c1d95] via-[#2e1065] to-[#170733] border-purple-500/30',
+      type: 'screenshare',
+    };
+  }
+  if (id === 'platform' || id.includes('platform') || id.includes('anticeil')) {
+    return {
+      name: 'Anticeil Platform',
+      bg: 'bg-blue-600',
+      gradient: 'from-blue-600 via-indigo-800 to-zinc-950 border-blue-500/30',
+      type: 'platform',
+    };
+  }
+  if (id === 'wordle') {
+    return {
+      name: 'Wordle',
+      bg: 'bg-[#123824]',
+      gradient: 'from-[#123824] via-[#0c2417] to-[#08180e] border-emerald-500/30',
+      type: 'wordle',
+    };
+  }
+  return {
+    name: 'App Activity',
+    bg: 'bg-primary',
+    gradient: 'from-[#2b2d31] via-[#1e1f22] to-[#111214] border-border/80',
+    type: 'default',
+  };
+}
+
+function renderAppIcon(type: AppVisualInfo['type'], size: 'xs' | 'sm' | 'md' | 'lg' = 'md') {
+  if (type === 'youtube') {
+    const svgClass = size === 'xs' ? 'w-2.5 h-2' : size === 'sm' ? 'w-4 h-3' : size === 'lg' ? 'w-8 h-6' : 'w-5 h-4';
+    return (
+      <svg className={cn(svgClass, 'fill-white')} viewBox="0 0 24 24">
+        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+      </svg>
+    );
+  }
+  if (type === 'tradingview') {
+    const svgClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
+    return (
+      <svg className={cn(svgClass, 'text-white fill-current')} viewBox="0 0 24 24">
+        <path d="M15.865 8.279a2.452 2.452 0 1 1-4.904 0a2.452 2.452 0 0 1 4.904 0M9.75 6H0v4.904h4.846v7.269H9.75Zm8.596 0H24l-5.106 12.173H13.24z" />
+      </svg>
+    );
+  }
+  if (type === 'whiteboard') {
+    const iconClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
+    return <Palette className={cn(iconClass, 'text-white')} />;
+  }
+  if (type === 'chess') {
+    const iconClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
+    return <Crown className={cn(iconClass, 'text-white')} />;
+  }
+  if (type === 'screenshare') {
+    const iconClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
+    return <ScreenShare className={cn(iconClass, 'text-white')} />;
+  }
+  if (type === 'platform') {
+    const iconClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
+    return <Sparkles className={cn(iconClass, 'text-white')} />;
+  }
+  if (type === 'wordle') {
+    if (size === 'xs') {
+      return (
+        <div className="w-2.5 h-2.5 grid grid-cols-2 gap-0.5 p-0.5 bg-black rounded-[2px]">
+          <div className="bg-[#538d4e]" />
+          <div className="bg-[#b59f3b]" />
+        </div>
+      );
+    }
+    return (
+      <div className="w-5 h-5 grid grid-cols-3 gap-0.5 p-0.5 bg-black rounded-[3px]">
+        <div className="bg-[#538d4e] rounded-[0.5px]" />
+        <div className="bg-[#538d4e] rounded-[0.5px]" />
+        <div className="bg-[#538d4e] rounded-[0.5px]" />
+        <div className="bg-[#b59f3b] rounded-[0.5px]" />
+        <div className="bg-[#3a3a3c] rounded-[0.5px]" />
+        <div className="bg-[#538d4e] rounded-[0.5px]" />
+      </div>
+    );
+  }
+  const defaultClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
+  return <Gamepad2 className={cn(defaultClass, 'text-white')} />;
+}
+
 export function MessageItem({
   msg,
   currentUser,
@@ -65,6 +197,7 @@ export function MessageItem({
 }: MessageItemProps) {
   const activityAtt = msg.attachments?.find((a) => a.type === 'activity');
   const act = activityAtt?.activityData;
+  const actInfo = useMemo(() => (act ? getAppVisualInfo(act.appId) : null), [act]);
 
   // Detect Discord poll data or parse legacy poll text
   const pollData = useMemo<DiscordPollData | null>(() => {
@@ -132,7 +265,7 @@ export function MessageItem({
                   )}
 
                   {/* Discord Command Header / Interaction spine with Click to see command */}
-                  {act && (
+                  {act && actInfo && (
                     <div
                       onClick={() => onJumpToMessage?.(msg.id)}
                       className="group/cmd flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1 select-none pl-6 relative cursor-pointer hover:text-foreground transition-colors"
@@ -141,14 +274,8 @@ export function MessageItem({
                       {/* Curved spine connector line */}
                       <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-border/80 pointer-events-none group-hover/cmd:border-foreground/60 transition-colors" />
                       {/* App icon badge */}
-                      <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
-                        {act.appId === 'watch-together' || act.appId === 'youtube' ? (
-                          <svg className="w-2.5 h-2 fill-[#ff0000]" viewBox="0 0 24 24">
-                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                          </svg>
-                        ) : (
-                          <span className="text-[10px] leading-none">{act.icon || '🚀'}</span>
-                        )}
+                      <div className={cn('w-4 h-4 rounded-md flex items-center justify-center shrink-0 shadow-2xs overflow-hidden text-white', actInfo.bg)}>
+                        {renderAppIcon(actInfo.type, 'xs')}
                       </div>
                       <span className="bg-primary text-white text-[9px] font-bold px-1 py-0.2 rounded-[3px] flex items-center gap-0.5 leading-none shadow-2xs">
                         <Check className="w-2 h-2 stroke-[3]" />
@@ -174,22 +301,15 @@ export function MessageItem({
                     )}
                   >
                     {/* Sender Avatar: If Activity, show App Logo */}
-                    {act ? (
+                    {act && actInfo ? (
                       <div
                         className={cn(
-                          'w-[38px] h-[38px] rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-md text-white',
-                          act.appId === 'watch-together' || act.appId === 'youtube'
-                            ? 'bg-[#ff0000]'
-                            : act.iconBg || 'bg-primary',
+                          'w-[38px] h-[38px] rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-md text-white border border-white/10 overflow-hidden',
+                          actInfo.bg,
                         )}
+                        title={act.name}
                       >
-                        {act.appId === 'watch-together' || act.appId === 'youtube' ? (
-                          <svg className="w-5 h-4 fill-white" viewBox="0 0 24 24">
-                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                          </svg>
-                        ) : (
-                          <span className="text-xl">{act.icon || '🚀'}</span>
-                        )}
+                        {renderAppIcon(actInfo.type, 'md')}
                       </div>
                     ) : (
                       <CommunityAvatar
@@ -253,32 +373,8 @@ export function MessageItem({
                             if (att.type === 'poll') return null;
                             if (att.type === 'activity' && att.activityData) {
                               const itemAct = att.activityData;
-                              const isYoutube = itemAct.appId === 'watch-together' || itemAct.appId === 'youtube';
-                              const isTradingView = itemAct.appId === 'tradingview' || itemAct.appId?.includes('trading') || itemAct.appId?.includes('chart');
-                              const isWhiteboard = itemAct.appId === 'whiteboard' || itemAct.appId?.includes('jamspace') || itemAct.appId?.includes('whiteboard');
-                              const isChess = itemAct.appId === 'chess' || itemAct.appId?.includes('chess');
-                              const isScreenShare = itemAct.appId === 'screenshare' || itemAct.appId?.includes('screen');
-                              const isWordle = itemAct.appId === 'wordle';
-                              const isPoker = itemAct.appId === 'poker-night' || itemAct.appId === 'erth-poker';
-                              const isMagicGarden = itemAct.appId === 'magic-garden';
-
-                              const gradientClass = isYoutube
-                                ? 'from-[#4d1014] via-[#330c0f] to-[#1f0709] border-red-500/30'
-                                : isTradingView
-                                  ? 'from-[#131722] via-[#0d1017] to-[#080a0f] border-blue-500/30'
-                                  : isWhiteboard
-                                    ? 'from-[#1e3a8a] via-[#172554] to-[#0f172a] border-blue-500/30'
-                                    : isChess
-                                      ? 'from-[#451a03] via-[#291002] to-[#120701] border-amber-500/30'
-                                      : isScreenShare
-                                        ? 'from-[#4c1d95] via-[#2e1065] to-[#170733] border-purple-500/30'
-                                        : isWordle
-                                          ? 'from-[#123824] via-[#0c2417] to-[#08180e] border-emerald-500/30'
-                                          : isPoker
-                                            ? 'from-[#1b254b] via-[#111730] to-[#0b0e1e] border-blue-500/30'
-                                            : isMagicGarden
-                                              ? 'from-[#3d240d] via-[#261608] to-[#140b04] border-amber-500/30'
-                                              : 'from-[#2b2d31] via-[#1e1f22] to-[#111214] border-border/80';
+                              const itemActInfo = getAppVisualInfo(itemAct.appId);
+                              const gradientClass = itemActInfo.gradient;
 
                               const currentUserName =
                                 `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() ||
@@ -311,44 +407,10 @@ export function MessageItem({
                                   {/* Main App Info Row */}
                                   <div className="flex items-center gap-3.5 mb-4">
                                     {/* App Icon in White/Brand Rounded Square */}
-                                    <div className="w-14 h-14 rounded-2xl bg-white border border-white/20 flex items-center justify-center shrink-0 shadow-xl overflow-hidden">
-                                      {isYoutube ? (
-                                        <svg className="w-8 h-6 fill-[#ff0000]" viewBox="0 0 24 24">
-                                          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                                        </svg>
-                                      ) : isTradingView ? (
-                                        <div className="w-10 h-10 rounded-xl bg-[#131722] flex items-center justify-center shadow-xs">
-                                          <svg className="w-5 h-5 text-white fill-current" viewBox="0 0 24 24">
-                                            <path d="M15.865 8.279a2.452 2.452 0 1 1-4.904 0a2.452 2.452 0 0 1 4.904 0M9.75 6H0v4.904h4.846v7.269H9.75Zm8.596 0H24l-5.106 12.173H13.24z" />
-                                          </svg>
-                                        </div>
-                                      ) : isWhiteboard ? (
-                                        <div className="w-10 h-10 rounded-xl bg-[#2563eb] flex items-center justify-center shadow-xs">
-                                          <Palette className="w-5 h-5 text-white" />
-                                        </div>
-                                      ) : isChess ? (
-                                        <div className="w-10 h-10 rounded-xl bg-[#b45309] flex items-center justify-center shadow-xs">
-                                          <Crown className="w-5 h-5 text-white" />
-                                        </div>
-                                      ) : isScreenShare ? (
-                                        <div className="w-10 h-10 rounded-xl bg-[#7c3aed] flex items-center justify-center shadow-xs">
-                                          <ScreenShare className="w-5 h-5 text-white" />
-                                        </div>
-                                      ) : isWordle ? (
-                                        <div className="w-8 h-8 grid grid-cols-3 gap-0.5 p-1 bg-black rounded-md">
-                                          <div className="bg-[#538d4e] rounded-[1px]" />
-                                          <div className="bg-[#538d4e] rounded-[1px]" />
-                                          <div className="bg-[#538d4e] rounded-[1px]" />
-                                          <div className="bg-[#b59f3b] rounded-[1px]" />
-                                          <div className="bg-[#3a3a3c] rounded-[1px]" />
-                                          <div className="bg-[#538d4e] rounded-[1px]" />
-                                          <div className="bg-[#538d4e] rounded-[1px]" />
-                                          <div className="bg-[#538d4e] rounded-[1px]" />
-                                          <div className="bg-[#538d4e] rounded-[1px]" />
-                                        </div>
-                                      ) : (
-                                        <span className="text-2xl">{itemAct.icon || '🚀'}</span>
-                                      )}
+                                    <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0 shadow-xl overflow-hidden">
+                                      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shadow-xs', itemActInfo.bg)}>
+                                        {renderAppIcon(itemActInfo.type, 'md')}
+                                      </div>
                                     </div>
 
                                     {/* Title & Playing Status */}
