@@ -108,6 +108,8 @@ export function ChannelTopHeaderBar({
   const isDmMode = Boolean(
     isHome ||
     activeChannel?.category === 'DIRECT MESSAGES' ||
+    activeChannel?.category?.toLowerCase()?.includes('direct') ||
+    activeChannel?.description?.toLowerCase()?.includes('percakapan langsung') ||
     activeChannel?.isDirectMessage ||
     activeChannel?.isGroupDm ||
     activeChannel?.id?.startsWith('dm-') ||
@@ -120,9 +122,9 @@ export function ChannelTopHeaderBar({
         {/* Responsive Sidebar Nav Toggle (Burger on Mobile/Tablet, PanelLeftOpen on Desktop when collapsed) */}
         <SidebarNavToggle onClick={onOpenMobileChannels} />
 
-        {activeChannel?.isGroupDm ? (
+        {activeChannel?.isGroupDm || activeChannel?.id?.startsWith('gdm-') ? (
           <Users className="w-5 h-5 text-muted-foreground shrink-0" />
-        ) : activeChannel?.category === 'DIRECT MESSAGES' || activeChannel?.isDirectMessage ? (
+        ) : isDmMode ? (
           <span className="text-muted-foreground font-bold text-base shrink-0 select-none">@</span>
         ) : activeChannel?.type === 'voice' ? (
           <Volume2 className="w-5 h-5 text-muted-foreground shrink-0" />

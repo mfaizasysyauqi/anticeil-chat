@@ -122,6 +122,11 @@ export function MessagesFeed({
     activeChannel?.isDirectMessage ||
     activeChannel?.id?.startsWith('dm-') ||
     activeChannel?.dmUserId ||
+    activeChannel?.category === 'DIRECT MESSAGES' ||
+    activeChannel?.category?.toLowerCase()?.includes('direct') ||
+    activeChannel?.description?.toLowerCase()?.includes('percakapan langsung') ||
+    activeChannel?.colonyId === 'home' ||
+    activeChannel?.colonyId === 'direct_messages' ||
     isGroupDm
   );
 
@@ -175,36 +180,94 @@ export function MessagesFeed({
   // Resolve DM peer friend info
   const dmFriend = React.useMemo(() => {
     if (!isDm || !activeChannel) return null;
-    const dmUserId =
-      activeChannel.dmUserId ||
-      (activeChannel.id.startsWith('dm-') ? activeChannel.id.replace('dm-', '') : null);
+
+    let otherUserId = activeChannel.dmUserId || null;
+    if (!otherUserId && activeChannel.id?.startsWith('dm-')) {
+      const parts = activeChannel.id.slice(3).split('-').filter(Boolean);
+      otherUserId = parts.find((p: string) => p !== currentUser?.id) || parts[0] || null;
+    }
+
+    const cleanChannelName = (activeChannel.name || '').replace(/^[@#]\s*/, '').trim();
 
     const foundFriend = friends?.allFriends?.find(
       (f: any) =>
-        (dmUserId && f.id === dmUserId) ||
-        (activeChannel.name &&
-          (f.name?.toLowerCase() === activeChannel.name.toLowerCase() ||
-            f.username?.toLowerCase() === activeChannel.name.toLowerCase()))
+        (otherUserId && f.id === otherUserId) ||
+        (cleanChannelName &&
+          (f.name?.toLowerCase() === cleanChannelName.toLowerCase() ||
+            f.username?.toLowerCase() === cleanChannelName.toLowerCase() ||
+            cleanChannelName.toLowerCase().includes((f.name || '').toLowerCase())))
     );
 
     const foundMember = members?.find(
-      (m: any) =>
-        (dmUserId && m.id === dmUserId) ||
-        (activeChannel.name &&
-          (m.name?.toLowerCase() === activeChannel.name.toLowerCase() ||
-            m.username?.toLowerCase() === activeChannel.name.toLowerCase()))
+      (m: any) => {
+        if (currentUser?.id && m.id === currentUser.id) return false;
+        return (
+          (otherUserId && m.id === otherUserId) ||
+          (cleanChannelName &&
+            (m.name?.toLowerCase() === cleanChannelName.toLowerCase() ||
+              m.username?.toLowerCase() === cleanChannelName.toLowerCase() ||
+              cleanChannelName.toLowerCase().includes((m.name || '').toLowerCase())))
+        );
+      }
     );
+
+    // Look for peer sender info from messages in this DM
+    const peerMessage = filteredMessages.find(
+      (m: any) => (!currentUser?.id || m.senderId !== currentUser.id) && (m.senderAvatar || m.senderName)
+    );
+
+    // Check localStorage cached message avatars
+    let cachedMessageAvatar: string | undefined;
+    try {
+      if (typeof window !== 'undefined') {
+        const rawMsgs = localStorage.getItem('anticeil_colony_messages_v3');
+        if (rawMsgs) {
+          const msgsMap = JSON.parse(rawMsgs);
+          const channelMsgs = msgsMap[activeChannel.id];
+          if (Array.isArray(channelMsgs)) {
+            for (let i = channelMsgs.length - 1; i >= 0; i--) {
+              const msg = channelMsgs[i];
+              if (msg?.senderAvatar && (!currentUser?.id || msg.senderId !== currentUser.id)) {
+                cachedMessageAvatar = msg.senderAvatar;
+                break;
+              }
+            }
+          }
+          if (!cachedMessageAvatar && cleanChannelName) {
+            const searchLower = cleanChannelName.toLowerCase();
+            for (const list of Object.values(msgsMap) as any[]) {
+              if (!Array.isArray(list)) continue;
+              for (let i = list.length - 1; i >= 0; i--) {
+                const msg = list[i];
+                if (
+                  msg?.senderAvatar &&
+                  msg.senderName &&
+                  (msg.senderName.toLowerCase() === searchLower ||
+                    msg.senderName.toLowerCase().startsWith(searchLower) ||
+                    searchLower.startsWith(msg.senderName.toLowerCase()))
+                ) {
+                  cachedMessageAvatar = msg.senderAvatar;
+                  break;
+                }
+              }
+              if (cachedMessageAvatar) break;
+            }
+          }
+        }
+      }
+    } catch {}
 
     const displayName =
       foundFriend?.name ||
       foundMember?.name ||
-      activeChannel.name?.replace(/^@/, '') ||
+      peerMessage?.senderName ||
+      cleanChannelName ||
       'Pengguna Anticeil';
 
     const username =
       foundFriend?.username ||
       foundMember?.username ||
-      (displayName !== activeChannel.name?.replace(/^@/, '') ? activeChannel.name?.replace(/^@/, '') : null) ||
+      (displayName !== cleanChannelName ? cleanChannelName : null) ||
       displayName.toLowerCase().replace(/[^a-z0-9_]/g, '');
 
     const avatar =
@@ -212,11 +275,16 @@ export function MessagesFeed({
       foundFriend?.imageUrl ||
       foundMember?.avatar ||
       foundMember?.imageUrl ||
+      peerMessage?.senderAvatar ||
+      cachedMessageAvatar ||
       activeChannel.avatar ||
+      (activeChannel as any).recipientAvatar ||
+      (activeChannel as any).dmUserAvatar ||
       (activeChannel as any).iconUrl ||
+      (activeChannel as any).imageUrl ||
       null;
 
-    const id = foundFriend?.id || foundMember?.id || dmUserId || activeChannel.id;
+    const id = foundFriend?.id || foundMember?.id || otherUserId || activeChannel.id;
 
     return {
       id,
@@ -224,7 +292,7 @@ export function MessagesFeed({
       username: username && username.toLowerCase() !== displayName.toLowerCase() ? username : (foundFriend?.username || username),
       avatar,
     };
-  }, [isDm, activeChannel, friends?.allFriends, members]);
+  }, [isDm, activeChannel, friends?.allFriends, members, filteredMessages, currentUser?.id]);
 
   // Check if target is a friend
   const isFriend = Boolean(
