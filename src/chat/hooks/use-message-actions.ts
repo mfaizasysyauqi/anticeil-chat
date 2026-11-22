@@ -205,12 +205,21 @@ export function useMessageActions({
 
     try {
       const saved = await colonyApi.sendMessage(activeChannel.id, payload);
+      const savedMsg: ColonyMessage = {
+        ...saved,
+        replyTo: saved.replyTo || payload.replyTo || null,
+      };
       setMessagesMap((prev) => {
         const list = prev[activeChannel.id] || [];
-        if (list.some((m) => m.id === saved.id)) return prev;
+        if (list.some((m) => m.id === savedMsg.id)) {
+          return {
+            ...prev,
+            [activeChannel.id]: list.map((m) => (m.id === savedMsg.id ? savedMsg : m)),
+          };
+        }
         return {
           ...prev,
-          [activeChannel.id]: [...list, saved],
+          [activeChannel.id]: [...list, savedMsg],
         };
       });
 

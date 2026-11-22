@@ -248,7 +248,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
                   developer: app.developer,
                   description: app.description,
                   icon: activityIcon,
-                  iconBg: app.iconBg,
+                  iconBg: (appId === 'watch-together' || appId === 'youtube') ? 'bg-white' : app.iconBg,
                   bannerGradient: app.bannerGradient,
                   startedBy: currentUserName,
                   startedById: currentUserId,

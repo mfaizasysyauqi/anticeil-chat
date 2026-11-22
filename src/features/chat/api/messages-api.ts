@@ -63,6 +63,7 @@ export const messagesApi = {
       content: payload.content || '',
       attachments: payload.attachments,
       poll: payload.poll,
+      replyTo: payload.replyTo || null,
       reactions: {},
       createdAt: new Date().toISOString(),
     };
@@ -73,10 +74,14 @@ export const messagesApi = {
         channelId,
       });
       if (res && res.id) {
+        const msgWithReply: ColonyMessage = {
+          ...res,
+          replyTo: res.replyTo || payload.replyTo || null,
+        };
         const stored = loadStoredMessages();
-        stored[channelId] = [...(stored[channelId] || []).filter((m) => m.id !== res.id), res];
+        stored[channelId] = [...(stored[channelId] || []).filter((m) => m.id !== msgWithReply.id), msgWithReply];
         saveStoredMessages(stored);
-        return res;
+        return msgWithReply;
       }
     } catch {}
 

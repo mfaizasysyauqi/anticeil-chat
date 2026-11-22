@@ -94,6 +94,7 @@ export const threadsApi = {
       senderRole: (payload.senderRole as any) || 'member',
       content: payload.content || '',
       attachments: payload.attachments,
+      replyTo: payload.replyTo || null,
       reactions: {},
       createdAt: new Date().toISOString(),
     };
@@ -106,11 +107,16 @@ export const threadsApi = {
         senderAvatar: payload.senderAvatar,
         senderRole: payload.senderRole,
         attachments: payload.attachments,
+        replyTo: payload.replyTo || null,
       });
       if (res && res.id) {
+        const msgWithReply: ColonyMessage = {
+          ...res,
+          replyTo: res.replyTo || payload.replyTo || null,
+        };
         const current = await this.getThreadMessages(threadId);
-        localStorage.setItem(`anticeil_thread_msgs_${threadId}`, JSON.stringify([...current, res]));
-        return res;
+        localStorage.setItem(`anticeil_thread_msgs_${threadId}`, JSON.stringify([...current, msgWithReply]));
+        return msgWithReply;
       }
     } catch {}
 

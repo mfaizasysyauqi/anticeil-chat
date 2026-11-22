@@ -28,6 +28,7 @@ import { renderFormattedMessage, DecryptedMessageText } from '../../utils/format
 import { VoiceNotePlayer } from './voice-note-player';
 import { DiscordPollCard } from './discord-poll-card';
 import { colonyApi } from '@/chat/chat-api';
+import { YouTubeIcon } from '@/features/voice/data/voice-activities';
 import type { ColonyChannel, ColonyMessage, ColonyRole, DiscordPollData } from '@/chat/chat-types';
 
 export interface MessageItemProps {
@@ -60,7 +61,7 @@ function getAppVisualInfo(appId?: string, fallbackIdentifier?: string): AppVisua
   if (raw.includes('watch-together') || raw.includes('youtube') || raw.includes('▶')) {
     return {
       name: 'Watch Together',
-      bg: 'bg-[#ff0000]',
+      bg: 'bg-white',
       gradient: 'from-[#4d1014] via-[#330c0f] to-[#1f0709] border-red-500/30',
       type: 'youtube',
     };
@@ -123,12 +124,8 @@ function getAppVisualInfo(appId?: string, fallbackIdentifier?: string): AppVisua
 
 function renderAppIcon(type: AppVisualInfo['type'], size: 'xs' | 'sm' | 'md' | 'lg' = 'md') {
   if (type === 'youtube') {
-    const svgClass = size === 'xs' ? 'w-2.5 h-2' : size === 'sm' ? 'w-4 h-3' : size === 'lg' ? 'w-8 h-6' : 'w-5 h-4';
-    return (
-      <svg className={cn(svgClass, 'fill-white')} viewBox="0 0 24 24">
-        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-      </svg>
-    );
+    const svgClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-8 h-8' : 'w-6 h-6';
+    return <YouTubeIcon className={svgClass} />;
   }
   if (type === 'tradingview') {
     const svgClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
@@ -274,7 +271,7 @@ export function MessageItem({
                       {/* Curved spine connector line */}
                       <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-border/80 pointer-events-none group-hover/cmd:border-foreground/60 transition-colors" />
                       {/* App icon badge */}
-                      <div className={cn('w-4 h-4 rounded-full flex items-center justify-center shrink-0 shadow-2xs overflow-hidden text-white', actInfo.bg)}>
+                      <div className={cn('w-4 h-4 rounded-full flex items-center justify-center shrink-0 shadow-2xs overflow-hidden', actInfo.bg)}>
                         {renderAppIcon(actInfo.type, 'xs')}
                       </div>
                       <span className="bg-primary text-white text-[9px] font-bold px-1 py-0.2 rounded-[3px] flex items-center gap-0.5 leading-none shadow-2xs">
@@ -304,7 +301,7 @@ export function MessageItem({
                     {act && actInfo ? (
                       <div
                         className={cn(
-                          'w-[38px] h-[38px] rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-md text-white border border-white/10 overflow-hidden',
+                          'w-[38px] h-[38px] rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-md border border-white/10 overflow-hidden',
                           actInfo.bg,
                         )}
                         title={act.name}
