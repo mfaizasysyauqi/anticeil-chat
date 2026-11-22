@@ -132,36 +132,35 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
   const workspaceRef = useRef<HTMLDivElement>(null);
   const { isMobile } = useResponsive();
 
-  // Desktop resizable width for Artifact Panel
-  const [artifactWidth, setArtifactWidth] = useState<number>(() => {
+  // Desktop resizable width for Artifact Panel (default null = exactly 50% / 50% ratio with chat)
+  const [artifactWidth, setArtifactWidth] = useState<number | null>(() => {
     try {
-      const saved = localStorage.getItem('anticeil_ai_artifact_width');
+      localStorage.removeItem('anticeil_ai_artifact_width'); // Clean up legacy fixed width
+      const saved = localStorage.getItem('anticeil_ai_custom_artifact_width');
       if (saved) {
         const val = parseInt(saved, 10);
         if (!isNaN(val) && val >= 320 && val <= 1600) return val;
       }
     } catch {}
-    if (typeof window !== 'undefined') {
-      return Math.min(Math.max(Math.round(window.innerWidth * 0.55), 450), 850);
-    }
-    return 640;
+    return null; // Default: exactly 50% / 50%
   });
   const [isResizingArtifact, setIsResizingArtifact] = useState(false);
 
   const handleArtifactResizeStart = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (artifactWidth === null && workspaceRef.current) {
+      const currentArtifactPx = Math.round(workspaceRef.current.getBoundingClientRect().width * 0.5);
+      setArtifactWidth(currentArtifactPx);
+    }
     setIsResizingArtifact(true);
   };
 
   const handleArtifactResizeReset = () => {
-    if (workspaceRef.current) {
-      const containerWidth = workspaceRef.current.getBoundingClientRect().width;
-      const defWidth = Math.min(Math.max(Math.round(containerWidth * 0.55), 450), 850);
-      setArtifactWidth(defWidth);
-      try {
-        localStorage.setItem('anticeil_ai_artifact_width', String(defWidth));
-      } catch {}
-    }
+    setArtifactWidth(null);
+    try {
+      localStorage.removeItem('anticeil_ai_custom_artifact_width');
+      localStorage.removeItem('anticeil_ai_artifact_width');
+    } catch {}
   };
 
   useEffect(() => {
@@ -178,9 +177,14 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
 
     const handleMouseUp = () => {
       setIsResizingArtifact(false);
-      try {
-        localStorage.setItem('anticeil_ai_artifact_width', String(artifactWidth));
-      } catch {}
+      setArtifactWidth((current) => {
+        if (current !== null) {
+          try {
+            localStorage.setItem('anticeil_ai_custom_artifact_width', String(current));
+          } catch {}
+        }
+        return current;
+      });
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -189,14 +193,14 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isResizingArtifact, artifactWidth]);
+  }, [isResizingArtifact]);
 
   useEffect(() => {
     const handleWindowResize = () => {
       if (!workspaceRef.current) return;
       const rect = workspaceRef.current.getBoundingClientRect();
       const maxAllowed = Math.max(rect.width - 340, 320);
-      setArtifactWidth((prev) => Math.min(prev, maxAllowed));
+      setArtifactWidth((prev) => (prev !== null ? Math.min(prev, maxAllowed) : null));
     };
     window.addEventListener('resize', handleWindowResize);
     return () => window.removeEventListener('resize', handleWindowResize);
@@ -536,9 +540,12 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
         {/* Left: Chat Feed & Command Input */}
         <div
           className={cn(
-            'flex flex-col flex-1 min-h-0 min-w-0 bg-background overflow-hidden',
+            'flex flex-col min-h-0 min-w-0 bg-background overflow-hidden',
             !isResizingArtifact && 'transition-all duration-150',
-            activeArtifact && 'hidden md:flex border-r border-border/80'
+            activeArtifact
+              ? 'hidden md:flex border-r border-border/80'
+              : 'flex-1 w-full',
+            activeArtifact && (artifactWidth ? 'flex-1' : 'md:basis-1/2 md:w-1/2 md:flex-1')
           )}
         >
           {/* 2. Messages & Capability Hero Feed (100% Symmetrical with App Bar via LAYOUT_PAGE_SPACING) */}
@@ -876,17 +883,18 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
     {activeArtifact && (
       <div
         className={cn(
-          'relative flex flex-col min-h-0 overflow-hidden bg-[#111214] border-l border-border/80 animate-in slide-in-from-right-4 duration-200',
-          'w-full md:w-auto shrink-0',
+          'relative flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#111214] border-l border-border/80 animate-in slide-in-from-right-4 duration-200',
+          'w-full',
+          artifactWidth ? 'md:w-auto shrink-0' : 'md:basis-1/2 md:w-1/2 md:flex-1',
           !isResizingArtifact && 'transition-all duration-150'
         )}
-        style={!isMobile ? { width: `${artifactWidth}px` } : undefined}
+        style={!isMobile && artifactWidth ? { width: `${artifactWidth}px`, flex: 'none' } : undefined}
       >
         {/* Desktop Resize Handle on Left Border of Artifact Panel */}
         <div
           role="separator"
           aria-orientation="vertical"
-          title="Tarik untuk mengubah ukuran artifact (Double-klik untuk reset)"
+          title="Tarik untuk mengubah ukuran artifact (Double-klik untuk reset ke 50/50)"
           onMouseDown={handleArtifactResizeStart}
           onDoubleClick={handleArtifactResizeReset}
           className="hidden md:flex absolute top-0 -left-1.5 w-3 h-full cursor-col-resize z-30 items-center justify-center select-none group"
