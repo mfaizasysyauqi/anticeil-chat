@@ -414,7 +414,7 @@ export function HomeChannelsSidebar({
               !id.startsWith('dm-') ||
               id === 'dm-u1' ||
               dmUserId === 'u1' ||
-              (!dmUserId && name === 'direct message') ||
+              (!dmUserId && (name === 'direct message' || name === 'pengguna')) ||
               dm.type === 'voice' ||
               dm.type === 'forum' ||
               dm.type === 'kanban' ||
@@ -422,6 +422,15 @@ export function HomeChannelsSidebar({
               name === 'pengguna anticeil'
             ) {
               return false;
+            }
+
+            // Filter out orphaned/dummy fallback entries with generic names that have no valid member
+            if (name === 'pengguna' || name === 'direct message') {
+              const hasMatchingMember = members.some((m) => {
+                if (m.id === currentUser?.id) return false;
+                return (dmUserId && m.id === dmUserId) || (m.id && id.includes(m.id));
+              });
+              if (!hasMatchingMember) return false;
             }
             const nameKey = `name-${name}`;
             const userKey = dmUserId ? `user-${dmUserId}` : null;
@@ -507,7 +516,7 @@ export function HomeChannelsSidebar({
                         )}
                       />
                     )}
-                    <span className="truncate flex-1">{dm.name}</span>
+                    <span className="truncate flex-1">{isGroup ? dm.name : (member?.name || member?.username || dm.name)}</span>
                     {isGroup && dm.dmUserIds && dm.dmUserIds.length > 0 && (
                       <span className="text-[10px] text-muted-foreground/70 font-semibold px-1 rounded bg-muted/40 shrink-0">
                         {dm.dmUserIds.length}

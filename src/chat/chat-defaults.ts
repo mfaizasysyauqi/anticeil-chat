@@ -119,7 +119,7 @@ export function loadStoredDmChannels(): ColonyChannel[] {
         !id.startsWith('dm-') ||
         id === 'dm-u1' ||
         dmUserId === 'u1' ||
-        (!dmUserId && name === 'direct message') ||
+        (!dmUserId && (name === 'direct message' || name === 'pengguna')) ||
         c?.category !== 'DIRECT MESSAGES' ||
         (c?.colonyId && c.colonyId !== 'anticeil') ||
         c?.type === 'voice' ||
@@ -172,7 +172,7 @@ export function saveStoredDmChannels(channels: ColonyChannel[]): void {
         !id.startsWith('dm-') ||
         id === 'dm-u1' ||
         dmUserId === 'u1' ||
-        (!dmUserId && name === 'direct message') ||
+        (!dmUserId && (name === 'direct message' || name === 'pengguna')) ||
         c?.category !== 'DIRECT MESSAGES' ||
         (c?.colonyId && c.colonyId !== 'anticeil') ||
         c?.type === 'voice' ||
