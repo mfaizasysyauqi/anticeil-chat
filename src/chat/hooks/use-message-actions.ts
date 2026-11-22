@@ -178,7 +178,20 @@ export function useMessageActions({
         id: replyingToMessage.id,
         senderId: replyingToMessage.senderId,
         senderName: replyingToMessage.senderName,
-        content: replyingToMessage.content,
+        content:
+          replyingToMessage.content ||
+          (replyingToMessage.attachments && replyingToMessage.attachments.length > 0
+            ? (() => {
+                const att = replyingToMessage.attachments[0];
+                if (att.type === 'activity' || att.activityData) return `[Aktivitas: ${att.activityData?.name || 'Aplikasi'}]`;
+                if (att.type === 'image') return '[Gambar]';
+                if (att.type === 'video') return '[Video]';
+                if (att.type === 'voice-note' || att.type === 'audio') return '[Pesan Suara]';
+                if (att.type === 'poll' || att.pollData) return `[Polling: ${att.pollData?.question || 'Polling'}]`;
+                if (att.type === 'template' || att.templateData) return `[Template: ${att.templateData?.name || 'Alur'}]`;
+                return `[Lampiran: ${att.name || 'File'}]`;
+              })()
+            : '[Pesan]'),
         senderAvatar: replyingToMessage.senderAvatar,
       } : null,
     };

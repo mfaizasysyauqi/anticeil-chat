@@ -256,7 +256,7 @@ export function MessageItem({
                       <span className="font-semibold text-foreground/90 shrink-0 group-hover/reply:underline">@{msg.replyTo.senderName}</span>
                       <span className="truncate max-w-[320px] sm:max-w-[480px] md:max-w-[650px] pr-1.5 text-muted-foreground/80 group-hover/reply:text-foreground/90 transition-colors">
                         {msg.replyTo.content ? (
-                          <DecryptedMessageText content={msg.replyTo.content} channelId={msg.channelId} />
+                          <DecryptedMessageText content={msg.replyTo.content} channelId={msg.channelId} inline />
                         ) : (
                           '[Lampiran]'
                         )}

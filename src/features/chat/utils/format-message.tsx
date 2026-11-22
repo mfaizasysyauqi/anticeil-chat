@@ -1,7 +1,15 @@
 import React from 'react';
 import { isEncryptedMessage, decryptMessage } from '@/lib/e2ee';
 
-export function DecryptedMessageText({ content, channelId }: { content: string; channelId?: string }) {
+export function DecryptedMessageText({
+  content,
+  channelId,
+  inline = false,
+}: {
+  content: string;
+  channelId?: string;
+  inline?: boolean;
+}) {
   const [decryptedText, setDecryptedText] = React.useState<string>(() => {
     if (!isEncryptedMessage(content)) return content;
     return '';
@@ -25,6 +33,14 @@ export function DecryptedMessageText({ content, channelId }: { content: string; 
       isMounted = false;
     };
   }, [content, channelId]);
+
+  if (inline) {
+    return (
+      <span className="inline align-middle">
+        {renderFormattedMessage(decryptedText || (isEncrypted ? 'Mendekripsi pesan...' : content))}
+      </span>
+    );
+  }
 
   return (
     <div>

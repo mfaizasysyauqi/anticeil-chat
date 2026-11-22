@@ -42,6 +42,7 @@ import { CreatePollModal } from './create-poll-modal';
 import { CustomScheduleModal } from './custom-schedule-modal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { DecryptedMessageText } from '@/features/chat/utils/format-message';
 import { MAX_MESSAGE_CHARS, getCurrentMaxMessageChars } from '../utils/text-limit';
 import { getCurrentUserPlan, processFilesBatch, MAX_UPLOAD_FILES_LIMIT } from '../utils/attachment';
 import type { ColonyChannel, Colony, ColonyMember, ColonyCustomRole } from '@/chat/chat-types';
@@ -460,8 +461,33 @@ export function ChatInputBar({
       {replyingTo && (
         <div className="px-3 py-1.5 rounded-[12px] bg-[#111214] border border-white/10 shadow-lg flex items-center justify-between text-xs animate-in slide-in-from-bottom-1 select-none">
           <div className="flex items-center gap-2 min-w-0 pr-2">
-            <span className="text-muted-foreground">Membalas <span className="font-semibold text-primary">@{replyingTo.senderName}</span>:</span>
-            <span className="truncate max-w-[280px] sm:max-w-[480px] md:max-w-[650px] pr-1.5 text-[#dbdee1]/90">{replyingTo.content || '[Lampiran]'}</span>
+            <span className="text-muted-foreground shrink-0">
+              Membalas <span className="font-semibold text-primary">@{replyingTo.senderName}</span>:
+            </span>
+            <span className="truncate max-w-[280px] sm:max-w-[480px] md:max-w-[650px] pr-1.5 text-[#dbdee1]/90 inline-block">
+              {replyingTo.content ? (
+                <DecryptedMessageText
+                  content={replyingTo.content}
+                  channelId={activeChannel?.id}
+                  inline
+                />
+              ) : (replyingTo as any).attachments && (replyingTo as any).attachments.length > 0 ? (
+                (() => {
+                  const att = (replyingTo as any).attachments[0];
+                  if (att.type === 'activity' || att.activityData) {
+                    return `[Aktivitas: ${att.activityData?.name || 'Aplikasi'}]`;
+                  }
+                  if (att.type === 'image') return '[Gambar]';
+                  if (att.type === 'video') return '[Video]';
+                  if (att.type === 'voice-note' || att.type === 'audio') return '[Pesan Suara]';
+                  if (att.type === 'poll' || att.pollData) return `[Polling: ${att.pollData?.question || 'Polling'}]`;
+                  if (att.type === 'template' || att.templateData) return `[Template: ${att.templateData?.name || 'Alur'}]`;
+                  return `[Lampiran: ${att.name || 'File'}]`;
+                })()
+              ) : (
+                '[Pesan]'
+              )}
+            </span>
           </div>
           <Button
             variant="ghost"
