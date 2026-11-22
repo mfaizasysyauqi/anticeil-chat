@@ -81,8 +81,7 @@ export function ChatAvatar({
     imageUrl &&
       !imageError &&
       !imageUrl.includes('logo.png') &&
-      !imageUrl.includes('logo.svg') &&
-      name?.toLowerCase() !== 'anticeil'
+      !imageUrl.includes('logo.svg')
   );
 
   const statusIndicator = showStatus && status && (
@@ -116,7 +115,7 @@ export function ChatAvatar({
         )}
         style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
       >
-        {imageUrl && (imageUrl.includes('logo.png') || imageUrl.includes('logo.svg') || name?.toLowerCase() === 'anticeil') ? (
+        {imageUrl && (imageUrl.includes('logo.png') || imageUrl.includes('logo.svg')) ? (
           <AnticeilLogo className={cn('w-3/5 h-3/5 transition-colors duration-150', isActive ? 'text-primary' : 'text-foreground')} />
         ) : imageUrl && !imageError ? (
           <img
@@ -126,6 +125,8 @@ export function ChatAvatar({
             style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
             className={cn('w-full h-full object-cover aspect-square', roundedClass)}
           />
+        ) : isSquircle && (name?.toLowerCase() === 'anticeil') ? (
+          <AnticeilLogo className={cn('w-3/5 h-3/5 transition-colors duration-150', isActive ? 'text-primary' : 'text-foreground')} />
         ) : isSquircle ? (
           <div
             className={cn(
