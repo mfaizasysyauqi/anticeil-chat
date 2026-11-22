@@ -330,26 +330,43 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
   const handleMicrosoftSignIn = async () => {
     try {
       toast.loading(t('Menghubungkan ke Microsoft 365...'), { id: 'ms-oauth' });
-      const res: any = await api.get('/v1/authn/federated/login?providerName=microsoft').catch(() => null);
-      if (res && res.loginUrl) {
-        toast.success(t('Membuka Microsoft Sign-In...'), { id: 'ms-oauth' });
-        const state = {
-          providerName: 'microsoft',
-          from: window.location.href,
-          activepiecesLogin: 'true',
-          login: 'true',
-        };
-        const loginUrl = new URL(res.loginUrl);
-        loginUrl.searchParams.set('state', JSON.stringify(state));
-        window.location.href = loginUrl.toString();
-        return;
+      let loginUrlStr = '';
+      try {
+        const res: any = await api.get('/v1/authn/federated/login?providerName=microsoft');
+        if (res && res.loginUrl) {
+          loginUrlStr = res.loginUrl;
+        }
+      } catch (e) {
+        console.warn('Backend federated login check returned error, using direct Microsoft OAuth fallback:', e);
       }
-      toast.dismiss('ms-oauth');
-      // If server does not have live MS OAuth credentials configured, prompt for work email to complete via Entra SSO
-      const promptEmail = window.prompt(t('Masukkan email Microsoft 365 / Entra ID kantor Anda (contoh: user@company.com):'));
-      if (promptEmail && promptEmail.includes('@')) {
-        await handleSsoLogin(promptEmail, undefined, 'Microsoft Entra ID');
+
+      // Fallback: If server is 502 or down or missing config, generate direct Microsoft OAuth authorization URL
+      if (!loginUrlStr) {
+        const msClientId =
+          (import.meta.env.VITE_MICROSOFT_CLIENT_ID as string) ||
+          'a2531019-87ff-46b9-84fd-129b08c5c1a2';
+        const redirectUri = `${window.location.origin}/redirect`;
+        const msUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+        msUrl.searchParams.set('client_id', msClientId);
+        msUrl.searchParams.set('redirect_uri', redirectUri);
+        msUrl.searchParams.set('response_type', 'code');
+        msUrl.searchParams.set('response_mode', 'query');
+        msUrl.searchParams.set('scope', 'openid email profile offline_access User.Read');
+        loginUrlStr = msUrl.toString();
       }
+
+      toast.success(t('Membuka Microsoft Sign-In...'), { id: 'ms-oauth' });
+      const state = {
+        providerName: 'microsoft',
+        from: window.location.href,
+        activepiecesLogin: 'true',
+        login: 'true',
+      };
+      const finalUrl = new URL(loginUrlStr);
+      finalUrl.searchParams.set('state', JSON.stringify(state));
+      finalUrl.searchParams.set('prompt', 'select_account');
+      window.location.href = finalUrl.toString();
+      return;
     } catch (err: any) {
       console.error('Microsoft OAuth initiation failed:', err);
       toast.error(t('Microsoft OAuth belum aktif di server atau gagal terhubung.'), { id: 'ms-oauth' });
@@ -455,8 +472,18 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
       const claimCode = async () => {
         try {
           toast.loading(t('Memverifikasi autentikasi...'), { id: 'oauth-claim' });
+          let providerName = 'google';
+          const stateParam = params.get('state');
+          if (stateParam) {
+            try {
+              const parsed = JSON.parse(stateParam);
+              if (parsed.providerName) {
+                providerName = parsed.providerName;
+              }
+            } catch {}
+          }
           const claimRes: any = await api.post('/v1/authn/federated/claim', {
-            providerName: 'google',
+            providerName,
             code: codeFromUrl,
           });
           if (claimRes && claimRes.token) {
