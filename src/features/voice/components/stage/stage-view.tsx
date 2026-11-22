@@ -859,6 +859,7 @@ export function StageView({
                     onClick={handleToggleScreenShare}
                     className={cn(
                       VOICE_BOTTOM_BAR_STYLES.BUTTON_ICON,
+                      'hidden md:flex',
                       isScreenSharing && 'text-primary bg-primary/20',
                     )}
                   >
@@ -866,7 +867,7 @@ export function StageView({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs font-semibold">
-                  {t('Bagikan Layar')}
+                  {isScreenSharing ? t('Hentikan Berbagi Layar') : t('Bagikan Layar')}
                 </TooltipContent>
               </Tooltip>
 
@@ -877,7 +878,8 @@ export function StageView({
                     type="button"
                     onClick={toggleMusic}
                     className={cn(
-                      'h-9 w-10 flex items-center justify-center rounded-lg transition-colors cursor-pointer',
+                      VOICE_BOTTOM_BAR_STYLES.BUTTON_ICON,
+                      'hidden md:flex',
                       isMusicPlaying
                         ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                         : 'text-foreground hover:bg-muted/60',
@@ -909,7 +911,7 @@ export function StageView({
                         handleToggleHandRaise();
                       }
                     }}
-                    className={VOICE_BOTTOM_BAR_STYLES.BUTTON_ICON}
+                    className={cn(VOICE_BOTTOM_BAR_STYLES.BUTTON_ICON, 'hidden sm:flex')}
                   >
                     {userRole === 'moderator' || userRole === 'speaker' ? (
                       <Users className="w-5 h-5" />
@@ -921,6 +923,8 @@ export function StageView({
                 <TooltipContent side="top" className="text-xs font-semibold">
                   {userRole === 'moderator' || userRole === 'speaker'
                     ? t('Leave the Stage')
+                    : isHandRaised
+                    ? t('Batal Angkat Tangan')
                     : t('Request to Speak')}
                 </TooltipContent>
               </Tooltip>
@@ -930,10 +934,13 @@ export function StageView({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className={VOICE_BOTTOM_BAR_STYLES.BUTTON_ICON}
+                    className={cn(VOICE_BOTTOM_BAR_STYLES.BUTTON_ICON, 'relative')}
                     aria-label="Opsi Lainnya"
                   >
                     <MoreHorizontal className="w-5 h-5" />
+                    {(isScreenSharing || isMusicPlaying || isHandRaised) && (
+                      <span className="md:hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
+                    )}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -942,6 +949,85 @@ export function StageView({
                   sideOffset={12}
                   className="w-56 p-1.5 rounded-xl bg-background border border-border shadow-2xl text-foreground z-50 animate-in fade-in zoom-in-95 duration-150"
                 >
+                  {/* Mobile/Compact-Only Options: Leave Stage/Raise Hand, Screen Share, Ambient Music */}
+                  <div className="md:hidden space-y-0.5">
+                    {/* Leave Stage / Raise Hand (hidden on bar for < sm) */}
+                    <div className="sm:hidden">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (userRole === 'speaker' || userRole === 'moderator') {
+                            toast.info(t('Anda turun dari panggung ke audiens'));
+                            setUserRole('audience');
+                            socket?.emit('COMMUNITY_STAGE_EVENT', {
+                              channelId: channel.id,
+                              action: 'STAGE_SPEAKER_DEMOTE',
+                              userId: currentUser?.id,
+                            });
+                          } else {
+                            handleToggleHandRaise();
+                          }
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
+                      >
+                        {userRole === 'moderator' || userRole === 'speaker' ? (
+                          <>
+                            <Users className="w-4 h-4 text-muted-foreground group-hover:text-accent-foreground shrink-0" />
+                            <span>{t('Leave the Stage')}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Hand className={cn('w-4 h-4 shrink-0', isHandRaised ? 'text-amber-400' : 'text-muted-foreground group-hover:text-accent-foreground')} />
+                            <span>{isHandRaised ? t('Batal Angkat Tangan') : t('Request to Speak')}</span>
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                    </div>
+
+                    {/* Screen Share */}
+                    <DropdownMenuItem
+                      onClick={handleToggleScreenShare}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
+                    >
+                      <Share2
+                        className={cn(
+                          'w-4 h-4 shrink-0',
+                          isScreenSharing ? 'text-primary' : 'text-muted-foreground group-hover:text-accent-foreground',
+                        )}
+                      />
+                      <div className="flex items-center justify-between flex-1 min-w-0">
+                        <span>{isScreenSharing ? t('Hentikan Berbagi Layar') : t('Bagikan Layar')}</span>
+                        {isScreenSharing && (
+                          <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-bold">
+                            {t('Aktif')}
+                          </span>
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+
+                    {/* Ambient Music */}
+                    <DropdownMenuItem
+                      onClick={toggleMusic}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground transition-colors group"
+                    >
+                      <Music
+                        className={cn(
+                          'w-4 h-4 shrink-0',
+                          isMusicPlaying ? 'text-emerald-500' : 'text-muted-foreground group-hover:text-accent-foreground',
+                        )}
+                      />
+                      <div className="flex items-center justify-between flex-1 min-w-0">
+                        <span>{t('Musik Latar')}</span>
+                        {isMusicPlaying && (
+                          <span className="text-[10px] bg-emerald-500/20 text-emerald-500 px-1.5 py-0.5 rounded font-bold">
+                            {t('Memutar')}
+                          </span>
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator className="bg-border my-1" />
+                  </div>
+
                   <DropdownMenuItem
                     onClick={() => {
                       setNewTopicInput(stageTopic);
