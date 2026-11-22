@@ -8,6 +8,7 @@ export interface ShopItem {
   description: string;
   priceIdr: number;
   priceDew: number;
+  allowDew?: boolean;
   priceOrbs?: number;
   discountPercent?: number;
   bannerUrl?: string;

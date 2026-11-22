@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { FilterToggleButton } from '@/components/ui/filter-toggle-button';
@@ -268,6 +269,7 @@ export function ShopView({
     description: '',
     priceIdr: 65000,
     priceDew: 500,
+    allowDew: true,
     previewIcon: '',
     badge: 'Baru',
     featured: true,
@@ -284,6 +286,7 @@ export function ShopView({
       description: '',
       priceIdr: 65000,
       priceDew: 500,
+      allowDew: true,
       previewIcon: '',
       badge: 'Baru',
       featured: true,
@@ -296,13 +299,15 @@ export function ShopView({
     setProductImageFile(null);
     const existingMedia = item.previewIcon || item.gifUrl || '';
     setProductImagePreview(existingMedia);
+    const itemCanUseDew = item.allowDew !== false && (item.priceDew !== 0);
     setNewProductForm({
       name: item.name,
       collection: item.collection,
       category: item.category,
       description: item.description,
       priceIdr: item.priceIdr || 65000,
-      priceDew: item.priceDew || item.priceOrbs || 500,
+      priceDew: itemCanUseDew ? (item.priceDew || item.priceOrbs || 500) : 0,
+      allowDew: itemCanUseDew,
       previewIcon: existingMedia,
       badge: item.badge || 'Baru',
       featured: Boolean(item.featured),
@@ -655,6 +660,9 @@ export function ShopView({
 
       const payload = {
         ...newProductForm,
+        allowDew: newProductForm.allowDew,
+        priceDew: newProductForm.allowDew ? newProductForm.priceDew : 0,
+        priceOrbs: newProductForm.allowDew ? newProductForm.priceDew : 0,
         previewIcon: finalPreviewUrl,
         gifUrl: finalPreviewUrl,
       };
@@ -690,6 +698,7 @@ export function ShopView({
             description: '',
             priceIdr: 65000,
             priceDew: 500,
+            allowDew: true,
             previewIcon: '',
             badge: 'Baru',
             featured: true,
@@ -1765,10 +1774,17 @@ export function ShopView({
                           <div className="text-[11px] sm:text-xs font-bold text-foreground truncate">
                             IDR {(item.priceIdr ?? 0).toLocaleString('id-ID')}
                           </div>
-                          <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold text-cyan-400">
-                            <span>💧</span>
-                            <span>{item.priceDew ?? item.priceOrbs ?? 0} Dew</span>
-                          </div>
+                          {item.allowDew !== false && (item.priceDew ?? item.priceOrbs ?? 0) > 0 ? (
+                            <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold text-cyan-400">
+                              <span>💧</span>
+                              <span>{item.priceDew ?? item.priceOrbs ?? 0} Dew</span>
+                            </div>
+                          ) : (
+                            <div className="text-[9px] sm:text-[10px] font-semibold text-amber-400/90 flex items-center gap-1">
+                              <span>💵</span>
+                              <span>{t('Hanya Uang Asli')}</span>
+                            </div>
+                          )}
                         </div>
 
                         {isOwned ? (
@@ -1931,124 +1947,143 @@ export function ShopView({
               </div>
 
               {/* Pricing Grid */}
-              <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-muted/40 border border-border">
-                <div className="space-y-0.5">
-                  <div className="text-[10px] text-muted-foreground font-semibold">{t('Harga Resmi IDR')}</div>
-                  <div className="text-xs sm:text-sm font-bold text-foreground">
-                    IDR {(activeModalItem?.priceIdr ?? 0).toLocaleString('id-ID')}
-                  </div>
-                </div>
-                <div className="space-y-0.5 text-right">
-                  <div className="text-[10px] text-muted-foreground font-semibold">{t('Harga Dew')}</div>
-                  <div className="text-xs sm:text-sm font-bold text-cyan-400 flex items-center justify-end gap-1">
-                    <span>💧</span>
-                    <span>{activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0} Dew</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="pt-2 space-y-2">
-                {ownedItemIds.has(activeModalItem.id) ? (
-                  <Button
-                    size="sm"
-                    variant="default"
-                    disabled={isEquipping}
-                    onClick={() => handleEquip(activeModalItem)}
-                    className="w-full h-9 font-bold text-xs cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    {isEquipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    <span>{t('Pasang ke Profil Anda')}</span>
-                  </Button>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="default"
-                        disabled={isPurchasing || (balance.dew ?? balance.orbs ?? 0) < (activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0)}
-                        onClick={() => handlePurchase(activeModalItem, 'dew')}
-                        className="flex-1 h-9 font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        {isPurchasing ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <>
+              {(() => {
+                const canUseDew = activeModalItem.allowDew !== false && (activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0) > 0;
+                return (
+                  <>
+                    <div className={cn("grid gap-3 p-3 rounded-lg bg-muted/40 border border-border", canUseDew ? "grid-cols-2" : "grid-cols-1")}>
+                      <div className="space-y-0.5">
+                        <div className="text-[10px] text-muted-foreground font-semibold">{t('Harga Resmi IDR')}</div>
+                        <div className="text-xs sm:text-sm font-bold text-foreground">
+                          IDR {(activeModalItem?.priceIdr ?? 0).toLocaleString('id-ID')}
+                        </div>
+                      </div>
+                      {canUseDew ? (
+                        <div className="space-y-0.5 text-right">
+                          <div className="text-[10px] text-muted-foreground font-semibold">{t('Harga Dew')}</div>
+                          <div className="text-xs sm:text-sm font-bold text-cyan-400 flex items-center justify-end gap-1">
                             <span>💧</span>
-                            <span>Beli ({activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0} Dew)</span>
-                          </>
-                        )}
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={isPurchasing}
-                        onClick={() => handlePurchase(activeModalItem, 'idr')}
-                        className="flex-1 h-9 font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>Beli IDR {(activeModalItem?.priceIdr ?? 0).toLocaleString('id-ID')}</span>
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={(e) => handleToggleWishlist(e, activeModalItem)}
-                        className="h-9 px-3 cursor-pointer shrink-0"
-                        title="Wishlist"
-                      >
-                        <Heart
-                          className={cn(
-                            'w-4 h-4',
-                            wishlistedItemIds.has(activeModalItem.id) && 'text-pink-500 fill-pink-500'
-                          )}
-                        />
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenEditProduct(activeModalItem);
-                        }}
-                        className="h-9 px-3 cursor-pointer shrink-0 text-muted-foreground hover:text-foreground"
-                        title={t('Edit Item')}
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteProduct(e, activeModalItem.id);
-                          setActiveModalItem(null);
-                        }}
-                        className="h-9 px-3 cursor-pointer text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 border border-border/80 bg-background/80 shrink-0 transition-colors"
-                        title={t('Hapus Item')}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+                            <span>{activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0} Dew</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-0.5 text-right">
+                          <div className="text-[10px] text-muted-foreground font-semibold">{t('Metode Pembayaran')}</div>
+                          <div className="text-xs font-semibold text-amber-400 flex items-center justify-end gap-1">
+                            <span>💵</span>
+                            <span>{t('Hanya Uang Asli (IDR)')}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {(balance.dew ?? balance.orbs ?? 0) < (activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0) && (
-                      <div className="flex items-center justify-between text-[11px] text-muted-foreground bg-muted/40 p-2 rounded-lg border border-border">
-                        <span>Saldo Dew belum cukup ({balance.dew ?? balance.orbs ?? 0} / {activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0})</span>
-                        <button
-                          type="button"
-                          onClick={() => handleTopupDew(500)}
-                          className="text-cyan-400 hover:underline font-bold cursor-pointer"
+                    {/* Actions */}
+                    <div className="pt-2 space-y-2">
+                      {ownedItemIds.has(activeModalItem.id) ? (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          disabled={isEquipping}
+                          onClick={() => handleEquip(activeModalItem)}
+                          className="w-full h-9 font-bold text-xs cursor-pointer flex items-center justify-center gap-2"
                         >
-                          + Klaim 500 Dew
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                          {isEquipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                          <span>{t('Pasang ke Profil Anda')}</span>
+                        </Button>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            {canUseDew && (
+                              <Button
+                                size="sm"
+                                variant="default"
+                                disabled={isPurchasing || (balance.dew ?? balance.orbs ?? 0) < (activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0)}
+                                onClick={() => handlePurchase(activeModalItem, 'dew')}
+                                className="flex-1 h-9 font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5"
+                              >
+                                {isPurchasing ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <>
+                                    <span>💧</span>
+                                    <span>Beli ({activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0} Dew)</span>
+                                  </>
+                                )}
+                              </Button>
+                            )}
+
+                            <Button
+                              size="sm"
+                              variant={canUseDew ? "outline" : "default"}
+                              disabled={isPurchasing}
+                              onClick={() => handlePurchase(activeModalItem, 'idr')}
+                              className="flex-1 h-9 font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                              <ShoppingBag className="w-3.5 h-3.5" />
+                              <span>Beli IDR {(activeModalItem?.priceIdr ?? 0).toLocaleString('id-ID')}</span>
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={(e) => handleToggleWishlist(e, activeModalItem)}
+                              className="h-9 px-3 cursor-pointer shrink-0"
+                              title="Wishlist"
+                            >
+                              <Heart
+                                className={cn(
+                                  'w-4 h-4',
+                                  wishlistedItemIds.has(activeModalItem.id) && 'text-pink-500 fill-pink-500'
+                                )}
+                              />
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenEditProduct(activeModalItem);
+                              }}
+                              className="h-9 px-3 cursor-pointer shrink-0 text-muted-foreground hover:text-foreground"
+                              title={t('Edit Item')}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteProduct(e, activeModalItem.id);
+                                setActiveModalItem(null);
+                              }}
+                              className="h-9 px-3 cursor-pointer text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 border border-border/80 bg-background/80 shrink-0 transition-colors"
+                              title={t('Hapus Item')}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+
+                          {canUseDew && (balance.dew ?? balance.orbs ?? 0) < (activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0) && (
+                            <div className="flex items-center justify-between text-[11px] text-muted-foreground bg-muted/40 p-2 rounded-lg border border-border">
+                              <span>Saldo Dew belum cukup ({balance.dew ?? balance.orbs ?? 0} / {activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0})</span>
+                              <button
+                                type="button"
+                                onClick={() => handleTopupDew(500)}
+                                className="text-cyan-400 hover:underline font-bold cursor-pointer"
+                              >
+                                + Klaim 500 Dew
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </DialogContent>
         )}
@@ -2163,9 +2198,33 @@ export function ShopView({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Toggle Allow Dew vs Only IDR */}
+            <div className="flex items-center justify-between p-2.5 rounded-lg border border-border/80 bg-muted/20">
+              <div className="space-y-0.5 pr-2">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer">
+                  <span>💧 {t('Bisa Dibeli dengan Dew')}</span>
+                </label>
+                <p className="text-[11px] text-muted-foreground">
+                  {newProductForm.allowDew
+                    ? t('Item ini bisa dibeli menggunakan Dew maupun Uang Asli (IDR).')
+                    : t('Item ini eksklusif hanya bisa dibeli menggunakan Uang Asli (IDR).')}
+                </p>
+              </div>
+              <Switch
+                checked={newProductForm.allowDew}
+                onCheckedChange={(checked) =>
+                  setNewProductForm((f) => ({
+                    ...f,
+                    allowDew: checked,
+                    priceDew: checked ? (f.priceDew || 500) : 0,
+                  }))
+                }
+              />
+            </div>
+
+            <div className={cn("grid gap-3", newProductForm.allowDew ? "grid-cols-2" : "grid-cols-1")}>
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">{t('Harga IDR')}</label>
+                <label className="text-xs font-semibold text-foreground block mb-1">{t('Harga IDR (Uang Asli)')}</label>
                 <Input
                   type="number"
                   value={newProductForm.priceIdr}
@@ -2174,15 +2233,17 @@ export function ShopView({
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">{t('Harga Dew')}</label>
-                <Input
-                  type="number"
-                  value={newProductForm.priceDew}
-                  onChange={(e) => setNewProductForm({ ...newProductForm, priceDew: Number(e.target.value) })}
-                  className="h-8 text-xs bg-muted/40 border-border"
-                />
-              </div>
+              {newProductForm.allowDew && (
+                <div>
+                  <label className="text-xs font-semibold text-foreground block mb-1">{t('Harga Dew (Poin)')}</label>
+                  <Input
+                    type="number"
+                    value={newProductForm.priceDew}
+                    onChange={(e) => setNewProductForm({ ...newProductForm, priceDew: Number(e.target.value) })}
+                    className="h-8 text-xs bg-muted/40 border-border"
+                  />
+                </div>
+              )}
             </div>
 
             <div>
