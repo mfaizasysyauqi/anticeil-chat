@@ -186,7 +186,7 @@ export function NotificationsView({
 
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar">
-        <div className={cn(horizontalPadding, verticalPadding, 'w-full max-w-4xl mx-auto space-y-2.5')}>
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding, 'space-y-2.5')}>
         {filteredNotifications.length === 0 ? (
           <EmptyState
             icon={<BellOff className="w-8 h-8 stroke-[1.8] text-primary" />}
@@ -208,21 +208,16 @@ export function NotificationsView({
                 key={item.id}
                 onClick={() => onJumpToMessage(item)}
                 className={cn(
-                  'w-full flex items-start gap-3.5 px-4 py-3.5 rounded-xl border transition-all cursor-pointer group shadow-2xs',
+                  'relative w-full flex items-start gap-3.5 px-4 py-3.5 rounded-xl border transition-all cursor-pointer group shadow-2xs overflow-hidden',
                   !item.isRead
                     ? 'bg-accent/40 border-primary/30 hover:border-primary/50'
                     : 'bg-card/40 border-border/40 hover:bg-accent/20 hover:border-border/80',
                 )}
               >
-                {/* Indicator dot */}
-                <div className="pt-2 shrink-0">
-                  <div
-                    className={cn(
-                      'size-2 rounded-full transition-opacity',
-                      !item.isRead ? 'bg-primary' : 'bg-transparent',
-                    )}
-                  />
-                </div>
+                {/* Discord-style unread left pill bar */}
+                {!item.isRead && (
+                  <div className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-primary rounded-r-full shadow-[0_0_8px_rgba(var(--primary-rgb,59,130,246),0.5)]" />
+                )}
 
                 {/* Avatar with type badge */}
                 <div className="relative shrink-0">
@@ -231,6 +226,9 @@ export function NotificationsView({
                     name={item.actorName}
                     className="w-10 h-10 border border-border/50 rounded-full"
                   />
+                  {!item.isRead && (
+                    <span className="absolute -top-0.5 -left-0.5 size-2.5 rounded-full bg-primary ring-2 ring-background z-10" />
+                  )}
                   <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-background border border-border flex items-center justify-center shadow-xs">
                     {getActionIcon(item.type)}
                   </div>
@@ -273,7 +271,7 @@ export function NotificationsView({
                 </div>
 
                 {/* Action buttons on hover */}
-                <div className="flex items-center gap-1 self-center shrink-0 opacity-80 group-hover:opacity-100 transition-opacity pl-1">
+                <div className="flex items-center gap-1 self-center shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
                   {!item.isRead && (
                     <button
                       type="button"
