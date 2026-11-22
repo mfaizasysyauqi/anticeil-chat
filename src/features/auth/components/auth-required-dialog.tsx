@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,13 +8,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/core/i18n';
 import {
   Sparkles,
   Bot,
-  Building2,
-  ArrowRight,
 } from 'lucide-react';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { isDevLoginEnabled, MOCK_DEV_USERS } from '../hooks/use-auth-session';
@@ -86,16 +83,6 @@ export function AuthRequiredDialog({
   featureDescription,
 }: AuthRequiredDialogProps) {
   const { t } = useTranslation();
-  const [ssoEmail, setSsoEmail] = useState('');
-
-  const handleSsoSubmit = () => {
-    const email = ssoEmail.trim();
-    if (!email || !email.includes('@')) {
-      return;
-    }
-    onClose();
-    onSsoLogin?.(email, 'Corporate SSO');
-  };
 
   const handleMicrosoftClick = () => {
     onClose();
@@ -183,52 +170,6 @@ export function AuthRequiredDialog({
               <OktaIcon className="size-4 shrink-0 text-blue-400" />
               <span className="truncate">{t('Lanjutkan dengan Okta')}</span>
             </Button>
-          </div>
-
-          {/* Divider */}
-          <div className="relative w-full flex items-center justify-center my-0.5">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border/60" />
-            </div>
-            <span className="relative bg-background px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {t('Atau Email Kantor')}
-            </span>
-          </div>
-
-          {/* ── Corporate SSO Email Input ── */}
-          <div className="w-full rounded-xl border border-border/70 bg-card/50 p-3 text-left space-y-2">
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Building2 className="size-3.5 text-primary" />
-              <span className="text-xs font-medium text-foreground">
-                {t('Single Sign-On Perusahaan')}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Input
-                type="email"
-                placeholder={t('nama@perusahaan.com')}
-                value={ssoEmail}
-                onChange={(e) => setSsoEmail(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleSsoSubmit();
-                  }
-                }}
-                className="h-9 text-xs rounded-lg bg-background border-border"
-              />
-              <Button
-                type="button"
-                onClick={handleSsoSubmit}
-                className="h-9 px-3.5 text-xs font-semibold shrink-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer"
-              >
-                <span>{t('Masuk')}</span>
-                <ArrowRight className="size-3.5 ml-1" />
-              </Button>
-            </div>
-            <p className="text-[11px] text-muted-foreground/75 leading-tight">
-              {t('Terhubung otomatis ke Colony kantor via domain email.')}
-            </p>
           </div>
 
           {/* Close / Later Button */}
