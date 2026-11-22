@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Users, Globe, UserPlus, Compass, LayoutGrid, Sparkles, PanelLeftOpen } from 'lucide-react';
+import { Plus, Users, Globe, UserPlus, Compass, LayoutGrid, Sparkles, PanelLeftOpen, Folder, FolderOpen } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,14 @@ import { CommunityAvatar } from '@/chat/chat-avatar';
 import { ServerIcon } from './colony-icon';
 import { toast } from 'sonner';
 import { loadStoredDmChannels } from '@/chat/chat-defaults';
+
+export interface RailFolder {
+  id: string;
+  name?: string;
+  color?: string;
+  itemIds: string[];
+  expanded?: boolean;
+}
 
 export interface ColonyRailProps {
   servers?: Colony[];
@@ -255,6 +263,410 @@ export function ColonyRail({
     (homeView !== 'ai' || Boolean(activeChannelId)) &&
     !activeFriendSelected;
 
+  // Folders state (persisted in localStorage)
+  const [colonyFolders, setColonyFolders] = useState<RailFolder[]>(() => {
+    try {
+      const saved = localStorage.getItem('anticeil_colony_folders');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [friendFolders, setFriendFolders] = useState<RailFolder[]>(() => {
+    try {
+      const saved = localStorage.getItem('anticeil_friend_folders');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const updateColonyFolders = (newFolders: RailFolder[]) => {
+    setColonyFolders(newFolders);
+    try {
+      localStorage.setItem('anticeil_colony_folders', JSON.stringify(newFolders));
+    } catch {}
+  };
+
+  const updateFriendFolders = (newFolders: RailFolder[]) => {
+    setFriendFolders(newFolders);
+    try {
+      localStorage.setItem('anticeil_friend_folders', JSON.stringify(newFolders));
+    } catch {}
+  };
+
+  const currentFolders = isFriendsMode ? friendFolders : colonyFolders;
+  const updateCurrentFolders = isFriendsMode ? updateFriendFolders : updateColonyFolders;
+
+  // Drag and drop state
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [draggedFromFolderId, setDraggedFromFolderId] = useState<string | null>(null);
+  const [dragOverTargetId, setDragOverTargetId] = useState<string | null>(null);
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
+
+  const allCurrentItems = isFriendsMode ? friendList : otherServers;
+
+  const validFolders = useMemo(() => {
+    return currentFolders
+      .map((f) => ({
+        ...f,
+        itemIds: f.itemIds.filter((id) => allCurrentItems.some((it) => it.id === id)),
+      }))
+      .filter((f) => f.itemIds.length > 0);
+  }, [currentFolders, allCurrentItems]);
+
+  const handleDropOnItem = (sourceId: string, targetId: string, sourceFolderId: string | null) => {
+    setDragOverTargetId(null);
+    setDragOverFolderId(null);
+    setDraggedItemId(null);
+    setDraggedFromFolderId(null);
+    if (!sourceId || !targetId || sourceId === targetId) return;
+
+    // Check if target is inside an existing folder
+    const targetFolder = currentFolders.find((f) => f.itemIds.includes(targetId));
+    if (targetFolder) {
+      handleDropOnFolder(sourceId, targetFolder.id, sourceFolderId);
+      return;
+    }
+
+    // Both are standalone or source is from folder
+    let nextFolders = currentFolders
+      .map((f) => {
+        if (sourceFolderId && f.id === sourceFolderId) {
+          return { ...f, itemIds: f.itemIds.filter((id) => id !== sourceId) };
+        }
+        return f;
+      })
+      .filter((f) => f.itemIds.length > 0);
+
+    const sourceItem = allCurrentItems.find((x) => x.id === sourceId);
+    const targetItem = allCurrentItems.find((x) => x.id === targetId);
+    const folderName = targetItem && sourceItem ? `${targetItem.name}, ${sourceItem.name}` : t('Folder');
+
+    const newFolder: RailFolder = {
+      id: `folder-${Date.now()}`,
+      name: folderName,
+      itemIds: [targetId, sourceId],
+      expanded: false,
+    };
+
+    nextFolders.push(newFolder);
+    updateCurrentFolders(nextFolders);
+    toast.success(isFriendsMode ? t('Folder Teman dibuat') : t('Folder Colony dibuat'));
+  };
+
+  const handleDropOnFolder = (sourceId: string, folderId: string, sourceFolderId: string | null) => {
+    setDragOverTargetId(null);
+    setDragOverFolderId(null);
+    setDraggedItemId(null);
+    setDraggedFromFolderId(null);
+    if (!sourceId || !folderId) return;
+
+    let nextFolders = currentFolders
+      .map((f) => {
+        if (sourceFolderId && f.id === sourceFolderId && f.id !== folderId) {
+          return { ...f, itemIds: f.itemIds.filter((id) => id !== sourceId) };
+        }
+        if (f.id === folderId) {
+          const nextIds = f.itemIds.includes(sourceId) ? f.itemIds : [...f.itemIds, sourceId];
+          return { ...f, itemIds: nextIds };
+        }
+        return f;
+      })
+      .filter((f) => f.itemIds.length > 0);
+
+    updateCurrentFolders(nextFolders);
+    toast.success(t('Ditambahkan ke folder'));
+  };
+
+  const handleRemoveFromFolder = (sourceId: string, folderId: string) => {
+    const nextFolders = currentFolders
+      .map((f) => {
+        if (f.id === folderId) {
+          return { ...f, itemIds: f.itemIds.filter((id) => id !== sourceId) };
+        }
+        return f;
+      })
+      .filter((f) => f.itemIds.length > 0);
+
+    updateCurrentFolders(nextFolders);
+    toast.info(t('Dikeluarkan dari folder'));
+  };
+
+  const toggleFolderExpanded = (folderId: string) => {
+    const nextFolders = currentFolders.map((f) =>
+      f.id === folderId ? { ...f, expanded: !f.expanded } : f
+    );
+    updateCurrentFolders(nextFolders);
+  };
+
+  const handleDissolveFolder = (folderId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const nextFolders = currentFolders.filter((f) => f.id !== folderId);
+    updateCurrentFolders(nextFolders);
+    toast.success(t('Folder dibongkar'));
+  };
+
+  const getFolderUnreadBadge = (itemIds: string[]) => {
+    if (!unreadCounts) return null;
+    let total = 0;
+    for (const id of itemIds) {
+      const v = unreadCounts[id] ?? unreadCounts[`dm-${id}`];
+      if (v) {
+        const n = typeof v === 'string' ? parseInt(v, 10) || 0 : v;
+        total += n;
+      }
+    }
+    return formatUnreadBadge(total);
+  };
+
+  const railEntries = useMemo(() => {
+    const folderByItemId = new Map<string, RailFolder>();
+    validFolders.forEach((f) => {
+      f.itemIds.forEach((id) => folderByItemId.set(id, f));
+    });
+
+    const emittedFolderIds = new Set<string>();
+    const entries: (
+      | { type: 'item'; item: any }
+      | { type: 'folder'; folder: RailFolder; items: any[] }
+    )[] = [];
+
+    for (const it of allCurrentItems) {
+      const folder = folderByItemId.get(it.id);
+      if (folder) {
+        if (!emittedFolderIds.has(folder.id)) {
+          emittedFolderIds.add(folder.id);
+          const fItems = folder.itemIds
+            .map((id) => allCurrentItems.find((x) => x.id === id))
+            .filter(Boolean);
+          entries.push({ type: 'folder', folder, items: fItems });
+        }
+      } else {
+        entries.push({ type: 'item', item: it });
+      }
+    }
+
+    for (const f of validFolders) {
+      if (!emittedFolderIds.has(f.id)) {
+        emittedFolderIds.add(f.id);
+        const fItems = f.itemIds
+          .map((id) => allCurrentItems.find((x) => x.id === id))
+          .filter(Boolean);
+        if (fItems.length > 0) {
+          entries.push({ type: 'folder', folder: f, items: fItems });
+        }
+      }
+    }
+
+    return entries;
+  }, [allCurrentItems, validFolders]);
+
+  const renderRailFriendItem = (f: any, parentFolderId?: string) => {
+    const isDmActive =
+      activeChannelId === `dm-${f.id}` ||
+      activeChannelId === f.id ||
+      (Boolean(activeChannelId?.startsWith('dm-')) && Boolean(activeChannelId?.includes(f.id)));
+    const friendUnread = formatUnreadBadge(
+      unreadCounts?.[f.id] ?? unreadCounts?.[`dm-${f.id}`] ?? f.unreadCount,
+    );
+    const hasProfileImage = Boolean(f.imageUrl || f.avatar);
+    const isBeingDragged = draggedItemId === f.id;
+    const isTargetOfDrag = dragOverTargetId === f.id;
+
+    return (
+      <div
+        key={f.id}
+        className={cn(
+          'relative group w-full flex items-center justify-center transition-all',
+          isBeingDragged && 'opacity-40 scale-95'
+        )}
+        draggable={true}
+        onDragStart={(e) => {
+          e.dataTransfer.setData('text/plain', f.id);
+          e.dataTransfer.effectAllowed = 'move';
+          setDraggedItemId(f.id);
+          setDraggedFromFolderId(parentFolderId || null);
+        }}
+        onDragEnd={() => {
+          setDraggedItemId(null);
+          setDraggedFromFolderId(null);
+          setDragOverTargetId(null);
+          setDragOverFolderId(null);
+        }}
+        onDragOver={(e) => {
+          if (!draggedItemId || draggedItemId === f.id) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          if (dragOverTargetId !== f.id) setDragOverTargetId(f.id);
+        }}
+        onDragLeave={() => {
+          if (dragOverTargetId === f.id) setDragOverTargetId(null);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (!draggedItemId || draggedItemId === f.id) return;
+          handleDropOnItem(draggedItemId, f.id, draggedFromFolderId);
+        }}
+      >
+        <span
+          className={cn(
+            'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
+            isDmActive
+              ? 'h-10'
+              : friendUnread
+              ? 'h-2 group-hover:h-5'
+              : 'h-0 group-hover:h-3.5 opacity-80',
+          )}
+        />
+
+        <Tooltip delayDuration={150}>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => onSelectFriend?.(f)}
+              className={cn(
+                'relative size-10 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
+                isTargetOfDrag
+                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-sidebar scale-105 shadow-md'
+                  : isDmActive
+                  ? hasProfileImage
+                    ? 'ring-1 ring-primary/30 shadow-xs'
+                    : 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
+                  : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
+              )}
+            >
+              <CommunityAvatar
+                name={f.name}
+                imageUrl={f.imageUrl || f.avatar}
+                size={40}
+                isActive={isDmActive}
+                className="rounded-[14px]"
+              />
+
+              {/* Online Status Dot */}
+              <span
+                className={cn(
+                  'absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-sidebar',
+                  f.status === 'online'
+                    ? 'bg-emerald-500'
+                    : f.status === 'idle'
+                    ? 'bg-amber-500'
+                    : f.status === 'dnd'
+                    ? 'bg-red-500'
+                    : 'bg-muted-foreground/40',
+                )}
+              />
+
+              {/* Discord-style bottom-right unread badge pill for friend */}
+              {friendUnread && (
+                <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight animate-in zoom-in-75">
+                  {friendUnread}
+                </span>
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+            <div>
+              <div className="font-bold">{f.name}</div>
+              <div className="text-[10px] text-muted-foreground capitalize">
+                {f.status || 'Offline'}
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    );
+  };
+
+  const renderRailServerItem = (srv: Colony, parentFolderId?: string) => {
+    const isActive = currentActiveId === srv.id;
+    const serverUnread = formatUnreadBadge(unreadCounts?.[srv.id] ?? srv.unreadCount);
+    const hasCustomIcon = Boolean(srv.iconUrl);
+    const isBeingDragged = draggedItemId === srv.id;
+    const isTargetOfDrag = dragOverTargetId === srv.id;
+
+    return (
+      <div
+        key={srv.id}
+        className={cn(
+          'relative group w-full flex items-center justify-center transition-all',
+          isBeingDragged && 'opacity-40 scale-95'
+        )}
+        draggable={true}
+        onDragStart={(e) => {
+          e.dataTransfer.setData('text/plain', srv.id);
+          e.dataTransfer.effectAllowed = 'move';
+          setDraggedItemId(srv.id);
+          setDraggedFromFolderId(parentFolderId || null);
+        }}
+        onDragEnd={() => {
+          setDraggedItemId(null);
+          setDraggedFromFolderId(null);
+          setDragOverTargetId(null);
+          setDragOverFolderId(null);
+        }}
+        onDragOver={(e) => {
+          if (!draggedItemId || draggedItemId === srv.id) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          if (dragOverTargetId !== srv.id) setDragOverTargetId(srv.id);
+        }}
+        onDragLeave={() => {
+          if (dragOverTargetId === srv.id) setDragOverTargetId(null);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (!draggedItemId || draggedItemId === srv.id) return;
+          handleDropOnItem(draggedItemId, srv.id, draggedFromFolderId);
+        }}
+      >
+        <span
+          className={cn(
+            'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
+            isActive
+              ? 'h-10'
+              : serverUnread
+              ? 'h-2 group-hover:h-5'
+              : 'h-0 group-hover:h-3.5 opacity-80',
+          )}
+        />
+
+        <Tooltip delayDuration={150}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => handleSelect(srv.id)}
+              className={cn(
+                'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
+                isTargetOfDrag
+                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-sidebar scale-105 shadow-md'
+                  : isActive
+                  ? hasCustomIcon
+                    ? 'ring-1 ring-primary/30 shadow-xs'
+                    : 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
+                  : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
+              )}
+            >
+              {renderIcon(srv, isActive)}
+
+              {/* Discord-style bottom-right unread badge pill for server */}
+              {serverUnread && (
+                <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight animate-in zoom-in-75">
+                  {serverUnread}
+                </span>
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+            {srv.name}
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    );
+  };
+
   return (
     <div id="anticeil-mini-rail" className="w-14 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col items-center select-none z-10 h-full overflow-hidden">
       {/* 1. Fixed top buttons: AI Command Center (Logo), Hub Fitur (LayoutGrid) with symmetrical gap-2 */}
@@ -359,7 +771,23 @@ export function ColonyRail({
       </div>
 
       {/* Scrollable lower rail: Switcher, Add (+), then list */}
-      <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden scrollbar-none [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-2 pb-16">
+      <div
+        className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden scrollbar-none [&::-webkit-scrollbar]:hidden flex flex-col items-center gap-2 pt-2 pb-16"
+        onDragOver={(e) => {
+          if (draggedItemId && draggedFromFolderId) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+          }
+        }}
+        onDrop={(e) => {
+          if (draggedItemId && draggedFromFolderId) {
+            e.preventDefault();
+            handleRemoveFromFolder(draggedItemId, draggedFromFolderId);
+            setDraggedItemId(null);
+            setDraggedFromFolderId(null);
+          }
+        }}
+      >
         {/* Switcher Button: Servers vs Friends (matches standard server icon aesthetic) */}
         <div className="relative group w-full flex items-center justify-center">
           <Tooltip delayDuration={150}>
@@ -423,30 +851,56 @@ export function ColonyRail({
         </div>
 
         {/* Separator before list */}
-        {((isFriendsMode && friendList.length > 0) || (!isFriendsMode && otherServers.length > 0)) && (
+        {railEntries.length > 0 && (
           <div className="w-8 h-[2px] bg-border rounded-full my-0.5 shrink-0" />
         )}
 
-        {/* Mode-specific list: Friends list OR Servers list */}
-        {isFriendsMode ? (
-          friendList.map((f) => {
-            const isDmActive =
-              activeChannelId === `dm-${f.id}` ||
-              activeChannelId === f.id ||
-              (Boolean(activeChannelId?.startsWith('dm-')) && Boolean(activeChannelId?.includes(f.id)));
-            const friendUnread = formatUnreadBadge(
-              unreadCounts?.[f.id] ?? unreadCounts?.[`dm-${f.id}`] ?? f.unreadCount,
-            );
-            const hasProfileImage = Boolean(f.imageUrl || f.avatar);
+        {/* Mode-specific list: Folders and Standalone Items */}
+        {railEntries.map((entry) => {
+          if (entry.type === 'item') {
+            return isFriendsMode
+              ? renderRailFriendItem(entry.item)
+              : renderRailServerItem(entry.item);
+          }
 
+          const folder = entry.folder;
+          const items = entry.items;
+          const isAnyChildActive = items.some((it) =>
+            isFriendsMode
+              ? activeChannelId === `dm-${it.id}` ||
+                activeChannelId === it.id ||
+                (Boolean(activeChannelId?.startsWith('dm-')) && Boolean(activeChannelId?.includes(it.id)))
+              : currentActiveId === it.id,
+          );
+          const folderUnread = getFolderUnreadBadge(folder.itemIds);
+          const folderTooltipText = items.map((it) => it.name).join(', ');
+
+          if (!folder.expanded) {
             return (
-              <div key={f.id} className="relative group w-full flex items-center justify-center">
+              <div
+                key={folder.id}
+                className="relative group w-full flex items-center justify-center"
+                onDragOver={(e) => {
+                  if (!draggedItemId || folder.itemIds.includes(draggedItemId)) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                  if (dragOverFolderId !== folder.id) setDragOverFolderId(folder.id);
+                }}
+                onDragLeave={() => {
+                  if (dragOverFolderId === folder.id) setDragOverFolderId(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (!draggedItemId) return;
+                  handleDropOnFolder(draggedItemId, folder.id, draggedFromFolderId);
+                }}
+              >
                 <span
                   className={cn(
                     'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
-                    isDmActive
+                    isAnyChildActive
                       ? 'h-10'
-                      : friendUnread
+                      : folderUnread
                       ? 'h-2 group-hover:h-5'
                       : 'h-0 group-hover:h-3.5 opacity-80',
                   )}
@@ -456,108 +910,93 @@ export function ColonyRail({
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      onClick={() => onSelectFriend?.(f)}
+                      onClick={() => toggleFolderExpanded(folder.id)}
+                      onContextMenu={(e) => handleDissolveFolder(folder.id, e)}
                       className={cn(
-                        'relative size-10 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
-                        isDmActive
-                          ? hasProfileImage
-                            ? 'ring-1 ring-primary/30 shadow-xs'
-                            : 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
+                        'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
+                        dragOverFolderId === folder.id
+                          ? 'ring-2 ring-primary ring-offset-2 ring-offset-sidebar bg-primary/20 scale-105 shadow-md'
+                          : isAnyChildActive
+                          ? 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
                           : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
                       )}
                     >
-                      <CommunityAvatar
-                        name={f.name}
-                        imageUrl={f.imageUrl || f.avatar}
-                        size={40}
-                        isActive={isDmActive}
-                        className="rounded-[14px]"
-                      />
+                      <Folder className="size-5 fill-[#5865F2] text-[#5865F2] transition-transform duration-200 group-hover:scale-110" />
 
-                      {/* Online Status Dot */}
-                      <span
-                        className={cn(
-                          'absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-sidebar',
-                          f.status === 'online'
-                            ? 'bg-emerald-500'
-                            : f.status === 'idle'
-                            ? 'bg-amber-500'
-                            : f.status === 'dnd'
-                            ? 'bg-red-500'
-                            : 'bg-muted-foreground/40',
-                        )}
-                      />
-
-                      {/* Discord-style bottom-right unread badge pill for friend */}
-                      {friendUnread && (
+                      {folderUnread && (
                         <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight animate-in zoom-in-75">
-                          {friendUnread}
+                          {folderUnread}
                         </span>
                       )}
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+                  <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs max-w-[220px]">
                     <div>
-                      <div className="font-bold">{f.name}</div>
-                      <div className="text-[10px] text-muted-foreground capitalize">
-                        {f.status || 'Offline'}
+                      <div className="font-bold line-clamp-3">{folderTooltipText}</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {t('Klik untuk membuka, klik kanan untuk membongkar')}
                       </div>
                     </div>
                   </TooltipContent>
                 </Tooltip>
               </div>
             );
-          })
-        ) : (
-          otherServers.map((srv) => {
-            const isActive = currentActiveId === srv.id;
-            const serverUnread = formatUnreadBadge(unreadCounts?.[srv.id] ?? srv.unreadCount);
-            const hasCustomIcon = Boolean(srv.iconUrl);
+          }
 
-            return (
-              <div key={srv.id} className="relative group w-full flex items-center justify-center">
-                <span
-                  className={cn(
-                    'absolute left-0 w-[4px] bg-foreground rounded-r-full transition-all duration-200',
-                    isActive
-                      ? 'h-10'
-                      : serverUnread
-                      ? 'h-2 group-hover:h-5'
-                      : 'h-0 group-hover:h-3.5 opacity-80',
-                  )}
-                />
+          // Expanded folder
+          return (
+            <div
+              key={folder.id}
+              className={cn(
+                'w-12 py-1.5 px-0.5 rounded-3xl bg-sidebar-accent/50 dark:bg-zinc-800/50 border border-sidebar-border/40 flex flex-col items-center gap-2 transition-all duration-200 animate-in fade-in zoom-in-95',
+                dragOverFolderId === folder.id && 'ring-2 ring-primary ring-offset-2 ring-offset-sidebar bg-primary/10',
+              )}
+              onDragOver={(e) => {
+                if (!draggedItemId || folder.itemIds.includes(draggedItemId)) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (dragOverFolderId !== folder.id) setDragOverFolderId(folder.id);
+              }}
+              onDragLeave={() => {
+                if (dragOverFolderId === folder.id) setDragOverFolderId(null);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (!draggedItemId) return;
+                handleDropOnFolder(draggedItemId, folder.id, draggedFromFolderId);
+              }}
+            >
+              {/* Folder header toggle */}
+              <Tooltip delayDuration={150}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => toggleFolderExpanded(folder.id)}
+                    onContextMenu={(e) => handleDissolveFolder(folder.id, e)}
+                    className="relative size-10 rounded-[14px] flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-sidebar-accent/80 text-primary"
+                  >
+                    <FolderOpen className="size-5 fill-[#5865F2]/40 text-[#5865F2] transition-transform duration-200 hover:scale-110" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
+                  <div>
+                    <div className="font-bold">{folder.name || t('Folder')}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {t('Klik untuk menutup folder, klik kanan untuk membongkar')}
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
 
-                <Tooltip delayDuration={150}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => handleSelect(srv.id)}
-                      className={cn(
-                        'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
-                        isActive
-                          ? hasCustomIcon
-                            ? 'ring-1 ring-primary/30 shadow-xs'
-                            : 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
-                          : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
-                      )}
-                    >
-                      {renderIcon(srv, isActive)}
-
-                      {/* Discord-style bottom-right unread badge pill for server */}
-                      {serverUnread && (
-                        <span className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-sidebar z-20 shadow-md pointer-events-none leading-none tracking-tight animate-in zoom-in-75">
-                          {serverUnread}
-                        </span>
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-                    {srv.name}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            );
-          })
-        )}
+              {/* Items inside folder */}
+              {items.map((it) =>
+                isFriendsMode
+                  ? renderRailFriendItem(it, folder.id)
+                  : renderRailServerItem(it, folder.id),
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
