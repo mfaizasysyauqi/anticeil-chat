@@ -65,6 +65,7 @@ import { AiMarkdown } from './ai-markdown';
 import { ArtifactViewer } from './artifact-viewer';
 import { parseArtifactsFromMessage } from '../utils/artifact-parser';
 import { useAiCommandCenterContext } from '../context/ai-command-center-context';
+import { useResponsive } from '@/core/hooks/use-responsive';
 
 export interface AiCommandCenterViewProps {
   sessions?: AiSession[];
@@ -128,6 +129,78 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  const { isMobile } = useResponsive();
+
+  // Desktop resizable width for Artifact Panel
+  const [artifactWidth, setArtifactWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('anticeil_ai_artifact_width');
+      if (saved) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= 320 && val <= 1600) return val;
+      }
+    } catch {}
+    if (typeof window !== 'undefined') {
+      return Math.min(Math.max(Math.round(window.innerWidth * 0.55), 450), 850);
+    }
+    return 640;
+  });
+  const [isResizingArtifact, setIsResizingArtifact] = useState(false);
+
+  const handleArtifactResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingArtifact(true);
+  };
+
+  const handleArtifactResizeReset = () => {
+    if (workspaceRef.current) {
+      const containerWidth = workspaceRef.current.getBoundingClientRect().width;
+      const defWidth = Math.min(Math.max(Math.round(containerWidth * 0.55), 450), 850);
+      setArtifactWidth(defWidth);
+      try {
+        localStorage.setItem('anticeil_ai_artifact_width', String(defWidth));
+      } catch {}
+    }
+  };
+
+  useEffect(() => {
+    if (!isResizingArtifact) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!workspaceRef.current) return;
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const minWidth = 320;
+      const maxWidth = Math.max(rect.width - 340, minWidth);
+      const newWidth = Math.min(Math.max(rect.right - e.clientX, minWidth), maxWidth);
+      setArtifactWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingArtifact(false);
+      try {
+        localStorage.setItem('anticeil_ai_artifact_width', String(artifactWidth));
+      } catch {}
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingArtifact, artifactWidth]);
+
+  useEffect(() => {
+    const handleWindowResize = () => {
+      if (!workspaceRef.current) return;
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const maxAllowed = Math.max(rect.width - 340, 320);
+      setArtifactWidth((prev) => Math.min(prev, maxAllowed));
+    };
+    window.addEventListener('resize', handleWindowResize);
+    return () => window.removeEventListener('resize', handleWindowResize);
+  }, []);
 
   // Auto-resize prompt textarea: strictly 1-line when empty/hint text, multi-line up to 7 lines (156px) for actual text with vertical scrollbar beyond 7 lines
   useEffect(() => {
@@ -459,12 +532,13 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       />
 
       {/* Main Workspace Area (Split view when activeArtifact is open) */}
-      <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+      <div ref={workspaceRef} className="flex flex-1 min-h-0 w-full overflow-hidden relative">
         {/* Left: Chat Feed & Command Input */}
         <div
           className={cn(
-            'flex flex-col flex-1 min-h-0 bg-background overflow-hidden transition-all',
-            activeArtifact && 'hidden md:flex md:w-5/12 lg:w-4/12 xl:w-5/12 border-r border-border/80'
+            'flex flex-col flex-1 min-h-0 min-w-0 bg-background overflow-hidden',
+            !isResizingArtifact && 'transition-all duration-150',
+            activeArtifact && 'hidden md:flex border-r border-border/80'
           )}
         >
           {/* 2. Messages & Capability Hero Feed (100% Symmetrical with App Bar via LAYOUT_PAGE_SPACING) */}
@@ -800,12 +874,43 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
 
     {/* Right: LibreChat-style Artifact Viewer Panel */}
     {activeArtifact && (
-      <div className="flex-1 md:w-7/12 lg:w-8/12 xl:w-7/12 flex flex-col min-h-0 overflow-hidden bg-[#111214] border-l border-border/80 animate-in slide-in-from-right-4 duration-200">
+      <div
+        className={cn(
+          'relative flex flex-col min-h-0 overflow-hidden bg-[#111214] border-l border-border/80 animate-in slide-in-from-right-4 duration-200',
+          'w-full md:w-auto shrink-0',
+          !isResizingArtifact && 'transition-all duration-150'
+        )}
+        style={!isMobile ? { width: `${artifactWidth}px` } : undefined}
+      >
+        {/* Desktop Resize Handle on Left Border of Artifact Panel */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          title="Tarik untuk mengubah ukuran artifact (Double-klik untuk reset)"
+          onMouseDown={handleArtifactResizeStart}
+          onDoubleClick={handleArtifactResizeReset}
+          className="hidden md:flex absolute top-0 -left-1.5 w-3 h-full cursor-col-resize z-30 items-center justify-center select-none group"
+        >
+          <div
+            className={cn(
+              'w-1 h-8 rounded-full transition-colors',
+              isResizingArtifact
+                ? 'bg-primary'
+                : 'bg-border/60 group-hover:bg-primary/80 group-hover:h-12'
+            )}
+          />
+        </div>
+
         <ArtifactViewer
           artifact={activeArtifact}
           onClose={() => setActiveArtifact(null)}
         />
       </div>
+    )}
+
+    {/* Fullscreen drag overlay while resizing to prevent iframes from trapping mouse events */}
+    {isResizingArtifact && (
+      <div className="fixed inset-0 z-50 cursor-col-resize select-none" />
     )}
   </div>
 
