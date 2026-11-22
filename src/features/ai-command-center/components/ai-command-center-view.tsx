@@ -434,8 +434,8 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
               ? 'screenshare'
               : args.appId === 'charting'
                 ? 'tradingview'
-                : args.appId === 'platform'
-                  ? 'anticeil-platform'
+                : args.appId === 'platform' || args.appId === 'anticeil-platform' || args.appId === 'flow'
+                  ? 'anticeil-flow'
                   : args.appId === 'youtube'
                     ? 'watch-together'
                     : args.appId;

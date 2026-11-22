@@ -108,7 +108,7 @@ export const ANTICEIL_GIF_ITEMS: AnticeilGifItem[] = [
 
 // ── Anticeil Interactive Apps & Games ─────────────────────────────────────────
 export const EXTENDED_ANTICEIL_APPS: AnticeilAppCatalogItem[] = [
-  { id: 'anticeil-platform', title: 'Anticeil Platform', developer: 'Anticeil Official', group: 'Promoted', icon: 'platform', iconBg: 'bg-blue-600', bannerGradient: 'from-blue-600 to-indigo-800', description: 'Buka dashboard utama Anticeil Platform dengan autentikasi SSO otomatis untuk alur kerja dan otomasi cerdas.' },
+  { id: 'anticeil-flow', title: 'Anticeil Flow', developer: 'Anticeil Official', group: 'Promoted', icon: 'platform', iconBg: 'bg-blue-600', bannerGradient: 'from-blue-600 to-indigo-800', description: 'Buka dashboard utama Anticeil Flow dengan autentikasi SSO otomatis untuk alur kerja dan otomasi cerdas.' },
   { id: 'watch-together', title: 'Watch Together', developer: 'YouTube', group: 'Promoted', icon: 'youtube', iconBg: 'bg-red-600', bannerGradient: 'bg-white', description: 'Tonton video YouTube bersama rekan secara sinkron realtime tanpa delay.' },
   { id: 'tradingview', title: 'TradingView Charts', developer: 'TradingView (Open Source)', group: 'Productivity & Dev', icon: 'tradingview', iconBg: 'bg-blue-600', bannerGradient: 'from-blue-600 to-indigo-700', description: 'Analisis teknikal, candlestick chart, indikator MA & volume realtime untuk Crypto, Saham, dan Forex.' },
   { id: 'whiteboard', title: 'Jamspace Whiteboard', developer: 'Anticeil Native', group: 'Productivity & Dev', icon: 'whiteboard', iconBg: 'bg-blue-600', bannerGradient: 'from-blue-600 to-indigo-700', description: 'Papan tulis kolaboratif realtime untuk sketching arsitektur sistem dan wireframing.' },

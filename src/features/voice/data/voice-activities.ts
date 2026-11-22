@@ -65,9 +65,9 @@ export type DiscordAppDefinition = VoiceAppDefinition;
 
 export const VOICE_APPS: VoiceAppDefinition[] = [
   {
-    id: 'anticeil-platform',
-    title: 'Anticeil Platform',
-    bannerTitle: 'ANTICEIL PLATFORM',
+    id: 'anticeil-flow',
+    title: 'Anticeil Flow',
+    bannerTitle: 'ANTICEIL FLOW',
     developer: 'Anticeil Official',
     category: 'productivity',
     bannerGradient: 'from-blue-600 via-indigo-800 to-zinc-950',
@@ -75,8 +75,8 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
     iconBg: 'bg-blue-600',
     iconColor: 'text-white',
     icon: Sparkles,
-    tagline: 'Platform otomasi & ekosistem cerdas Anticeil...',
-    description: 'Buka dashboard utama Anticeil Platform dengan autentikasi SSO otomatis untuk alur kerja dan otomasi cerdas.',
+    tagline: 'Platform otomasi & ekosistem alur kerja cerdas Anticeil...',
+    description: 'Buka dashboard utama Anticeil Flow dengan autentikasi SSO otomatis untuk alur kerja dan otomasi cerdas.',
     isRecent: true,
     isPromoted: true,
     badge: 'OFFICIAL',
@@ -88,8 +88,8 @@ export const VOICE_APPS: VoiceAppDefinition[] = [
       'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
     ],
-    overviewLong: 'Anticeil Platform adalah pusat kontrol kerja, otomasi, dan integrasi cerdas Anticeil. Terhubung langsung melalui Single Sign-On (SSO) akun Anticeil Anda.',
-    howToPlay: 'Klik Luncurkan atau Buka Platform untuk masuk ke Anticeil Platform dengan sesi akun yang tersinkronisasi otomatis.',
+    overviewLong: 'Anticeil Flow adalah pusat kontrol kerja, alur kerja (flow), otomasi, dan integrasi cerdas Anticeil. Terhubung langsung melalui Single Sign-On (SSO) akun Anticeil Anda.',
+    howToPlay: 'Klik Luncurkan atau Buka Flow untuk masuk ke Anticeil Flow dengan sesi akun yang tersinkronisasi otomatis.',
   },
   {
     id: 'watch-together',

@@ -17,9 +17,9 @@ export const GROQ_TOOLS = [
         properties: {
           appId: {
             type: 'string',
-            enum: ['watch-together', 'jamspace-whiteboard', 'whiteboard', 'anticeil-chess', 'chess', 'share-screen', 'screenshare', 'tradingview', 'anticeil-platform', 'apps-view'],
+            enum: ['watch-together', 'jamspace-whiteboard', 'whiteboard', 'anticeil-chess', 'chess', 'share-screen', 'screenshare', 'tradingview', 'anticeil-flow', 'anticeil-platform', 'apps-view'],
             description:
-              'ID aplikasi: "watch-together" untuk YouTube Watch Together, "whiteboard" atau "jamspace-whiteboard" untuk Jamspace Whiteboard, "chess" atau "anticeil-chess" untuk Anticeil Chess, "screenshare" atau "share-screen" untuk Berbagi Layar, "tradingview" untuk TradingView, "anticeil-platform" untuk Anticeil Platform, "apps-view" untuk membuka halaman daftar Aplikasi & Aktivitas.',
+              'ID aplikasi: "watch-together" untuk YouTube Watch Together, "whiteboard" atau "jamspace-whiteboard" untuk Jamspace Whiteboard, "chess" atau "anticeil-chess" untuk Anticeil Chess, "screenshare" atau "share-screen" untuk Berbagi Layar, "tradingview" untuk TradingView, "anticeil-flow" untuk Anticeil Flow, "apps-view" untuk membuka halaman daftar Aplikasi & Aktivitas.',
           },
           appName: {
             type: 'string',
@@ -593,8 +593,10 @@ Artifacts mendukung preview interaktif, inspeksi kode, serta unduh langsung.`,
   }
 
   if (
+    prompt.includes('anticeil flow') ||
     prompt.includes('anticeil platform') ||
     prompt.includes('platform') ||
+    prompt.includes('flow') ||
     prompt.includes('otomasi') ||
     prompt.includes('dashboard')
   ) {
@@ -604,20 +606,20 @@ Artifacts mendukung preview interaktif, inspeksi kode, serta unduh langsung.`,
       function: {
         name: 'launch_application',
         arguments: JSON.stringify({
-          appId: 'anticeil-platform',
-          appName: 'Anticeil Platform',
+          appId: 'anticeil-flow',
+          appName: 'Anticeil Flow',
           mode: 'standalone',
         }),
       },
       parsedArgs: {
-        appId: 'anticeil-platform',
-        appName: 'Anticeil Platform',
+        appId: 'anticeil-flow',
+        appName: 'Anticeil Flow',
         mode: 'standalone',
       },
       status: 'pending',
     });
     return {
-      replyText: 'Siap! Membuka **Anticeil Platform** dengan autentikasi SSO dalam mode standalone.',
+      replyText: 'Siap! Membuka **Anticeil Flow** dengan autentikasi SSO dalam mode standalone.',
       toolCalls,
     };
   }

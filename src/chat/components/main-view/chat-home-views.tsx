@@ -136,8 +136,8 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
             ? 'screenshare'
             : rawAppId === 'charting'
               ? 'tradingview'
-              : rawAppId === 'platform'
-                ? 'anticeil-platform'
+              : rawAppId === 'platform' || rawAppId === 'anticeil-platform' || rawAppId === 'flow'
+                ? 'anticeil-flow'
                 : rawAppId === 'youtube'
                   ? 'watch-together'
                   : rawAppId;

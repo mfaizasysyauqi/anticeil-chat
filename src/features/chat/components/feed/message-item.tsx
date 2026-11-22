@@ -97,9 +97,9 @@ function getAppVisualInfo(appId?: string, fallbackIdentifier?: string): AppVisua
       type: 'screenshare',
     };
   }
-  if (raw.includes('platform') || raw.includes('anticeil') || raw.includes('✨')) {
+  if (raw.includes('flow') || raw.includes('platform') || raw.includes('anticeil') || raw.includes('✨')) {
     return {
-      name: 'Anticeil Platform',
+      name: 'Anticeil Flow',
       bg: 'bg-blue-600',
       gradient: 'from-blue-600 via-indigo-800 to-zinc-950 border-blue-500/30',
       type: 'platform',

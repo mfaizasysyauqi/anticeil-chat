@@ -240,7 +240,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
                     ? 'chess'
                     : appId === 'screenshare'
                     ? 'screenshare'
-                    : appId === 'anticeil-platform'
+                    : (appId === 'anticeil-platform' || appId === 'anticeil-flow')
                     ? 'platform'
                     : typeof (app as any).icon === 'string' && !/[\u{1F300}-\u{1FAFF}]/u.test((app as any).icon)
                     ? (app as any).icon

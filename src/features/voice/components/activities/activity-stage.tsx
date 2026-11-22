@@ -94,7 +94,7 @@ export function ActivityStage({
         />
       )}
 
-      {(activeAppId === 'anticeil-platform' || activeAppId === 'platform') && (
+      {(activeAppId === 'anticeil-flow' || activeAppId === 'flow' || activeAppId === 'anticeil-platform' || activeAppId === 'platform') && (
         <AnticeilPlatformStage
           channel={channel}
           socket={socket}
@@ -112,6 +112,8 @@ export function ActivityStage({
         activeAppId !== 'screenshare' &&
         activeAppId !== 'tradingview' &&
         activeAppId !== 'charting' &&
+        activeAppId !== 'anticeil-flow' &&
+        activeAppId !== 'flow' &&
         activeAppId !== 'anticeil-platform' &&
         activeAppId !== 'platform' && (
           <ColonyAppStage
