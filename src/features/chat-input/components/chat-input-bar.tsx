@@ -468,7 +468,7 @@ export function ChatInputBar({
               {replyingTo.content ? (
                 <DecryptedMessageText
                   content={replyingTo.content}
-                  channelId={activeChannel?.id}
+                  channelId={(replyingTo as any)?.channelId || activeChannel?.id}
                   inline
                 />
               ) : (replyingTo as any).attachments && (replyingTo as any).attachments.length > 0 ? (

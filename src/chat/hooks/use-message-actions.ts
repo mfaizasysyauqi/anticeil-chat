@@ -6,7 +6,7 @@ import {
   recordTextMessage,
   validateTextMessage,
 } from '@/features/chat-input';
-import { isE2eeEnabled, encryptMessage } from '@/lib/e2ee';
+import { isE2eeEnabled, encryptMessage, isEncryptedMessage, getDecryptedCachedText } from '@/lib/e2ee';
 import { colonyApi } from '../chat-api';
 import type {
   ColonyChannel,
@@ -179,7 +179,11 @@ export function useMessageActions({
         senderId: replyingToMessage.senderId,
         senderName: replyingToMessage.senderName,
         content:
-          replyingToMessage.content ||
+          (replyingToMessage.content
+            ? isEncryptedMessage(replyingToMessage.content)
+              ? getDecryptedCachedText(replyingToMessage.content) || replyingToMessage.content
+              : replyingToMessage.content
+            : null) ||
           (replyingToMessage.attachments && replyingToMessage.attachments.length > 0
             ? (() => {
                 const att = replyingToMessage.attachments[0];

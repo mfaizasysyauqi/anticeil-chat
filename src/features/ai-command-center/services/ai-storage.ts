@@ -18,6 +18,8 @@ export const GROQ_MODELS = [
 export function getStoredSessions(): AiSession[] {
   if (typeof window === 'undefined') return [];
   try {
+    const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
+    if (!token) return [];
     const raw = localStorage.getItem(STORAGE_KEY_SESSIONS);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
@@ -46,6 +48,8 @@ export function getStoredSessions(): AiSession[] {
 
 export function saveStoredSessions(sessions: AiSession[]): void {
   if (typeof window === 'undefined') return;
+  const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
+  if (!token) return;
   try {
     const safeSessions = (sessions || [])
       .filter((s: any) => s && s.id)
@@ -65,6 +69,8 @@ export function saveStoredSessions(sessions: AiSession[]): void {
 
 export function getActiveSessionId(): string | null {
   if (typeof window === 'undefined') return null;
+  const token = localStorage.getItem('token') || localStorage.getItem('ap_token');
+  if (!token) return null;
   return localStorage.getItem(STORAGE_KEY_ACTIVE_SESSION);
 }
 

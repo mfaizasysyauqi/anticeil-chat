@@ -1,5 +1,5 @@
 import React from 'react';
-import { isEncryptedMessage, decryptMessage } from '@/lib/e2ee';
+import { isEncryptedMessage, decryptMessage, getDecryptedCachedText } from '@/lib/e2ee';
 
 export function DecryptedMessageText({
   content,
@@ -12,13 +12,28 @@ export function DecryptedMessageText({
 }) {
   const [decryptedText, setDecryptedText] = React.useState<string>(() => {
     if (!isEncryptedMessage(content)) return content;
+    const cached = getDecryptedCachedText(content);
+    if (cached) return cached;
     return '';
   });
   const [isEncrypted, setIsEncrypted] = React.useState<boolean>(() => isEncryptedMessage(content));
 
   React.useEffect(() => {
     let isMounted = true;
-    if (isEncryptedMessage(content) && channelId) {
+    if (!isEncryptedMessage(content)) {
+      setDecryptedText(content);
+      setIsEncrypted(false);
+      return;
+    }
+
+    const cached = getDecryptedCachedText(content);
+    if (cached) {
+      setDecryptedText(cached);
+      setIsEncrypted(true);
+      return;
+    }
+
+    if (channelId) {
       decryptMessage(content, channelId).then((res) => {
         if (isMounted) {
           setDecryptedText(res.text);
@@ -26,8 +41,8 @@ export function DecryptedMessageText({
         }
       });
     } else {
-      setDecryptedText(content);
-      setIsEncrypted(false);
+      setDecryptedText('🔒 [Pesan]');
+      setIsEncrypted(true);
     }
     return () => {
       isMounted = false;

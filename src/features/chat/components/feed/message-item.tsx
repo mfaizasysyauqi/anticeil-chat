@@ -271,7 +271,7 @@ export function MessageItem({
                       {/* Curved spine connector line */}
                       <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-border/80 pointer-events-none group-hover/cmd:border-foreground/60 transition-colors" />
                       {/* App icon badge */}
-                      <div className={cn('w-4 h-4 rounded-full flex items-center justify-center shrink-0 shadow-2xs overflow-hidden', actInfo.bg)}>
+                      <div className={cn('w-4 h-4 rounded-full flex items-center justify-center shrink-0 shadow-2xs overflow-hidden', actInfo.type === 'youtube' ? 'bg-white p-0.5' : actInfo.bg)}>
                         {renderAppIcon(actInfo.type, 'xs')}
                       </div>
                       <span className="bg-primary text-white text-[9px] font-bold px-1 py-0.2 rounded-[3px] flex items-center gap-0.5 leading-none shadow-2xs">
@@ -302,7 +302,7 @@ export function MessageItem({
                       <div
                         className={cn(
                           'w-[38px] h-[38px] rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-md border border-white/10 overflow-hidden',
-                          actInfo.bg,
+                          actInfo.type === 'youtube' ? 'bg-white p-1.5' : actInfo.bg,
                         )}
                         title={act.name}
                       >
@@ -405,7 +405,7 @@ export function MessageItem({
                                   <div className="flex items-center gap-3.5 mb-4">
                                     {/* App Icon in White/Brand Rounded Square */}
                                     <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0 shadow-xl overflow-hidden">
-                                      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shadow-xs', itemActInfo.bg)}>
+                                      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shadow-xs', itemActInfo.type === 'youtube' ? 'bg-white p-1' : itemActInfo.bg)}>
                                         {renderAppIcon(itemActInfo.type, 'md')}
                                       </div>
                                     </div>

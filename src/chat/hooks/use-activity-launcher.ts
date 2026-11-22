@@ -153,7 +153,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
         developer: appId === 'watch-together' || appId === 'youtube' ? 'YouTube' : 'Community App',
         description: 'Tonton video YouTube bersama rekan secara sinkron realtime tanpa delay.',
         icon: appId === 'watch-together' || appId === 'youtube' ? 'youtube' : appId,
-        iconBg: 'bg-red-600',
+        iconBg: (appId === 'watch-together' || appId === 'youtube') ? 'bg-white' : 'bg-primary',
         bannerGradient: 'bg-white',
       };
 

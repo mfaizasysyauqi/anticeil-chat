@@ -25,6 +25,17 @@ export function useAiCommandCenter() {
   // Load sessions from API / persistent backend on mount
   useEffect(() => {
     let isMounted = true;
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('token') || localStorage.getItem('ap_token')
+        : null;
+
+    if (!token) {
+      setSessions([]);
+      setActiveSessionId(null);
+      return;
+    }
+
     aiCommandCenterApi.getSessions().then((fetched) => {
       if (!isMounted) return;
       if (Array.isArray(fetched)) {
@@ -42,6 +53,19 @@ export function useAiCommandCenter() {
     });
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  // Listen to logout & storage clearing events
+  useEffect(() => {
+    const handleClearState = () => {
+      setSessions([]);
+      setActiveSessionId(null);
+    };
+
+    window.addEventListener('anticeil_logout', handleClearState);
+    return () => {
+      window.removeEventListener('anticeil_logout', handleClearState);
     };
   }, []);
 

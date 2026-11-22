@@ -108,35 +108,83 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
   };
 
   const handleLogout = () => {
-    // Clear all user session, colony, channels, and hubs caches from localStorage
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (
-        key &&
-        (key.startsWith('anticeil_colony_') ||
-          key.startsWith('anticeil_community_') ||
-          key.startsWith('anticeil_current_') ||
-          key.startsWith('anticeil_threads_') ||
-          key.startsWith('anticeil_notif_') ||
-          key === 'token' ||
-          key === 'ap_token' ||
-          key === 'projectId' ||
-          key === 'current_project' ||
-          key === 'current_platform')
-      ) {
-        keysToRemove.push(key);
+    // Preserve only harmless client device preferences
+    const preserved: Record<string, string> = {};
+    const PRESERVED_KEYS = [
+      'theme',
+      'vite-ui-theme',
+      'anticeil_theme',
+      'locale',
+      'anticeil_language',
+      'i18nextLng',
+      'anticeil_desktop_sidebar_collapsed',
+      'anticeil_rail_mode',
+      'anticeil_time_format',
+      'anticeil_voice_input_device',
+      'anticeil_voice_output_device',
+    ];
+
+    try {
+      for (const key of PRESERVED_KEYS) {
+        const val = localStorage.getItem(key);
+        if (val !== null) {
+          preserved[key] = val;
+        }
       }
-    }
-    keysToRemove.forEach((k) => localStorage.removeItem(k));
-    sessionStorage.clear();
+    } catch {}
+
+    // 1. FULL CLEAR of localStorage
+    try {
+      localStorage.clear();
+      // Restore client device preferences
+      for (const [key, val] of Object.entries(preserved)) {
+        localStorage.setItem(key, val);
+      }
+    } catch {}
+
+    // 2. FULL CLEAR of sessionStorage
+    try {
+      sessionStorage.clear();
+    } catch {}
+
+    // 3. Clear auth cookies
+    try {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf('=');
+        const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.anticeil.com`;
+      }
+    } catch {}
+
+    // 4. Clear CacheStorage
+    try {
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        }).catch(() => {});
+      }
+    } catch {}
+
+    // 5. In-memory state reset
     setCurrentUser(null);
     onResetAppState?.();
-    window.dispatchEvent(new Event('storage'));
+
+    // 6. Notify storage listeners
+    try {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('anticeil_logout'));
+    } catch {}
+
     toast.success(t('Berhasil keluar dari akun.'));
+
+    // 7. Hard redirect to clean URL
     setTimeout(() => {
       window.location.href = window.location.origin + window.location.pathname;
-    }, 200);
+    }, 150);
   };
 
   const handleDevMockLogin = (userIndex = 0) => {

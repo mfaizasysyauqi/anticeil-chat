@@ -8,6 +8,23 @@ const PREFIX = 'enc:v1:';
 const keyCache = new Map<string, CryptoKey>();
 const decryptedCache = new Map<string, string>();
 
+/**
+ * Returns cached decrypted plaintext for an encrypted string if previously decrypted in this session.
+ */
+export function getDecryptedCachedText(content?: string | null): string | undefined {
+  if (!content) return undefined;
+  return decryptedCache.get(content);
+}
+
+/**
+ * Pre-populates the in-memory decrypted plaintext cache for an encrypted string.
+ */
+export function cacheDecryptedText(content: string, plaintext: string): void {
+  if (content && plaintext) {
+    decryptedCache.set(content, plaintext);
+  }
+}
+
 // Storage key for user E2EE preference
 export const E2EE_STORAGE_KEY = 'anticeil_e2ee_enabled';
 

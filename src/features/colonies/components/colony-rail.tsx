@@ -8,6 +8,7 @@ import type { Colony } from '@/lib/colony';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { ServerIcon } from './colony-icon';
 import { toast } from 'sonner';
+import { loadStoredDmChannels } from '@/chat/chat-defaults';
 
 export interface ColonyRailProps {
   servers?: Colony[];
@@ -156,15 +157,27 @@ export function ColonyRail({
   const mainServer = serverList[0];
   const otherServers = serverList.slice(1);
 
-  // Derive friends: use friends prop, or if empty, extract active DM contacts from dmChannels
+  // Derive friends: use friends prop, or if empty, extract active DM contacts from dmChannels / stored DMs / members
   const friendList = useMemo(() => {
-    if (friends && friends.length > 0) return friends;
-    if (!dmChannels || dmChannels.length === 0) return [];
-
-    const derived: any[] = [];
+    const list: any[] = [];
     const seen = new Set<string>();
-    for (const dm of dmChannels) {
-      if (!dm.id || dm.isGroupDm || dm.id.startsWith('gdm-') || dm.type === 'voice' || dm.type === 'forum') continue;
+
+    // 1. Explicit friends list (from database or props)
+    if (Array.isArray(friends) && friends.length > 0) {
+      for (const f of friends) {
+        if (!f || !f.id || seen.has(f.id)) continue;
+        seen.add(f.id);
+        list.push(f);
+      }
+    }
+
+    // 2. Derive from active / stored DM channels
+    const allDms = (Array.isArray(dmChannels) && dmChannels.length > 0)
+      ? dmChannels
+      : (typeof window !== 'undefined' ? loadStoredDmChannels() : []);
+
+    for (const dm of allDms) {
+      if (!dm?.id || dm.isGroupDm || dm.id.startsWith('gdm-') || dm.type === 'voice' || dm.type === 'forum' || dm.type === 'kanban') continue;
       const otherMember = members?.find((m: any) => {
         if (dm.dmUserId && m.id === dm.dmUserId) return true;
         if (m.name && dm.name && m.name.toLowerCase() === dm.name.toLowerCase()) return true;
@@ -174,7 +187,7 @@ export function ColonyRail({
       const friendId = otherMember?.id || dm.dmUserId || dm.id.replace('dm-', '');
       if (seen.has(friendId)) continue;
       seen.add(friendId);
-      derived.push({
+      list.push({
         id: friendId,
         dmChannelId: dm.id,
         name: otherMember?.name || dm.name || 'Pengguna',
@@ -184,7 +197,36 @@ export function ColonyRail({
         unreadCount: unreadCounts?.[dm.id] ?? 0,
       });
     }
-    return derived;
+
+    // 3. Fallback: If list is still empty, populate from colony members (excluding self & test accounts) so the friends rail is never empty!
+    if (list.length === 0 && Array.isArray(members) && members.length > 0) {
+      for (const m of members) {
+        const name = (m.name || '').trim();
+        const lowerName = name.toLowerCase();
+        if (
+          !m.id ||
+          m.id === 'u1' ||
+          seen.has(m.id) ||
+          lowerName === 'pengguna' ||
+          lowerName === 'pengguna anticeil' ||
+          lowerName === 'user'
+        ) {
+          continue;
+        }
+        seen.add(m.id);
+        list.push({
+          id: m.id,
+          dmChannelId: `dm-${m.id}`,
+          name: m.name,
+          username: m.username || null,
+          imageUrl: m.avatar || (m as any).imageUrl || null,
+          status: m.status || 'online',
+          unreadCount: 0,
+        });
+      }
+    }
+
+    return list;
   }, [friends, dmChannels, members, unreadCounts]);
 
   // Logo Anticeil: ONLY notification count, not chat messages
@@ -202,7 +244,9 @@ export function ColonyRail({
     isFriendsMode &&
     friendList.some(
       (f) =>
+        activeChannelId === f.dmChannelId ||
         activeChannelId === `dm-${f.id}` ||
+        activeChannelId === f.id ||
         (Boolean(activeChannelId?.startsWith('dm-')) && Boolean(activeChannelId?.includes(f.id))),
     );
 
