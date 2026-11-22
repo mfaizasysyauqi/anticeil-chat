@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
@@ -471,54 +472,52 @@ export function AccessibilityTab({
               </div>
 
               {/* Role Colors Dropdown */}
-              <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-2 border-b border-border/50">
+                <div className="flex-1">
                   <div className="text-xs font-bold text-foreground">{t('Role Colors')}</div>
                   <div className="text-[11px] text-muted-foreground mt-0.5">
                     {t('Choose how you would like role colors to be displayed.')}
                   </div>
                 </div>
-                <div className="relative">
-                  <select
+                <div className="w-full sm:w-56 shrink-0">
+                  <FormDropdown
+                    size="sm"
                     value={roleColorsDisplay}
-                    onChange={(e) => {
-                      const val = e.target.value as any;
-                      setRoleColorsDisplay(val);
-                      persistAccessibility({ roleColorsDisplay: val });
+                    onChange={(val) => {
+                      setRoleColorsDisplay(val as any);
+                      persistAccessibility({ roleColorsDisplay: val as any });
                     }}
-                    className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
-                  >
-                    <option value="names" className="bg-[#2b2d31]">In names</option>
-                    <option value="dot" className="bg-[#2b2d31]">As dot next to names</option>
-                    <option value="none" className="bg-[#2b2d31]">None</option>
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    options={[
+                      { value: 'names', label: 'In names' },
+                      { value: 'dot', label: 'As dot next to names' },
+                      { value: 'none', label: 'None' },
+                    ]}
+                  />
                 </div>
               </div>
 
               {/* Official Messages Dropdown */}
-              <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-2 border-b border-border/50">
+                <div className="flex-1">
                   <div className="text-xs font-bold text-foreground">{t('Official Messages')}</div>
                   <div className="text-[11px] text-muted-foreground mt-0.5">
                     {t('Choose how official developer messages look on verified servers that support it.')}
                   </div>
                 </div>
-                <div className="relative">
-                  <select
+                <div className="w-full sm:w-56 shrink-0">
+                  <FormDropdown
+                    size="sm"
                     value={officialMessagesStyle}
-                    onChange={(e) => {
-                      const val = e.target.value as any;
-                      setOfficialMessagesStyle(val);
-                      persistAccessibility({ officialMessagesStyle: val });
+                    onChange={(val) => {
+                      setOfficialMessagesStyle(val as any);
+                      persistAccessibility({ officialMessagesStyle: val as any });
                     }}
-                    className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
-                  >
-                    <option value="default" className="bg-[#2b2d31]">Default</option>
-                    <option value="contrast" className="bg-[#2b2d31]">High Contrast</option>
-                    <option value="plain" className="bg-[#2b2d31]">Plain</option>
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    options={[
+                      { value: 'default', label: 'Default' },
+                      { value: 'contrast', label: 'High Contrast' },
+                      { value: 'plain', label: 'Plain' },
+                    ]}
+                  />
                 </div>
               </div>
 

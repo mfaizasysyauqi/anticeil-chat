@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -40,65 +41,47 @@ export function VoiceAudioSection({
       {/* Input & Output Devices */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Microphone Select */}
-        <div className="space-y-2">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-            {t('Microphone')}
-          </label>
-          <div className="relative">
-            <select
-              value={settings.inputDeviceId}
-              onChange={(e) => updateSetting('inputDeviceId', e.target.value)}
-              className="w-full text-xs font-semibold px-3 py-2.5 rounded-lg bg-muted/40 border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
-            >
-              {audioInputDevices.length > 0 ? (
-                audioInputDevices.map((d, idx) => (
-                  <option
-                    key={d.deviceId || idx}
-                    value={d.deviceId}
-                    className="bg-popover text-popover-foreground"
-                  >
-                    {d.label || (d.deviceId === 'default' || !d.deviceId ? 'Default Microphone (Sistem)' : `Microphone ${idx + 1} (${d.deviceId.slice(0, 5)})`)}
-                  </option>
-                ))
-              ) : (
-                <option value="default" className="bg-popover text-popover-foreground">
-                  Default Microphone (Realtek(R) Audio)
-                </option>
-              )}
-            </select>
-            <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+        <div>
+          <FormDropdown
+            label={t('Microphone')}
+            value={settings.inputDeviceId}
+            onChange={(val) => updateSetting('inputDeviceId', val)}
+            options={
+              audioInputDevices.length > 0
+                ? audioInputDevices.map((d, idx) => ({
+                    value: d.deviceId,
+                    label: d.label || (d.deviceId === 'default' || !d.deviceId ? 'Default Microphone (Sistem)' : `Microphone ${idx + 1} (${d.deviceId.slice(0, 5)})`),
+                  }))
+                : [
+                    {
+                      value: 'default',
+                      label: 'Default Microphone (Realtek(R) Audio)',
+                    },
+                  ]
+            }
+          />
         </div>
 
         {/* Speaker Select */}
-        <div className="space-y-2">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-            {t('Speaker')}
-          </label>
-          <div className="relative">
-            <select
-              value={settings.outputDeviceId}
-              onChange={(e) => updateSetting('outputDeviceId', e.target.value)}
-              className="w-full text-xs font-semibold px-3 py-2.5 rounded-lg bg-muted/40 border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
-            >
-              {audioOutputDevices.length > 0 ? (
-                audioOutputDevices.map((d, idx) => (
-                  <option
-                    key={d.deviceId || idx}
-                    value={d.deviceId}
-                    className="bg-popover text-popover-foreground"
-                  >
-                    {d.label || (d.deviceId === 'default' || !d.deviceId ? 'Default Speaker (Sistem)' : `Speaker ${idx + 1} (${d.deviceId.slice(0, 5)})`)}
-                  </option>
-                ))
-              ) : (
-                <option value="default" className="bg-popover text-popover-foreground">
-                  Default Speaker (soundcore R50i)
-                </option>
-              )}
-            </select>
-            <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+        <div>
+          <FormDropdown
+            label={t('Speaker')}
+            value={settings.outputDeviceId}
+            onChange={(val) => updateSetting('outputDeviceId', val)}
+            options={
+              audioOutputDevices.length > 0
+                ? audioOutputDevices.map((d, idx) => ({
+                    value: d.deviceId,
+                    label: d.label || (d.deviceId === 'default' || !d.deviceId ? 'Default Speaker (Sistem)' : `Speaker ${idx + 1} (${d.deviceId.slice(0, 5)})`),
+                  }))
+                : [
+                    {
+                      value: 'default',
+                      label: 'Default Speaker (soundcore R50i)',
+                    },
+                  ]
+            }
+          />
         </div>
       </div>
 
@@ -317,28 +300,22 @@ export function VoiceAudioSection({
             krisp
           </div>
         </div>
-        <div className="relative shrink-0">
-          <select
+        <div className="w-40 shrink-0">
+          <FormDropdown
+            size="sm"
             value={settings.noiseSuppression}
-            onChange={(e) =>
+            onChange={(val) =>
               updateSetting(
                 'noiseSuppression',
-                e.target.value as NoiseSuppressionType,
+                val as NoiseSuppressionType,
               )
             }
-            className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
-          >
-            <option value="krisp" className="bg-[#2b2d31] text-foreground">
-              Krisp
-            </option>
-            <option value="standard" className="bg-[#2b2d31] text-foreground">
-              Standard
-            </option>
-            <option value="none" className="bg-[#2b2d31] text-foreground">
-              None
-            </option>
-          </select>
-          <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+            options={[
+              { value: 'krisp', label: 'Krisp' },
+              { value: 'standard', label: 'Standard' },
+              { value: 'none', label: 'None' },
+            ]}
+          />
         </div>
       </div>
 

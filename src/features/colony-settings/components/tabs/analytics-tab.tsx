@@ -14,6 +14,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { toast } from 'sonner';
 import { ColonyWidgetSection } from './analytics/colony-widget-section';
 import { colonyApi } from '@/chat/chat-api';
@@ -204,30 +205,21 @@ export function AnalyticsTab({
         </div>
 
         {/* System Messages Channel Dropdown */}
-        <div className="pt-2 space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            {t('System Messages Channel')}
-          </label>
-          <p className="text-xs text-muted-foreground mb-1.5">
-            {t('This is the channel we send system event messages to.')}
-          </p>
-          <div className="relative">
-            <select
-              value={systemChannelId}
-              onChange={(e) => setSystemChannelId(e.target.value)}
-              className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-primary cursor-pointer"
-            >
-              {textChannels.map((ch) => (
-                <option key={ch.id} value={ch.id}>
-                  # {ch.name} {ch.description ? `— ${ch.description}` : ''}
-                </option>
-              ))}
-              {textChannels.length === 0 && (
-                <option value=""># general</option>
-              )}
-            </select>
-            <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-3 top-3 pointer-events-none" />
-          </div>
+        <div className="pt-2">
+          <FormDropdown
+            label={t('System Messages Channel')}
+            description={t('This is the channel we send system event messages to.')}
+            value={systemChannelId}
+            onChange={(val) => setSystemChannelId(val)}
+            options={
+              textChannels.length > 0
+                ? textChannels.map((ch) => ({
+                    value: ch.id,
+                    label: `# ${ch.name}${ch.description ? ` — ${ch.description}` : ''}`,
+                  }))
+                : [{ value: '', label: '# general' }]
+            }
+          />
         </div>
       </div>
 
@@ -324,46 +316,35 @@ export function AnalyticsTab({
       <div className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Inactive Channel */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              {t('Inactive Channel')}
-            </label>
-            <div className="relative">
-              <select
-                value={afkChannelId}
-                onChange={(e) => setAfkChannelId(e.target.value)}
-                className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-primary cursor-pointer"
-              >
-                <option value="none">{t('No Inactive Channel')}</option>
-                {voiceChannels.map((vc) => (
-                  <option key={vc.id} value={vc.id}>
-                    🔊 {vc.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-3 top-3 pointer-events-none" />
-            </div>
+          <div>
+            <FormDropdown
+              label={t('Inactive Channel')}
+              value={afkChannelId}
+              onChange={(val) => setAfkChannelId(val)}
+              options={[
+                { value: 'none', label: t('No Inactive Channel') },
+                ...voiceChannels.map((vc) => ({
+                  value: vc.id,
+                  label: `🔊 ${vc.name}`,
+                })),
+              ]}
+            />
           </div>
 
           {/* Inactive Timeout */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              {t('Inactive Timeout')}
-            </label>
-            <div className="relative">
-              <select
-                value={afkTimeout}
-                onChange={(e) => setAfkTimeout(Number(e.target.value))}
-                className="w-full h-10 px-3 bg-[#1e1f22] border border-border/80 rounded-xl text-xs font-semibold text-foreground appearance-none focus:outline-none focus:border-primary cursor-pointer"
-              >
-                <option value={60}>{t('1 minute')}</option>
-                <option value={300}>{t('5 minutes')}</option>
-                <option value={900}>{t('15 minutes')}</option>
-                <option value={1800}>{t('30 minutes')}</option>
-                <option value={3600}>{t('1 hour')}</option>
-              </select>
-              <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-3 top-3 pointer-events-none" />
-            </div>
+          <div>
+            <FormDropdown
+              label={t('Inactive Timeout')}
+              value={String(afkTimeout)}
+              onChange={(val) => setAfkTimeout(Number(val))}
+              options={[
+                { value: '60', label: t('1 minute') },
+                { value: '300', label: t('5 minutes') },
+                { value: '900', label: t('15 minutes') },
+                { value: '1800', label: t('30 minutes') },
+                { value: '3600', label: t('1 hour') },
+              ]}
+            />
           </div>
         </div>
 

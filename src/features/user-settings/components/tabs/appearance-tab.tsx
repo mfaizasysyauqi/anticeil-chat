@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
@@ -522,22 +523,22 @@ export function AppearanceTab({
               </div>
 
               {/* Show spoiler content select */}
-              <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-2 border-b border-border/50">
+                <div className="flex-1">
                   <div className="text-xs font-semibold text-foreground">{t('Show spoiler content')}</div>
                   <div className="text-[11px] text-muted-foreground">{t('Pilih kapan konten spoiler disembunyikan')}</div>
                 </div>
-                <div className="relative">
-                  <select
+                <div className="w-full sm:w-56 shrink-0">
+                  <FormDropdown
+                    size="sm"
                     value={spoilerDisplay}
-                    onChange={(e) => setSpoilerDisplay(e.target.value as any)}
-                    className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
-                  >
-                    <option value="click" className="bg-[#2b2d31]">On click</option>
-                    <option value="mod" className="bg-[#2b2d31]">On servers I moderate</option>
-                    <option value="always" className="bg-[#2b2d31]">Always</option>
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    onChange={(val) => setSpoilerDisplay(val as any)}
+                    options={[
+                      { value: 'click', label: 'On click' },
+                      { value: 'mod', label: 'On servers I moderate' },
+                      { value: 'always', label: 'Always' },
+                    ]}
+                  />
                 </div>
               </div>
 

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { useVoiceSettings, NoiseSuppressionType } from '../hooks/use-voice-settings';
@@ -108,21 +109,18 @@ export function VoiceVideoSettingsModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Input Device (Microphone) */}
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                {t('Microphone')}
-              </label>
-              <select
+              <FormDropdown
+                label={t('Microphone')}
                 value={settings.inputDeviceId}
-                onChange={(e) => updateSetting('inputDeviceId', e.target.value)}
-                className="w-full h-10 px-3 bg-muted border border-border rounded-lg text-xs text-foreground focus:border-primary focus:outline-none cursor-pointer"
-              >
-                <option value="default">{t('Windows Default (Realtek Audio)')}</option>
-                {audioInputDevices.map((d, i) => (
-                  <option key={d.deviceId || i} value={d.deviceId}>
-                    {d.label || `${t('Microphone')} ${i + 1}`}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => updateSetting('inputDeviceId', val)}
+                options={[
+                  { value: 'default', label: t('Windows Default (Realtek Audio)') },
+                  ...audioInputDevices.map((d, i) => ({
+                    value: d.deviceId,
+                    label: d.label || `${t('Microphone')} ${i + 1}`,
+                  })),
+                ]}
+              />
 
               {/* Input Volume */}
               <div className="pt-2 space-y-1.5">
@@ -143,21 +141,18 @@ export function VoiceVideoSettingsModal({
 
             {/* Output Device (Speaker) */}
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                {t('Speaker')}
-              </label>
-              <select
+              <FormDropdown
+                label={t('Speaker')}
                 value={settings.outputDeviceId}
-                onChange={(e) => updateSetting('outputDeviceId', e.target.value)}
-                className="w-full h-10 px-3 bg-muted border border-border rounded-lg text-xs text-foreground focus:border-primary focus:outline-none cursor-pointer"
-              >
-                <option value="default">{t('Windows Default (Realtek Audio)')}</option>
-                {audioOutputDevices.map((d, i) => (
-                  <option key={d.deviceId || i} value={d.deviceId}>
-                    {d.label || `${t('Speaker')} ${i + 1}`}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => updateSetting('outputDeviceId', val)}
+                options={[
+                  { value: 'default', label: t('Windows Default (Realtek Audio)') },
+                  ...audioOutputDevices.map((d, i) => ({
+                    value: d.deviceId,
+                    label: d.label || `${t('Speaker')} ${i + 1}`,
+                  })),
+                ]}
+              />
 
               {/* Output Volume */}
               <div className="pt-2 space-y-1.5">
@@ -315,15 +310,18 @@ export function VoiceVideoSettingsModal({
                   {t('Reduces background noise and keyboard clicks from your microphone. Powered by Krisp Engine.')}
                 </p>
               </div>
-              <select
-                value={settings.noiseSuppression}
-                onChange={(e) => updateSetting('noiseSuppression', e.target.value as NoiseSuppressionType)}
-                className="h-8 px-2.5 bg-muted border border-border rounded-lg text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
-              >
-                <option value="krisp">{t('Krisp (AI Isolation)')}</option>
-                <option value="standard">{t('Standard')}</option>
-                <option value="none">{t('Off')}</option>
-              </select>
+              <div className="w-44 shrink-0">
+                <FormDropdown
+                  size="sm"
+                  value={settings.noiseSuppression}
+                  onChange={(val) => updateSetting('noiseSuppression', val as NoiseSuppressionType)}
+                  options={[
+                    { value: 'krisp', label: t('Krisp (AI Isolation)') },
+                    { value: 'standard', label: t('Standard') },
+                    { value: 'none', label: t('Off') },
+                  ]}
+                />
+              </div>
             </div>
 
             {/* Echo cancellation toggle */}
@@ -355,22 +353,19 @@ export function VoiceVideoSettingsModal({
             </div>
 
             {/* Camera Preview Section */}
-            <div className="pt-3 border-t border-border space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                {t('Camera')}
-              </label>
-              <select
+            <div className="pt-3 border-t border-border">
+              <FormDropdown
+                label={t('Camera')}
                 value={settings.cameraDeviceId}
-                onChange={(e) => updateSetting('cameraDeviceId', e.target.value)}
-                className="w-full h-10 px-3 bg-muted border border-border rounded-lg text-xs text-foreground focus:border-primary focus:outline-none cursor-pointer"
-              >
-                <option value="default">{t('Default Web Camera')}</option>
-                {videoInputDevices.map((d, i) => (
-                  <option key={d.deviceId || i} value={d.deviceId}>
-                    {d.label || `${t('Camera')} ${i + 1}`}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => updateSetting('cameraDeviceId', val)}
+                options={[
+                  { value: 'default', label: t('Default Web Camera') },
+                  ...videoInputDevices.map((d, i) => ({
+                    value: d.deviceId,
+                    label: d.label || `${t('Camera')} ${i + 1}`,
+                  })),
+                ]}
+              />
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Check, ChevronDown, Pencil } from 'lucide-react';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -101,23 +102,18 @@ export const VoiceSoundboardSection: React.FC<VoiceSoundboardSectionProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           {/* Choose a Server */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-              {t('Choose a Server')}
-            </label>
-            <div className="relative">
-              <select
-                value={entranceServer}
-                onChange={(e) => setEntranceServer(e.target.value)}
-                className="w-full text-xs font-semibold px-3 py-2.5 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
-              >
-                <option value="all" className="bg-[#2b2d31] text-foreground">All Servers</option>
-                <option value="s1" className="bg-[#2b2d31] text-foreground">zmsta's server</option>
-                <option value="s2" className="bg-[#2b2d31] text-foreground">Anticeil Official Community</option>
-                <option value="s3" className="bg-[#2b2d31] text-foreground">Developer Hub Colony</option>
-              </select>
-              <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+          <div>
+            <FormDropdown
+              label={t('Choose a Server')}
+              value={entranceServer}
+              onChange={(val) => setEntranceServer(val)}
+              options={[
+                { value: 'all', label: 'All Servers' },
+                { value: 's1', label: "zmsta's server" },
+                { value: 's2', label: 'Anticeil Official Community' },
+                { value: 's3', label: 'Developer Hub Colony' },
+              ]}
+            />
           </div>
 
           {/* Choose a Sound */}

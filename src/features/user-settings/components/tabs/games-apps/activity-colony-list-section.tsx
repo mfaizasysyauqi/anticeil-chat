@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, ChevronDown, ChevronRight, Shield } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -117,30 +118,23 @@ export function ActivityColonyListSection({
       </div>
 
       {/* Colony List Controls: Order & Toggle All Off */}
-      <div className="flex items-center justify-between pt-1 text-xs">
-        <div className="relative">
-          <select
+      <div className="flex items-center justify-between pt-1 text-xs gap-3">
+        <div className="w-44">
+          <FormDropdown
+            size="xs"
             value={activityServerSortOrder}
-            onChange={(e) =>
-              setActivityServerSortOrder(e.target.value as any)
-            }
-            className="bg-transparent text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none pr-4"
-          >
-            <option value="order" className="bg-popover text-popover-foreground">
-              {t('Colony Order ⌵')}
-            </option>
-            <option value="name" className="bg-popover text-popover-foreground">
-              {t('Colony Name ⌵')}
-            </option>
-            <option value="members" className="bg-popover text-popover-foreground">
-              {t('Member Count ⌵')}
-            </option>
-          </select>
+            onChange={(val) => setActivityServerSortOrder(val as any)}
+            options={[
+              { value: 'order', label: t('Colony Order') },
+              { value: 'name', label: t('Colony Name') },
+              { value: 'members', label: t('Member Count') },
+            ]}
+          />
         </div>
         <button
           type="button"
           onClick={handleToggleAllServers}
-          className="text-primary hover:underline font-semibold cursor-pointer text-xs"
+          className="text-primary hover:underline font-semibold cursor-pointer text-xs shrink-0"
         >
           {isAnyServerActivityOn
             ? t('Toggle All Off')

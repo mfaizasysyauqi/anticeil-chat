@@ -5,6 +5,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
@@ -263,28 +264,27 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                       className="grid grid-cols-12 gap-3 items-center p-3 rounded-xl border border-border/70 bg-[#1e1f22]"
                     >
                       {/* Action selector */}
-                      <div className="col-span-6 relative">
-                        <select
+                      <div className="col-span-6">
+                        <FormDropdown
+                          size="sm"
                           value={kb.action}
-                          onChange={(e) => {
-                            const val = e.target.value;
+                          onChange={(val) => {
                             setCustomKeybinds((prev) =>
                               prev.map((k) => (k.id === kb.id ? { ...k, action: val } : k)),
                             );
                           }}
-                          className="w-full text-xs font-semibold px-3 py-2 rounded-lg bg-[#2b2d31] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
-                        >
-                          <option value="Activate Overlay Chat">Activate Overlay Chat</option>
-                          <option value="Push to Talk">Push to Talk</option>
-                          <option value="Push to Mute">Push to Mute</option>
-                          <option value="Toggle Mute">Toggle Mute</option>
-                          <option value="Toggle Deafen">Toggle Deafen</option>
-                          <option value="Toggle Screen Share">Toggle Screen Share</option>
-                          <option value="Toggle Camera">Toggle Camera</option>
-                          <option value="Toggle Soundboard">Toggle Soundboard</option>
-                          <option value="Navigate to Call">Navigate to Call</option>
-                        </select>
-                        <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          options={[
+                            { value: 'Activate Overlay Chat', label: 'Activate Overlay Chat' },
+                            { value: 'Push to Talk', label: 'Push to Talk' },
+                            { value: 'Push to Mute', label: 'Push to Mute' },
+                            { value: 'Toggle Mute', label: 'Toggle Mute' },
+                            { value: 'Toggle Deafen', label: 'Toggle Deafen' },
+                            { value: 'Toggle Screen Share', label: 'Toggle Screen Share' },
+                            { value: 'Toggle Camera', label: 'Toggle Camera' },
+                            { value: 'Toggle Soundboard', label: 'Toggle Soundboard' },
+                            { value: 'Navigate to Call', label: 'Navigate to Call' },
+                          ]}
+                        />
                       </div>
 
                       {/* Keybind recorder */}

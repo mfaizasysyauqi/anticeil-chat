@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
@@ -500,24 +501,17 @@ export function EnterpriseSsoTab({
         </div>
 
         {/* Default Landing Channel */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
-            {t('Saluran Onboarding Karyawan Pertama Kali')}
-          </label>
-          <p className="text-xs text-muted-foreground">
-            {t('Karyawan yang baru pertama kali login akan langsung diarahkan ke saluran ini.')}
-          </p>
-          <select
+        <div>
+          <FormDropdown
+            label={t('Saluran Onboarding Karyawan Pertama Kali')}
+            description={t('Karyawan yang baru pertama kali login akan langsung diarahkan ke saluran ini.')}
             value={defaultChannelId}
-            onChange={(e) => setDefaultChannelId(e.target.value)}
-            className="w-full h-9 px-3 text-xs rounded-xl bg-background border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-          >
-            {textChannels.map((c) => (
-              <option key={c.id} value={c.id}>
-                #{c.name}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setDefaultChannelId(val)}
+            options={textChannels.map((c) => ({
+              value: c.id,
+              label: `#${c.name}`,
+            }))}
+          />
         </div>
 
         {/* Enforce SSO Switch */}

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import {
   Dialog,
   DialogContent,
@@ -351,23 +352,21 @@ export function BansTab({
           </DialogHeader>
 
           <form onSubmit={handleCreateBan} className="space-y-4 pt-2">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
-                {t('Pilih Anggota')}
-              </label>
-              <select
+            <div>
+              <FormDropdown
+                label={t('Pilih Anggota')}
                 value={selectedMemberId}
-                onChange={(e) => setSelectedMemberId(e.target.value)}
-                className="w-full h-9 px-3 rounded-lg bg-secondary border border-border/70 text-xs text-foreground focus:outline-none focus:border-sidebar-primary cursor-pointer"
-              >
-                <option value="">{t('-- Pilih anggota server --')}</option>
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} ({m.id})
-                  </option>
-                ))}
-                <option value="custom">{t('+ Masukkan ID kustom')}</option>
-              </select>
+                onChange={(val) => setSelectedMemberId(val)}
+                placeholder={t('-- Pilih anggota server --')}
+                options={[
+                  { value: '', label: t('-- Pilih anggota server --') },
+                  ...members.map((m) => ({
+                    value: m.id,
+                    label: `${m.name} (${m.id})`,
+                  })),
+                  { value: 'custom', label: t('+ Masukkan ID kustom') },
+                ]}
+              />
             </div>
 
             {selectedMemberId === 'custom' && (
@@ -398,21 +397,16 @@ export function BansTab({
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
-                {t('Alasan Pemblokiran')}
-              </label>
-              <select
+            <div className="space-y-2">
+              <FormDropdown
+                label={t('Alasan Pemblokiran')}
                 value={banReason}
-                onChange={(e) => setBanReason(e.target.value)}
-                className="w-full h-9 px-3 rounded-lg bg-secondary border border-border/70 text-xs text-foreground focus:outline-none focus:border-sidebar-primary cursor-pointer mb-2"
-              >
-                {COMMON_BAN_REASONS.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setBanReason(val)}
+                options={COMMON_BAN_REASONS.map((r) => ({
+                  value: r,
+                  label: r,
+                }))}
+              />
               <Input
                 value={banReason}
                 onChange={(e) => setBanReason(e.target.value)}

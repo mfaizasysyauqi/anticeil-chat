@@ -9,6 +9,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import {
   Dialog,
   DialogContent,
@@ -283,39 +284,35 @@ export function InvitesTab({
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                {t('Expire After')}
-              </label>
-              <select
+            <div>
+              <FormDropdown
+                label={t('Expire After')}
                 value={inviteExpiry}
-                onChange={(e) => setInviteExpiry(e.target.value as any)}
-                className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
-              >
-                <option value="1d">{t('24 Hours')}</option>
-                <option value="7d">{t('7 Days')}</option>
-                <option value="30d">{t('30 Days')}</option>
-                <option value="never">{t('Never')}</option>
-              </select>
+                onChange={(val) => setInviteExpiry(val as any)}
+                options={[
+                  { value: '1d', label: t('24 Hours') },
+                  { value: '7d', label: t('7 Days') },
+                  { value: '30d', label: t('30 Days') },
+                  { value: 'never', label: t('Never') },
+                ]}
+              />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                {t('Max Number of Uses')}
-              </label>
-              <select
-                value={maxUses}
-                onChange={(e) => setMaxUses(Number(e.target.value))}
-                className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary"
-              >
-                <option value={0}>{t('No limit')}</option>
-                <option value={1}>{t('1 use')}</option>
-                <option value={5}>{t('5 uses')}</option>
-                <option value={10}>{t('10 uses')}</option>
-                <option value={25}>{t('25 uses')}</option>
-                <option value={50}>{t('50 uses')}</option>
-                <option value={100}>{t('100 uses')}</option>
-              </select>
+            <div>
+              <FormDropdown
+                label={t('Max Number of Uses')}
+                value={String(maxUses)}
+                onChange={(val) => setMaxUses(Number(val))}
+                options={[
+                  { value: '0', label: t('No limit') },
+                  { value: '1', label: t('1 use') },
+                  { value: '5', label: t('5 uses') },
+                  { value: '10', label: t('10 uses') },
+                  { value: '25', label: t('25 uses') },
+                  { value: '50', label: t('50 uses') },
+                  { value: '100', label: t('100 uses') },
+                ]}
+              />
             </div>
           </div>
 

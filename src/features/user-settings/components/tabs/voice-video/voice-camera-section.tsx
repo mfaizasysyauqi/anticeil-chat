@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -124,35 +125,26 @@ export function VoiceCameraSection({
       </div>
 
       {/* Camera dropdown */}
-      <div className="space-y-2">
-        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-          {t('Camera')}
-        </label>
-        <div className="relative max-w-md">
-          <select
-            value={settings.cameraDeviceId}
-            onChange={(e) => updateSetting('cameraDeviceId', e.target.value)}
-            className="w-full text-xs font-semibold px-3 py-2.5 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
-          >
-            {videoInputDevices.length > 0 ? (
-              videoInputDevices.map((d) => (
-                <option
-                  key={d.deviceId}
-                  value={d.deviceId}
-                  className="bg-[#2b2d31] text-foreground"
-                >
-                  📷 {d.label || `Camera (${d.deviceId.slice(0, 5)})`}
-                </option>
-              ))
-            ) : (
-              <option value="default" className="bg-[#2b2d31] text-foreground">
-                📷 HD User Facing (Integrated Webcam)
-              </option>
-            )}
-          </select>
-          <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-        </div>
-        <p className="text-[11px] text-muted-foreground">
+      <div className="max-w-md">
+        <FormDropdown
+          label={t('Camera')}
+          value={settings.cameraDeviceId}
+          onChange={(val) => updateSetting('cameraDeviceId', val)}
+          options={
+            videoInputDevices.length > 0
+              ? videoInputDevices.map((d) => ({
+                  value: d.deviceId,
+                  label: `📷 ${d.label || `Camera (${d.deviceId.slice(0, 5)})`}`,
+                }))
+              : [
+                  {
+                    value: 'default',
+                    label: '📷 HD User Facing (Integrated Webcam)',
+                  },
+                ]
+          }
+        />
+        <p className="text-[11px] text-muted-foreground mt-1">
           {t('Looking for more camera options? Check out your')}{' '}
           <span
             onClick={() =>

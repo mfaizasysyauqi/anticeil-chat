@@ -3,6 +3,7 @@ import { ExternalLink, Trash2, Users, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import {
@@ -80,21 +81,22 @@ export function RegisteredGamesSubtab({
                 {t('Select an app or game to add:')}
               </label>
               <div className="flex items-center gap-2">
-                <select
-                  value={selectedGameToAdd}
-                  onChange={(e) => setSelectedGameToAdd(e.target.value)}
-                  className="flex-1 h-9 rounded-lg bg-muted/40 border border-border/80 px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">{t('Choose a running app...')}</option>
-                  {detectableGamesPreset.map((g) => (
-                    <option key={g.name} value={g.name}>
-                      {g.icon} {g.name}
-                    </option>
-                  ))}
-                  <option value="__custom__">
-                    {t('➕ Add Custom Name...')}
-                  </option>
-                </select>
+                <div className="flex-1">
+                  <FormDropdown
+                    size="sm"
+                    value={selectedGameToAdd}
+                    onChange={(val) => setSelectedGameToAdd(val)}
+                    placeholder={t('Choose a running app...')}
+                    options={[
+                      { value: '', label: t('Choose a running app...') },
+                      ...detectableGamesPreset.map((g) => ({
+                        value: g.name,
+                        label: `${g.icon} ${g.name}`,
+                      })),
+                      { value: '__custom__', label: t('➕ Add Custom Name...') },
+                    ]}
+                  />
+                </div>
                 <Button
                   size="sm"
                   className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-9 px-4 cursor-pointer"

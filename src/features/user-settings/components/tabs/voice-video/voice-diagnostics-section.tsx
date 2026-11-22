@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { cn } from '@/lib/utils';
 
 export interface VoiceDiagnosticsSectionProps {
@@ -70,20 +71,18 @@ export const VoiceDiagnosticsSection: React.FC<VoiceDiagnosticsSectionProps> = (
               <Switch checked={debugLogging} onCheckedChange={setDebugLogging} />
             </div>
 
-            <div className="space-y-1.5 py-1">
-              <label className="text-xs font-bold text-foreground block">{t('Audio Subsystem')}</label>
-              <div className="relative max-w-xs">
-                <select
-                  value={audioSubsystem}
-                  onChange={(e) => setAudioSubsystem(e.target.value)}
-                  className="w-full text-xs font-semibold px-3 py-2 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none cursor-pointer pr-8"
-                >
-                  <option value="standard" className="bg-[#2b2d31]">Standard (Recommended)</option>
-                  <option value="legacy" className="bg-[#2b2d31]">Legacy Audio Stack</option>
-                  <option value="experimental" className="bg-[#2b2d31]">Experimental Low-Latency</option>
-                </select>
-                <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
+            <div className="py-1 max-w-xs">
+              <FormDropdown
+                size="sm"
+                label={t('Audio Subsystem')}
+                value={audioSubsystem}
+                onChange={(val) => setAudioSubsystem(val)}
+                options={[
+                  { value: 'standard', label: 'Standard (Recommended)' },
+                  { value: 'legacy', label: 'Legacy Audio Stack' },
+                  { value: 'experimental', label: 'Experimental Low-Latency' },
+                ]}
+              />
             </div>
 
             <div className="flex items-center justify-between gap-4 py-1">
