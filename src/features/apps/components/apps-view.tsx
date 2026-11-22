@@ -272,7 +272,14 @@ export function AppsView({
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed.slice(0, MAX_RECENT_APPS);
+            const sanitized = parsed.map((id) =>
+              id === 'anticeil-platform' || id === 'platform' || id === 'flow' ? 'anticeil-flow' : id
+            );
+            const deduped = Array.from(new Set(sanitized)).slice(0, MAX_RECENT_APPS);
+            try {
+              localStorage.setItem(RECENT_APPS_STORAGE_KEY, JSON.stringify(deduped));
+            } catch {}
+            return deduped;
           }
         }
       } catch {}
@@ -280,9 +287,13 @@ export function AppsView({
     return DEFAULT_RECENT_IDS.slice(0, MAX_RECENT_APPS);
   });
 
-  const trackRecentApp = (appId: string) => {
+  const trackRecentApp = (rawAppId: string) => {
+    const appId =
+      rawAppId === 'anticeil-platform' || rawAppId === 'platform' || rawAppId === 'flow'
+        ? 'anticeil-flow'
+        : rawAppId;
     setRecentAppIds((prev) => {
-      const updated = [appId, ...prev.filter((id) => id !== appId)].slice(0, MAX_RECENT_APPS);
+      const updated = [appId, ...prev.filter((id) => id !== appId && id !== 'anticeil-platform' && id !== 'platform' && id !== 'flow')].slice(0, MAX_RECENT_APPS);
       try {
         localStorage.setItem(RECENT_APPS_STORAGE_KEY, JSON.stringify(updated));
       } catch {}
@@ -303,7 +314,11 @@ export function AppsView({
 
   const recentApps = useMemo(() => {
     const list: VoiceAppDefinition[] = [];
-    for (const id of recentAppIds.slice(0, MAX_RECENT_APPS)) {
+    for (const rawId of recentAppIds.slice(0, MAX_RECENT_APPS)) {
+      const id =
+        rawId === 'anticeil-platform' || rawId === 'platform' || rawId === 'flow'
+          ? 'anticeil-flow'
+          : rawId;
       const found = appList.find((a) => a.id === id);
       if (found && !list.some((item) => item.id === found.id)) {
         list.push(found);

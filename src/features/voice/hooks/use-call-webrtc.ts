@@ -92,7 +92,12 @@ export function useCallWebRTC({
 
   const currentActiveApp = useMemo(() => {
     if (!activeAppId) return null;
-    const targetId = activeAppId === 'youtube' ? 'watch-together' : activeAppId;
+    const targetId =
+      activeAppId === 'youtube'
+        ? 'watch-together'
+        : activeAppId === 'anticeil-platform' || activeAppId === 'platform' || activeAppId === 'flow'
+          ? 'anticeil-flow'
+          : activeAppId;
     const standardApp = DISCORD_APPS.find((app) => app.id === targetId);
     if (standardApp) return standardApp;
 

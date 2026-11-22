@@ -79,6 +79,14 @@ export function ActivityAppBar({
   };
 
   const AppIcon = app.icon || Sparkles;
+  const appTitle =
+    app.id === 'anticeil-flow' ||
+    app.id === 'anticeil-platform' ||
+    app.id === 'platform' ||
+    app.id === 'flow' ||
+    app.title === 'Anticeil Platform'
+      ? 'Anticeil Flow'
+      : app.title;
 
   return (
     <div
@@ -115,7 +123,7 @@ export function ActivityAppBar({
           </div>
         )}
         <span className="text-sm font-bold text-foreground truncate max-w-[180px] sm:max-w-[280px]">
-          {app.title}
+          {appTitle}
         </span>
       </div>
 

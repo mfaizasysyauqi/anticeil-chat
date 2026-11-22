@@ -34,9 +34,9 @@ function getCurrentAuthUser() {
   try {
     const raw =
       typeof window !== 'undefined'
-        ? localStorage.getItem('user') ||
-          localStorage.getItem('currentUser') ||
-          localStorage.getItem('anticeil_current_user')
+        ? localStorage.getItem('anticeil_current_user') ||
+          localStorage.getItem('user') ||
+          localStorage.getItem('currentUser')
         : null;
     return raw ? JSON.parse(raw) : null;
   } catch {
@@ -50,7 +50,10 @@ export const coloniesApi = {
     try {
       const user = getCurrentAuthUser();
       const currentUserId = userId || user?.id;
-      const qs = currentUserId ? `?userId=${encodeURIComponent(currentUserId)}` : '';
+      const params = new URLSearchParams();
+      if (currentUserId) params.set('userId', currentUserId);
+      if (user?.email) params.set('email', user.email);
+      const qs = params.toString() ? `?${params.toString()}` : '';
       const res = await api.get<Colony[]>(`/v1/colony/colonies${qs}`);
       if (Array.isArray(res) && res.length > 0) {
         saveStoredColonies(res);

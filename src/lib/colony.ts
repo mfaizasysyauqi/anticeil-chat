@@ -244,9 +244,9 @@ export function getStorageKeyColonies(): string {
   try {
     const rawUser =
       typeof window !== 'undefined'
-        ? localStorage.getItem('user') ||
-          localStorage.getItem('currentUser') ||
-          localStorage.getItem('anticeil_current_user')
+        ? localStorage.getItem('anticeil_current_user') ||
+          localStorage.getItem('user') ||
+          localStorage.getItem('currentUser')
         : null;
     const user = rawUser ? JSON.parse(rawUser) : null;
     if (user?.id) {
@@ -263,8 +263,9 @@ export function cleanLegacyStorage(): void {
     if (!token) {
       localStorage.removeItem('anticeil_colony_dm_channels_v3');
       localStorage.removeItem('anticeil_colony_channels_v3');
+      localStorage.removeItem(STORAGE_KEY_COLONIES);
     }
-    const keysToRemove: string[] = [];
+    const keysToRemove: string[] = [STORAGE_KEY_COLONIES];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (
@@ -288,7 +289,8 @@ export function loadStoredColonies(): Colony[] {
     const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('ap_token')) : null;
     if (!token) return DEFAULT_COLONIES;
     const userKey = getStorageKeyColonies();
-    const raw = localStorage.getItem(userKey) || (userKey !== STORAGE_KEY_COLONIES ? localStorage.getItem(STORAGE_KEY_COLONIES) : null);
+    if (userKey === STORAGE_KEY_COLONIES) return DEFAULT_COLONIES;
+    const raw = localStorage.getItem(userKey);
     if (!raw) return DEFAULT_COLONIES;
     const parsed = JSON.parse(raw);
     const list = Array.isArray(parsed) && parsed.length > 0
@@ -310,9 +312,8 @@ export function loadStoredColonies(): Colony[] {
 export function saveStoredColonies(colonies: Colony[]): void {
   try {
     const userKey = getStorageKeyColonies();
-    localStorage.setItem(userKey, JSON.stringify(colonies));
-    if (userKey !== STORAGE_KEY_COLONIES) {
-      localStorage.setItem(STORAGE_KEY_COLONIES, JSON.stringify(colonies));
+    if (userKey && userKey !== STORAGE_KEY_COLONIES) {
+      localStorage.setItem(userKey, JSON.stringify(colonies));
     }
     window.dispatchEvent(new Event('anticeil_colonies_changed'));
     window.dispatchEvent(new Event('anticeil_hubs_changed'));

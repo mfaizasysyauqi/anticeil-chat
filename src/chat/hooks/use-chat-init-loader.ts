@@ -117,11 +117,12 @@ export function useChatInitLoader({
       }
       try {
         const currentProjectId = authenticationSession.getProjectId();
+        const effectiveUser = currentUser || authenticationSession.getUser();
         const [channelsRes, membersRes, hubsRes, friendsRes] =
           await Promise.all([
             colonyApi.getChannels(),
             colonyApi.getMembers(currentProjectId || undefined),
-            colonyApi.getColonies(currentUser?.id),
+            colonyApi.getColonies(effectiveUser?.id),
             friendsApi.getFriends().catch(() => []),
           ]);
         if (mounted) {
@@ -250,6 +251,26 @@ export function useChatInitLoader({
       mounted = false;
     };
   }, []);
+
+  // 1b. Reactive Colony Sync when currentUser is populated or switched
+  useEffect(() => {
+    const uid = currentUser?.id || authenticationSession.getUser()?.id;
+    if (!uid) return;
+    let mounted = true;
+    colonyApi.getColonies(uid).then((res) => {
+      if (mounted && Array.isArray(res) && res.length > 0) {
+        setColonies(() => {
+          const home = res.find((h) => h.id === 'anticeil') || DEFAULT_COLONIES[0];
+          const userColonies = [home, ...res.filter((s) => s.id !== 'anticeil')];
+          saveStoredColonies(userColonies);
+          return userColonies;
+        });
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [currentUser?.id]);
 
   // 2. Load Messages, Pins, Notifications & Threads when Active Channel Changes
   useEffect(() => {

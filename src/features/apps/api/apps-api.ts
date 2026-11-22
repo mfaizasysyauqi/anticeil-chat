@@ -8,7 +8,15 @@ export const appsApi = {
       const res = await api.get<any[]>('/v1/community/apps');
       if (Array.isArray(res) && res.length > 0) {
         const customApps: VoiceAppDefinition[] = res
-          .filter((a) => a && !ANTICEIL_APPS.some((def) => def.id === a.id))
+          .filter(
+            (a) =>
+              a &&
+              !ANTICEIL_APPS.some((def) => def.id === a.id) &&
+              a.id !== 'anticeil-platform' &&
+              a.id !== 'platform' &&
+              a.id !== 'flow' &&
+              a.id !== 'anticeil-flow'
+          )
           .map((a) => ({
             id: a.id,
             title: a.title || a.name || 'Community App',

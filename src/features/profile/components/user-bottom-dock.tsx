@@ -14,6 +14,7 @@ import {
   Palette,
   Crown,
   ScreenShare,
+  Sparkles,
 } from 'lucide-react';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,18 @@ function getAppBrand(appId: string | null | undefined) {
   if (!appId) return null;
   const raw = appId.toLowerCase().trim();
   const def = ANTICEIL_APPS.find((a) => a.id === raw || a.id.toLowerCase() === raw);
+
+  if (raw === 'anticeil-flow' || raw === 'flow' || raw === 'anticeil-platform' || raw === 'platform') {
+    return {
+      id: 'anticeil-flow',
+      title: 'Anticeil Flow',
+      renderIcon: () => (
+        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0 shadow-xs">
+          <Sparkles className="w-4 h-4 text-white" />
+        </div>
+      ),
+    };
+  }
 
   if (raw === 'watch-together' || raw === 'youtube' || raw.includes('youtube') || raw.includes('watch')) {
     return {
