@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
+import { LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { ANTICEIL_APPS } from '@/features/voice/data/voice-activities';
 import type {
   AiMessage,
@@ -110,7 +110,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
     friends,
     currentUser,
     onOpenSidebar,
-    horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+    horizontalPadding = LAYOUT_PAGE_SPACING.HORIZONTAL,
     onLaunchActivity,
     onOpenApps,
     onSendMessageToChannel,
@@ -463,8 +463,13 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
             activeArtifact && 'hidden md:flex md:w-5/12 lg:w-4/12 xl:w-5/12 border-r border-border/80'
           )}
         >
-          {/* 2. Messages & Capability Hero Feed */}
-          <div className={cn('flex-1 min-h-0 overflow-y-auto custom-scrollbar py-4 space-y-4', horizontalPadding)}>
+          {/* 2. Messages & Capability Hero Feed (100% Symmetrical with App Bar via LAYOUT_PAGE_SPACING) */}
+          <div
+            className={cn(
+              'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar py-4 space-y-4 w-full',
+              horizontalPadding || LAYOUT_PAGE_SPACING.BODY_HORIZONTAL,
+            )}
+          >
             {messages.length === 0 ? (
               <div className="max-w-2xl mx-auto py-8 sm:py-12 text-center space-y-6">
                 <div className="flex justify-center">
@@ -635,7 +640,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
       <div
         className={cn(
           'sticky bottom-0 z-20 shrink-0 pb-2 sm:pb-3 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-1 bg-background flex flex-col w-full',
-          horizontalPadding,
+          horizontalPadding || LAYOUT_PAGE_SPACING.HORIZONTAL,
         )}
       >
         <div className="w-full flex flex-col gap-1.5">

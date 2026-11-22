@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
+import { LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 
 export interface AiCommandCenterHeaderProps {
@@ -26,7 +26,7 @@ export interface AiCommandCenterHeaderProps {
  */
 export function AiCommandCenterHeader({
   onOpenSidebar,
-  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
+  horizontalPadding = LAYOUT_PAGE_SPACING.HORIZONTAL,
   onClearSessionMessages,
   hasMessages = false,
   hasActiveArtifact = false,

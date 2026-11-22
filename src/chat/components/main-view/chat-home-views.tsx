@@ -1,6 +1,6 @@
 import React from 'react';
 import { MessageSquare } from 'lucide-react';
-import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { MessageRequestsView, type MessageRequestItem } from '@/features/message-requests';
 import { NotificationsView, type NotificationItem } from '@/features/notifications';
 import { CalendarView, type CalendarEvent } from '@/features/calendar';
@@ -172,7 +172,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   if (isAiCommandCenterView) {
     return (
       <AiCommandCenterView
-        horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+        horizontalPadding={LAYOUT_PAGE_SPACING.HORIZONTAL}
         colonies={colonies}
         channels={channels}
         members={members}
