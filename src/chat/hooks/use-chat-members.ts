@@ -15,6 +15,7 @@ export interface UseChatMembersProps {
   setHomeView: (view: any) => void;
   setIsMobileChannelsOpen: (open: boolean) => void;
   setIsMobileMembersOpen: (open: boolean) => void;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
 }
 
 export function useChatMembers({
@@ -30,6 +31,7 @@ export function useChatMembers({
   setHomeView,
   setIsMobileChannelsOpen,
   setIsMobileMembersOpen,
+  requireAuth,
 }: UseChatMembersProps) {
   const currentUserName =
     `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() ||
@@ -88,6 +90,14 @@ export function useChatMembers({
   // Start DM handler
   const handleStartDM = (member: any) => {
     if (!member) return;
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleStartDM(member),
+        'Mulai Percakapan',
+        'Masuk ke Anticeil untuk memulai obrolan langsung.',
+      );
+      return;
+    }
     const dmId = currentUser?.id
       ? getDmChannelId(currentUser.id, member.id)
       : `dm-${member.id}`;
@@ -141,6 +151,14 @@ export function useChatMembers({
   // Create Group DM handler
   const handleCreateGroupDM = (name: string, memberIds: string[]) => {
     if (!memberIds || memberIds.length === 0) return;
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleCreateGroupDM(name, memberIds),
+        'Buat Obrolan Grup',
+        'Masuk ke Anticeil untuk membuat obrolan grup.',
+      );
+      return;
+    }
     const gdmId = `gdm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const allMemberIds = Array.from(
       new Set([...(currentUser?.id ? [currentUser.id] : []), ...memberIds]),

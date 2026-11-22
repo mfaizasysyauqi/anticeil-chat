@@ -127,6 +127,15 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   const handleOpenNav = onOpenSidebar || (() => setIsMobileChannelsOpen(true));
 
   const handleLaunchStandalone = (rawAppId: string) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleLaunchStandalone(rawAppId),
+        t('Buka Aktivitas'),
+        t('Masuk ke Anticeil untuk menggunakan aktivitas dan aplikasi ini.'),
+      );
+      return;
+    }
+
     const appId =
       rawAppId === 'jamspace-whiteboard'
         ? 'whiteboard'
@@ -178,6 +187,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         members={members}
         friends={friends}
         currentUser={currentUser}
+        requireAuth={requireAuth}
         onOpenSidebar={handleOpenNav}
         onLaunchStandalone={handleLaunchStandalone}
         onLaunchActivity={handleLaunchStandalone}
@@ -266,9 +276,39 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
           setActiveCallChannelId(channelId);
         }}
         onOpenSidebar={handleOpenNav}
-        onCreateEvent={createCalendarEvent}
-        onUpdateEvent={updateCalendarEvent}
-        onDeleteEvent={deleteCalendarEvent}
+        onCreateEvent={(event) => {
+          if (!currentUser && requireAuth) {
+            requireAuth(
+              () => createCalendarEvent(event),
+              t('Buat Agenda'),
+              t('Masuk ke Anticeil untuk membuat acara dan agenda kalender.'),
+            );
+            return;
+          }
+          createCalendarEvent(event);
+        }}
+        onUpdateEvent={(id, event) => {
+          if (!currentUser && requireAuth) {
+            requireAuth(
+              () => updateCalendarEvent?.(id, event),
+              t('Ubah Agenda'),
+              t('Masuk ke Anticeil untuk mengubah acara kalender.'),
+            );
+            return;
+          }
+          updateCalendarEvent?.(id, event);
+        }}
+        onDeleteEvent={(id) => {
+          if (!currentUser && requireAuth) {
+            requireAuth(
+              () => deleteCalendarEvent?.(id),
+              t('Hapus Agenda'),
+              t('Masuk ke Anticeil untuk mengelola acara kalender.'),
+            );
+            return;
+          }
+          deleteCalendarEvent?.(id);
+        }}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
       />
     );
@@ -283,7 +323,17 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
           setActiveColonyId(colonyId);
           setActiveChannelId(channelId);
         }}
-        onToggleComplete={handleToggleComplete}
+        onToggleComplete={(id) => {
+          if (!currentUser && requireAuth) {
+            requireAuth(
+              () => handleToggleComplete(id),
+              t('Tugas Saya'),
+              t('Masuk ke Anticeil untuk mengelola dan menyelesaikan tugas.'),
+            );
+            return;
+          }
+          handleToggleComplete(id);
+        }}
         onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
       />
@@ -297,6 +347,24 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         friends={friends.allFriends}
         colonies={colonies}
         onStartCall={(friend) => {
+          if (!currentUser && requireAuth) {
+            requireAuth(
+              () => {
+                handleCreateCallLog({
+                  peerId: friend.id,
+                  peerName: friend.name,
+                  peerAvatar: friend.avatar || null,
+                  isDm: true,
+                  type: 'outgoing',
+                  isVideo: false,
+                });
+                handleStartDirectMessage(friend);
+              },
+              t('Mulai Panggilan'),
+              t('Masuk ke Anticeil untuk memulai panggilan suara atau video.'),
+            );
+            return;
+          }
           handleCreateCallLog({
             peerId: friend.id,
             peerName: friend.name,
@@ -320,6 +388,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         colonies={colonies}
         members={members}
         currentUser={currentUser}
+        requireAuth={requireAuth}
         socket={socket}
         activeCallChannelId={activeCallChannelId}
         onLaunchActivity={handleLaunchActivity}
@@ -339,7 +408,8 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   if (isShopView) {
     return (
       <ShopView
-        currentUser={members.find((m) => m.id === 'me')}
+        currentUser={currentUser || members.find((m) => m.id === 'me')}
+        requireAuth={requireAuth}
         onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
         verticalPadding={CHANNEL_VERTICAL_PADDING}
@@ -351,6 +421,8 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   if (isQuestsView) {
     return (
       <QuestsView
+        currentUser={currentUser}
+        requireAuth={requireAuth}
         onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
         verticalPadding={CHANNEL_VERTICAL_PADDING}
@@ -364,6 +436,8 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
     return (
       <ColoniesView
         servers={colonies}
+        currentUser={currentUser}
+        requireAuth={requireAuth}
         onSelectServer={(colonyId) => {
           setActiveColonyId(colonyId);
           const firstCh = channels.find(

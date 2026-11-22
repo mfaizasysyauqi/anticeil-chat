@@ -399,6 +399,23 @@ export function HomeChannelsSidebar({
 
         {/* Direct Messages List */}
         {(() => {
+          if (!currentUser) {
+            return (
+              <div className="px-2.5 py-3 text-[11px] text-muted-foreground/60 leading-relaxed text-center">
+                <p>{t('Belum ada pesan langsung.')}</p>
+                <button
+                  onClick={() => {
+                    setActiveChannelId('');
+                    setFriendsTab('all');
+                  }}
+                  className="mt-1.5 text-primary hover:underline font-semibold cursor-pointer block mx-auto text-[11px]"
+                >
+                  {t('Buka Halaman Teman →')}
+                </button>
+              </div>
+            );
+          }
+
           const seen = new Set<string>();
           const validDms = dmChannels.filter((dm) => {
             const name = (dm.name || '').toLowerCase().trim();

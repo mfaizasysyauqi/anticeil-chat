@@ -59,11 +59,12 @@ export interface ChannelsSidebarProps {
   userBottomDock?: React.ReactNode;
   selectedActivityAppId?: string | null;
   onToggleCollapseSidebar?: () => void;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
 export function ChannelsSidebar(props: ChannelsSidebarProps) {
-  const { isHome, userBottomDock, homeView, activeChannelId } = props;
+  const { isHome, userBottomDock, homeView, activeChannelId, currentUser, requireAuth } = props;
   const isAiActive = isHome && (homeView === 'ai' || !homeView) && !activeChannelId;
 
   return (
@@ -71,6 +72,8 @@ export function ChannelsSidebar(props: ChannelsSidebarProps) {
       {isAiActive ? (
         <AiCommandCenterSidebar
           onToggleCollapseSidebar={props.onToggleCollapseSidebar}
+          currentUser={currentUser}
+          requireAuth={requireAuth}
         />
       ) : isHome ? (
         <HomeChannelsSidebar {...props} />

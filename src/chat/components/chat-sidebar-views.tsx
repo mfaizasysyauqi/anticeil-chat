@@ -267,6 +267,7 @@ export const ChannelsSidebarWrapper: React.FC<ChannelsSidebarWrapperProps> = ({
   return (
     <ChannelsSidebar
       currentUser={currentUser}
+      requireAuth={requireAuth}
       isHome={isHome}
       activeColony={activeColony}
       channels={channels}
@@ -539,6 +540,7 @@ export const FriendsMainPageWrapper: React.FC<FriendsMainPageWrapperProps> = ({
     <FriendsView
       {...friends}
       currentUser={currentUser}
+      requireAuth={requireAuth}
       members={members}
       onTabChange={(tab) => {
         if (tab === 'add' && !currentUser) {

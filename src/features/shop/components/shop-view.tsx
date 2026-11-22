@@ -103,6 +103,7 @@ export interface ShopViewProps {
   verticalPadding?: string;
   onOpenProfile?: () => void;
   onNavigateSection?: (section: string) => void;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
 }
 
 export function ShopView({
@@ -112,6 +113,7 @@ export function ShopView({
   verticalPadding = CHANNEL_VERTICAL_PADDING,
   onOpenProfile,
   onNavigateSection,
+  requireAuth,
 }: ShopViewProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'featured' | 'browse' | 'dew' | 'app_shops' | 'all'>('featured');
@@ -542,6 +544,14 @@ export function ShopView({
   // Wishlist toggle action
   const handleToggleWishlist = async (e: React.MouseEvent, item: ShopItem) => {
     e.stopPropagation();
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleToggleWishlist(e, item),
+        t('Wishlist Shop'),
+        t('Masuk ke Anticeil untuk menambahkan item ke wishlist Anda.'),
+      );
+      return;
+    }
     try {
       const res = await shopApi.toggleWishlist(item.id);
       if (res.success) {
@@ -560,6 +570,14 @@ export function ShopView({
 
   // Purchase item action (Supports Dew F2P or Midtrans Sandbox IDR)
   const handlePurchase = async (item: ShopItem, currency: 'dew' | 'idr') => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handlePurchase(item, currency),
+        t('Beli Item Shop'),
+        t('Masuk ke Anticeil untuk membeli avatar deco dan kosmetik.'),
+      );
+      return;
+    }
     setIsPurchasing(true);
     try {
       if (currency === 'idr') {

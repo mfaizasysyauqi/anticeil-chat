@@ -87,6 +87,7 @@ export interface AiCommandCenterViewProps {
   onSendDirectMessage?: (recipientIdOrName: string, content: string) => Promise<any> | any;
   onNavigateToChannel?: (colonyId: string, channelId: string) => void;
   onNavigateToDM?: (memberId: string) => void;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
 }
 
 function formatFileSize(bytes: number): string {
@@ -122,6 +123,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
     onSendDirectMessage,
     onNavigateToChannel,
     onNavigateToDM,
+    requireAuth,
   } = props;
   const [inputPrompt, setInputPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -328,6 +330,14 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
   };
 
   const handleSendMessage = async (promptToSend?: string) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleSendMessage(promptToSend),
+        t('Pusat Komando AI'),
+        t('Masuk ke Anticeil untuk berinteraksi dan mengeksekusi perintah AI.'),
+      );
+      return;
+    }
     const rawText = (promptToSend || inputPrompt).trim();
     if ((!rawText && attachedFiles.length === 0) || isLoading) return;
 
@@ -776,7 +786,17 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  if (!currentUser && requireAuth) {
+                    requireAuth(
+                      () => fileInputRef.current?.click(),
+                      t('Unggah Dokumen'),
+                      t('Masuk ke Anticeil untuk menganalisis file dan dokumen.'),
+                    );
+                    return;
+                  }
+                  fileInputRef.current?.click();
+                }}
                 className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/60 rounded-full cursor-pointer shrink-0 mb-0.5"
                 title="Unggah berkas / file"
                 aria-label="Unggah berkas"

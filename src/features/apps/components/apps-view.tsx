@@ -56,6 +56,7 @@ export interface AppsViewProps {
   setSelectedActivityAppId?: (id: string | null) => void;
   isActivityOpen?: boolean;
   setIsActivityOpen?: (open: boolean) => void;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
 }
 
 interface ActivitySectionConfig {
@@ -198,6 +199,7 @@ export function AppsView({
   setSelectedActivityAppId,
   isActivityOpen,
   setIsActivityOpen,
+  requireAuth,
 }: AppsViewProps) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -378,6 +380,14 @@ export function AppsView({
   }, [appList, searchQuery, activeCategory]);
 
   const handleLaunchStandalone = (appOrId: VoiceAppDefinition | string) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleLaunchStandalone(appOrId),
+        t('Buka Aktivitas'),
+        t('Masuk ke Anticeil untuk menggunakan aktivitas dan aplikasi ini.'),
+      );
+      return;
+    }
     const app = typeof appOrId === 'string'
       ? appList.find((a) => a.id === appOrId) || ANTICEIL_APPS.find((a) => a.id === appOrId) || null
       : appOrId;
@@ -400,6 +410,14 @@ export function AppsView({
   };
 
   const handleOpenSendToChannel = (app: VoiceAppDefinition) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleOpenSendToChannel(app),
+        t('Kirim ke Saluran'),
+        t('Masuk ke Anticeil untuk meluncurkan aktivitas ke saluran.'),
+      );
+      return;
+    }
     setSelectedAppForLaunch(app);
     setIsLaunchDialogOpen(true);
   };

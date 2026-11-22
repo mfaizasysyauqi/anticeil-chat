@@ -30,6 +30,8 @@ export interface SidebarChannelItemProps {
   onItemClick?: () => void;
   onOpenInvite: () => void;
   onOpenEditChannel: (channel: ColonyChannel) => void;
+  currentUser?: any;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -49,6 +51,8 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
   onItemClick,
   onOpenInvite,
   onOpenEditChannel,
+  currentUser,
+  requireAuth,
   t,
 }) => {
   const isActiveCh = activeChannelId === ch.id;
@@ -117,6 +121,19 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
       <div
         key={ch.id}
         onClick={() => {
+          if (!currentUser && requireAuth) {
+            requireAuth(
+              () => {
+                setActiveChannelId(ch.id);
+                setActiveCallChannelId(ch.id);
+                setIsCallPiP(false);
+                onItemClick?.();
+              },
+              t('Gabung Panggilan Suara'),
+              t('Masuk ke Anticeil untuk bergabung ke saluran suara atau panggilan.'),
+            );
+            return;
+          }
           setActiveChannelId(ch.id);
           setActiveCallChannelId(ch.id);
           setIsCallPiP(false);

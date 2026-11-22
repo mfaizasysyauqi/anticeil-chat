@@ -31,6 +31,7 @@ interface FriendsViewProps {
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
   verticalPadding?: string;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
 }
 
 export function FriendsView({
@@ -54,6 +55,7 @@ export function FriendsView({
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   verticalPadding = CHANNEL_VERTICAL_PADDING,
+  requireAuth,
 }: FriendsViewProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
@@ -72,7 +74,17 @@ export function FriendsView({
         allCount={safeAllFriends.length}
         pendingCount={safeFriendRequests.length}
         onOpenDmSearch={onOpenDmSearch}
-        onOpenAddFriendDialog={() => setIsAddDialogOpen(true)}
+        onOpenAddFriendDialog={() => {
+          if (!currentUser && requireAuth) {
+            requireAuth(
+              () => setIsAddDialogOpen(true),
+              'Tambah Teman',
+              'Masuk ke Anticeil untuk mencari dan menambahkan teman baru.',
+            );
+            return;
+          }
+          setIsAddDialogOpen(true);
+        }}
         onOpenSidebar={onOpenSidebar}
         horizontalPadding={horizontalPadding}
       />
@@ -105,7 +117,17 @@ export function FriendsView({
                 onSearchChange={onSearchChange}
                 filteredFriends={safeFilteredFriends}
                 onStartDM={onStartDM}
-                onSwitchToAddTab={() => setIsAddDialogOpen(true)}
+                onSwitchToAddTab={() => {
+                  if (!currentUser && requireAuth) {
+                    requireAuth(
+                      () => setIsAddDialogOpen(true),
+                      'Tambah Teman',
+                      'Masuk ke Anticeil untuk mencari dan menambahkan teman baru.',
+                    );
+                    return;
+                  }
+                  setIsAddDialogOpen(true);
+                }}
               />
             )}
           </div>

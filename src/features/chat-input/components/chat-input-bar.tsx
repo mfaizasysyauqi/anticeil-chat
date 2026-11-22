@@ -99,6 +99,7 @@ export interface ChatInputBarProps {
   onLaunchActivity: (id: string) => void;
   onSendVoiceNote?: (blob: Blob, durationSeconds: number) => void;
   hideGifsAndStickers?: boolean;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
   t: (key: string) => string;
 }
 
@@ -146,6 +147,7 @@ export function ChatInputBar({
   setAppsSearchQuery,
   onLaunchActivity,
   hideGifsAndStickers = false,
+  requireAuth,
   t,
 }: ChatInputBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -695,7 +697,20 @@ export function ChatInputBar({
           />
 
         {/* Discord Plus Action Menu (Upload, Thread, Poll, Apps, Schedule Message) */}
-        <DropdownMenu open={isPlusMenuOpen} onOpenChange={setIsPlusMenuOpen}>
+        <DropdownMenu
+          open={isPlusMenuOpen}
+          onOpenChange={(open) => {
+            if (open && !currentUser && requireAuth) {
+              requireAuth(
+                () => setIsPlusMenuOpen(true),
+                t('Lampiran & Alat'),
+                t('Masuk ke Anticeil untuk mengirim lampiran file, polling, dan agenda.'),
+              );
+              return;
+            }
+            setIsPlusMenuOpen(open);
+          }}
+        >
           <DropdownMenuTrigger asChild>
             <button
               type="button"
@@ -839,6 +854,14 @@ export function ChatInputBar({
           maxLength={maxMessageChars + 4000}
           onPaste={handlePaste}
           onClick={(e) => {
+            if (!currentUser && requireAuth) {
+              requireAuth(
+                () => textareaRef.current?.focus(),
+                t('Kirim Pesan'),
+                t('Masuk ke Anticeil untuk mengirim pesan di saluran ini.'),
+              );
+              return;
+            }
             updateMentionState(e.currentTarget.value, e.currentTarget.selectionStart);
           }}
           onKeyUp={(e) => {
@@ -847,6 +870,14 @@ export function ChatInputBar({
             }
           }}
           onChange={(e) => {
+            if (!currentUser && requireAuth) {
+              requireAuth(
+                () => textareaRef.current?.focus(),
+                t('Kirim Pesan'),
+                t('Masuk ke Anticeil untuk mengirim pesan di saluran ini.'),
+              );
+              return;
+            }
             setInputText(e.target.value);
             if (!isSlashOpen && e.target.value.startsWith('/')) {
               setIsSlashOpen(true);
@@ -900,6 +931,14 @@ export function ChatInputBar({
             if (e.key === 'Enter' && !e.shiftKey) {
               if ((e.nativeEvent as any).isComposing) return;
               e.preventDefault();
+              if (!currentUser && requireAuth) {
+                requireAuth(
+                  () => onSendMessage(),
+                  t('Kirim Pesan'),
+                  t('Masuk ke Anticeil untuk mengirim pesan di saluran ini.'),
+                );
+                return;
+              }
               if (inputText.length > maxMessageChars) {
                 toast.error(t('Pesan melebihi batas karakter! Upgrade ke Anticeil Pollen / Nectar / Royal untuk mengirim hingga 4.000 karakter.'));
                 return;
@@ -909,11 +948,13 @@ export function ChatInputBar({
           }}
           disabled={!activeChannel}
           placeholder={
-            activeChannel
-              ? activeChannel.category === 'DIRECT MESSAGES' || activeChannel.isDirectMessage
-                ? `Message @${activeChannel.name}`
-                : `Message #${activeChannel.name}`
-              : t('Pilih atau buat channel terlebih dahulu...')
+            !currentUser
+              ? t('Masuk ke akun Anda untuk mengirim pesan di sini...')
+              : activeChannel
+                ? activeChannel.category === 'DIRECT MESSAGES' || activeChannel.isDirectMessage
+                  ? `Message @${activeChannel.name}`
+                  : `Message #${activeChannel.name}`
+                : t('Pilih atau buat channel terlebih dahulu...')
           }
           className="border-0 outline-none focus:outline-none focus:ring-0 text-sm px-1 py-1.5 bg-transparent flex-1 placeholder:text-muted-foreground/90 text-foreground font-medium disabled:opacity-50 resize-none min-h-[32px] max-h-[calc(50vh-2rem)] overflow-y-auto custom-scrollbar leading-relaxed"
         />
@@ -933,7 +974,17 @@ export function ChatInputBar({
           {/* 1. Gift Icon */}
           <button
             type="button"
-            onClick={onOpenGiftModal}
+            onClick={() => {
+              if (!currentUser && requireAuth) {
+                requireAuth(
+                  () => onOpenGiftModal(),
+                  t('Kirim Hadiah'),
+                  t('Masuk ke Anticeil untuk mengirim hadiah ke teman atau anggota saluran.'),
+                );
+                return;
+              }
+              onOpenGiftModal();
+            }}
             className="flex w-6 h-6 text-muted-foreground/90 hover:text-foreground items-center justify-center transition-colors cursor-pointer"
             title="Kirim Hadiah (Send a Gift)"
           >
@@ -943,7 +994,17 @@ export function ChatInputBar({
           {/* Unified Media Picker Popover (GIFs, Stickers, Emoji) */}
           <MediaPickerPopover
             open={isMediaPickerOpen}
-            onOpenChange={setIsMediaPickerOpen}
+            onOpenChange={(open) => {
+              if (open && !currentUser && requireAuth) {
+                requireAuth(
+                  () => setIsMediaPickerOpen(true),
+                  t('Stiker & Emoji'),
+                  t('Masuk ke Anticeil untuk mengirim stiker, GIF, dan emoji kustom.'),
+                );
+                return;
+              }
+              setIsMediaPickerOpen(open);
+            }}
             activeMediaTab={activeMediaTab}
             setActiveMediaTab={setActiveMediaTab}
             mediaSearchQuery={mediaSearchQuery}
@@ -965,7 +1026,17 @@ export function ChatInputBar({
           <div className="flex items-center">
             <ChatAppsPopover
               open={isTemplatePopoverOpen}
-              onOpenChange={setIsTemplatePopoverOpen}
+              onOpenChange={(open) => {
+                if (open && !currentUser && requireAuth) {
+                  requireAuth(
+                    () => setIsTemplatePopoverOpen(true),
+                    t('Aplikasi & Aktivitas'),
+                    t('Masuk ke Anticeil untuk meluncurkan aktivitas bersama.'),
+                  );
+                  return;
+                }
+                setIsTemplatePopoverOpen(open);
+              }}
               appsSearchQuery={appsSearchQuery}
               setAppsSearchQuery={setAppsSearchQuery}
               onLaunchActivity={onLaunchActivity}
@@ -977,6 +1048,14 @@ export function ChatInputBar({
             <button
               type="button"
               onClick={() => {
+                if (!currentUser && requireAuth) {
+                  requireAuth(
+                    () => onSendMessage(),
+                    t('Kirim Pesan'),
+                    t('Masuk ke Anticeil untuk mengirim pesan di saluran ini.'),
+                  );
+                  return;
+                }
                 if (inputText.length > maxMessageChars) {
                   toast.error(t('Pesan melebihi batas karakter! Upgrade ke Anticeil Pollen / Nectar / Royal untuk mengirim hingga 4.000 karakter.'));
                   return;

@@ -442,6 +442,7 @@ export function useColonyPageState(): ChatPageContentProps {
     setIsCallPiP,
     setIsActivityOpen,
     setMessagesMap,
+    requireAuth,
   });
 
   const handleDisconnectCall = useCallback(() => {
@@ -562,6 +563,7 @@ export function useColonyPageState(): ChatPageContentProps {
     setHomeView,
     setIsMobileChannelsOpen,
     setIsMobileMembersOpen,
+    requireAuth,
   });
 
   const handleKanbanCardsUpdate = useCallback(

@@ -399,6 +399,14 @@ export function useMessageActions({
 
   // Schedule Message connected directly to PostgreSQL Calendar Database
   const handleScheduleMessage = async (scheduledDate: Date, customText?: string) => {
+    if (!currentUser) {
+      setAuthFeatureInfo({
+        title: t('Pesan Terjadwal'),
+        desc: t('Masuk ke Anticeil untuk menjadwalkan pesan.'),
+      });
+      setIsAuthRequiredOpen(true);
+      return;
+    }
     const textToSend = (customText || inputText).trim();
     if (!textToSend) {
       toast.error(t('Tulis pesan terlebih dahulu untuk dijadwalkan'));
@@ -440,6 +448,14 @@ export function useMessageActions({
     allowMultiple: boolean = false,
     durationHours: number = 24,
   ) => {
+    if (!currentUser) {
+      setAuthFeatureInfo({
+        title: t('Buat Polling'),
+        desc: t('Masuk ke Anticeil untuk membuat polling.'),
+      });
+      setIsAuthRequiredOpen(true);
+      return;
+    }
     if (!activeChannel) return;
     const cleanQuestion = question.trim();
     if (!cleanQuestion) return;
@@ -726,6 +742,14 @@ export function useMessageActions({
 
   // Toggle reaction
   const handleToggleReaction = async (msgId: string, emoji: string) => {
+    if (!currentUser) {
+      setAuthFeatureInfo({
+        title: t('Reaksi Pesan'),
+        desc: t('Masuk ke Anticeil untuk memberikan reaksi emoji pada pesan.'),
+      });
+      setIsAuthRequiredOpen(true);
+      return;
+    }
     if (!activeChannel) return;
     const currentUserId = currentUser?.id || 'me';
 
@@ -833,6 +857,14 @@ export function useMessageActions({
 
   // Voice Note Send
   const handleSendVoiceNote = async (blob: Blob, durationSeconds: number) => {
+    if (!currentUser) {
+      setAuthFeatureInfo({
+        title: t('Kirim Pesan Suara'),
+        desc: t('Masuk ke Anticeil untuk mengirim voice note.'),
+      });
+      setIsAuthRequiredOpen(true);
+      return;
+    }
     const reader = new FileReader();
     reader.onloadend = async () => {
       const dataUrl = reader.result as string;

@@ -64,6 +64,8 @@ export interface QuestsViewProps {
   verticalPadding?: string;
   onNavigateShop?: () => void;
   onLaunchActivity?: (appId: string) => void;
+  currentUser?: any;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
 }
 
 export function QuestsView({
@@ -72,6 +74,8 @@ export function QuestsView({
   verticalPadding = CHANNEL_VERTICAL_PADDING,
   onNavigateShop,
   onLaunchActivity,
+  currentUser,
+  requireAuth,
 }: QuestsViewProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'all' | 'accepted' | 'claimed'>('all');
@@ -325,6 +329,14 @@ export function QuestsView({
 
   // Accept a quest
   const handleAcceptQuest = async (quest: QuestItem) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleAcceptQuest(quest),
+        t('Ambil Quest'),
+        t('Masuk ke Anticeil untuk mengambil misi dan mendapatkan hadiah Dew.'),
+      );
+      return;
+    }
     try {
       const res = await questsApi.acceptQuest(quest.id);
       if (res.success && res.quest) {
@@ -371,6 +383,14 @@ export function QuestsView({
 
   // Claim quest reward (F2P Dew Currency!)
   const handleClaimReward = async (quest: QuestItem) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleClaimReward(quest),
+        t('Klaim Hadiah Quest'),
+        t('Masuk ke Anticeil untuk mengklaim hadiah Dew Anda.'),
+      );
+      return;
+    }
     try {
       const res = await questsApi.claimQuest(quest.id);
       if (res.success) {

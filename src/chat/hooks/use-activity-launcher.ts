@@ -34,6 +34,7 @@ export interface UseActivityLauncherOptions {
   setIsCallPiP: (pip: boolean) => void;
   setIsActivityOpen: (open: boolean) => void;
   setMessagesMap: React.Dispatch<React.SetStateAction<Record<string, ColonyMessage[]>>>;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
 }
 
 export function useActivityLauncher(options: UseActivityLauncherOptions) {
@@ -67,6 +68,17 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
       targetChannelId?: string,
       targetColonyId?: string,
     ) => {
+      if (!currentUser) {
+        if (options.requireAuth) {
+          options.requireAuth(
+            () => handleLaunchActivity(appId, fromChatInvite, targetChannelId, targetColonyId),
+            t('Buka Aktivitas'),
+            t('Masuk ke Anticeil untuk menggunakan aktivitas dan aplikasi ini.'),
+          );
+        }
+        return;
+      }
+
       setSelectedActivityAppId(appId);
       setIsTemplatePopoverOpen(false);
 

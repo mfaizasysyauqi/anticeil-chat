@@ -31,6 +31,8 @@ export interface AiCommandCenterSidebarProps {
   onSelectPromptPreset?: (prompt: string) => void;
   onOpenGroqSettings?: () => void;
   onToggleCollapseSidebar?: () => void;
+  currentUser?: any;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
 }
 
 export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
@@ -48,6 +50,20 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
   const onTogglePinSession = props.onTogglePinSession || contextValue?.handleTogglePinSession || (() => {});
   const onOpenGroqSettings = props.onOpenGroqSettings || (() => contextValue?.setIsGroqSettingsOpen(true));
   const onSelectPromptPreset = props.onSelectPromptPreset;
+  const currentUser = props.currentUser;
+  const requireAuth = props.requireAuth;
+
+  const handleCreateNewClick = () => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => onCreateNewSession?.(),
+        t('Obrolan Baru AI'),
+        t('Masuk ke Anticeil untuk membuat obrolan baru dengan AI.'),
+      );
+      return;
+    }
+    onCreateNewSession?.();
+  };
 
   const { t } = useTranslation();
   const onToggleCollapseSidebar = props.onToggleCollapseSidebar;
@@ -118,7 +134,7 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
         <div className="mb-2">
           <button
             type="button"
-            onClick={() => onCreateNewSession?.()}
+            onClick={handleCreateNewClick}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md bg-accent text-accent-foreground hover:bg-accent/80 text-xs font-semibold transition-all cursor-pointer group shadow-2xs"
           >
             <div className="w-5 h-5 rounded-md bg-primary/20 text-primary flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
@@ -170,7 +186,7 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onCreateNewSession?.()}
+                onClick={handleCreateNewClick}
                 className="text-xs h-7 gap-1 cursor-pointer"
               >
                 <Plus className="w-3 h-3" /> {t('Buat Obrolan')}

@@ -63,6 +63,8 @@ export interface ColoniesViewProps {
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
   verticalPadding?: string;
+  currentUser?: any;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
 }
 
 export function ColoniesView({
@@ -75,6 +77,8 @@ export function ColoniesView({
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   verticalPadding = CHANNEL_VERTICAL_PADDING,
+  currentUser,
+  requireAuth,
 }: ColoniesViewProps) {
   const colonyList = colonies ?? servers ?? [];
   const handleSelectColony = onSelectColony ?? onSelectServer ?? (() => {});
@@ -191,6 +195,14 @@ export function ColoniesView({
   );
 
   const handleJoinPublic = async (community: Colony) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleJoinPublic(community),
+        t('Gabung Komunitas'),
+        t('Masuk ke Anticeil untuk bergabung dengan colony komunitas ini.'),
+      );
+      return;
+    }
     try {
       const joined = await colonyApi.joinColony(community);
       toast.success(t('Berhasil bergabung dengan {{name}}! 🎉', { name: community.name }));
@@ -202,6 +214,14 @@ export function ColoniesView({
 
   const handleJoinByCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleJoinByCode(e),
+        t('Gabung via Kode'),
+        t('Masuk ke Anticeil untuk bergabung dengan colony via kode undangan.'),
+      );
+      return;
+    }
     const code = inviteCodeInput.trim();
     if (!code) return;
     setIsJoiningByCode(true);
@@ -218,6 +238,14 @@ export function ColoniesView({
   };
 
   const handleAcceptInvitation = async (invite: ColonyInvitation) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleAcceptInvitation(invite),
+        t('Terima Undangan'),
+        t('Masuk ke Anticeil untuk menerima undangan colony.'),
+      );
+      return;
+    }
     try {
       const res = await colonyApi.acceptServerInvitation(invite.id);
       const joinedHub: Colony = res?.hub || {

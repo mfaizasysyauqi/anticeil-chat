@@ -141,6 +141,7 @@ export interface ChatChannelViewProps {
   onAddMemberToGroup?: (memberId: string) => void;
   colonies?: Colony[];
   members?: ColonyMember[];
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
   t: (key: string) => string;
 }
 
@@ -150,6 +151,7 @@ export function ChatChannelView({
   isCallPiP,
   setIsMobileChannelsOpen,
   onOpenSidebar,
+  requireAuth,
   isThreadsPopoverOpen,
   setIsThreadsPopoverOpen,
   channelThreads,
@@ -518,6 +520,7 @@ export function ChatChannelView({
         onScheduleMessage={handleScheduleMessage}
         onSubmitPoll={handleCreatePoll}
         hideGifsAndStickers={isStage || activeChannel?.type === 'stage'}
+        requireAuth={requireAuth}
         t={t}
       />
     </>

@@ -63,6 +63,8 @@ export interface ColonyChannelsSidebarProps {
   onOpenServerEvents?: () => void;
   selectedActivityAppId?: string | null;
   onToggleCollapseSidebar?: () => void;
+  currentUser?: any;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -97,6 +99,8 @@ export function ColonyChannelsSidebar({
   onOpenServerEvents,
   selectedActivityAppId,
   onToggleCollapseSidebar,
+  currentUser,
+  requireAuth,
   t,
 }: ColonyChannelsSidebarProps) {
   const [editingCategory, setEditingCategory] = useState<ColonyCategory | null>(null);
@@ -230,6 +234,8 @@ export function ColonyChannelsSidebar({
           onItemClick={onItemClick}
           onOpenInvite={onOpenInvite}
           onOpenEditChannel={onOpenEditChannel}
+          currentUser={currentUser}
+          requireAuth={requireAuth}
           t={t}
         />
       </div>
