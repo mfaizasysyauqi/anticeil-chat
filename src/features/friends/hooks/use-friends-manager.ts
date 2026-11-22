@@ -28,9 +28,10 @@ export function useFriendsManager({
 
   const fetchFriendRequests = useCallback(async () => {
     try {
+      const uid = currentUser?.id;
       const [reqs, friends] = await Promise.all([
-        friendsApi.getFriendRequests(),
-        friendsApi.getFriends(),
+        friendsApi.getFriendRequests(uid),
+        friendsApi.getFriends(uid),
       ]);
       setFriendRequests(reqs);
       setPersistedFriends(friends);
@@ -40,7 +41,7 @@ export function useFriendsManager({
     } catch {
       // Keep optimistic state
     }
-  }, []);
+  }, [currentUser?.id]);
 
   useEffect(() => {
     fetchFriendRequests();
@@ -49,7 +50,7 @@ export function useFriendsManager({
   const allFriends = useMemo(() => {
     const friendMap = new Map<string, FriendMember>();
 
-    // Persisted friends from database (accepted friend relationships)
+    // 1. Persisted friends from database (accepted friend relationships)
     persistedFriends
       .filter((f) => {
         const name = (f?.name || '').toLowerCase().trim();
@@ -103,8 +104,55 @@ export function useFriendsManager({
         friendMap.set(key, friendItem);
       });
 
+    // 2. Also populate friends from active direct message channels (DMs)
+    if (Array.isArray(dmChannels)) {
+      dmChannels.forEach((dm) => {
+        if (dm.isGroupDm || dm.id?.startsWith('gdm-')) return;
+        const name = (dm.name || '').trim();
+        if (!name) return;
+        const lowerName = name.toLowerCase();
+        if (
+          lowerName === 'pengguna' ||
+          lowerName === 'pengguna anticeil' ||
+          lowerName === 'user' ||
+          lowerName === 'direct message' ||
+          lowerName === 'general voice'
+        ) {
+          return;
+        }
+
+        const match = members.concat(displayMembers).find((m) => {
+          if (currentUser?.id && m.id === currentUser.id) return false;
+          return (
+            (dm.dmUserId && m.id === dm.dmUserId) ||
+            (dm.id && m.id && dm.id.includes(m.id)) ||
+            (m.name && m.name.toLowerCase() === lowerName) ||
+            (m.username && m.username.toLowerCase() === lowerName)
+          );
+        });
+
+        const friendId = dm.dmUserId || match?.id || dm.id.replace(/^dm-/, '');
+        if (currentUser?.id && friendId === currentUser.id) return;
+        if (friendId === 'u1') return;
+
+        const friendItem: FriendMember = {
+          id: friendId,
+          name: match?.name || name,
+          username: match?.username || name.toLowerCase().replace(/[^a-z0-9_]/g, ''),
+          avatar: match?.avatar || (dm as any).avatar || (dm as any).imageUrl || null,
+          email: match?.email || '',
+          status: (match?.status || 'online') as any,
+        };
+
+        const key = friendItem.id || friendItem.name;
+        if (!friendMap.has(key)) {
+          friendMap.set(key, friendItem);
+        }
+      });
+    }
+
     return Array.from(friendMap.values());
-  }, [persistedFriends, currentUser, members, displayMembers]);
+  }, [persistedFriends, dmChannels, currentUser, members, displayMembers]);
 
   const onlineFriends = useMemo(() => {
     return allFriends.filter((f) => f.status !== 'offline');

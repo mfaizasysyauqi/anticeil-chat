@@ -354,6 +354,7 @@ export function ColonyRail({
           friendList.map((f) => {
             const isDmActive =
               activeChannelId === `dm-${f.id}` ||
+              activeChannelId === f.id ||
               (Boolean(activeChannelId?.startsWith('dm-')) && Boolean(activeChannelId?.includes(f.id)));
             const friendUnread = formatUnreadBadge(
               unreadCounts?.[f.id] ?? unreadCounts?.[`dm-${f.id}`] ?? f.unreadCount,

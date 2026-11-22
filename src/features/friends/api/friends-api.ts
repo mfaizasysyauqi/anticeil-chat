@@ -2,9 +2,17 @@ import { api } from '@/lib/api';
 import type { FriendMember, FriendRequest } from '../types';
 
 export const friendsApi = {
-  getFriends: async (): Promise<FriendMember[]> => {
+  getFriends: async (userId?: string): Promise<FriendMember[]> => {
     try {
-      const data = await api.get<any[]>('/v1/community/friends');
+      const currentUserId =
+        userId ||
+        (typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('anticeil_current_user') || '{}')?.id ||
+            JSON.parse(localStorage.getItem('user') || '{}')?.id ||
+            JSON.parse(localStorage.getItem('currentUser') || '{}')?.id
+          : undefined);
+      const qs = currentUserId ? `?userId=${encodeURIComponent(currentUserId)}` : '';
+      const data = await api.get<any[]>(`/v1/community/friends${qs}`);
       if (!Array.isArray(data)) return [];
       return data.map((f: any) => {
         // Backend may return nested friend/user/member object or flat fields
@@ -49,9 +57,17 @@ export const friendsApi = {
     }
   },
 
-  getFriendRequests: async (): Promise<FriendRequest[]> => {
+  getFriendRequests: async (userId?: string): Promise<FriendRequest[]> => {
     try {
-      const data = await api.get<any[]>('/v1/community/friends/requests');
+      const currentUserId =
+        userId ||
+        (typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('anticeil_current_user') || '{}')?.id ||
+            JSON.parse(localStorage.getItem('user') || '{}')?.id ||
+            JSON.parse(localStorage.getItem('currentUser') || '{}')?.id
+          : undefined);
+      const qs = currentUserId ? `?userId=${encodeURIComponent(currentUserId)}` : '';
+      const data = await api.get<any[]>(`/v1/community/friends/requests${qs}`);
       if (!Array.isArray(data)) return [];
       return data.map((r) => {
         // Backend may return nested sender/receiver objects or flat fields
