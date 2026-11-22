@@ -42,6 +42,7 @@ import {
 import { AppFilterDrawer } from '@/components/ui/app-filter-drawer';
 import { FilterToggleButton } from '@/components/ui/filter-toggle-button';
 import { Input } from '@/components/ui/input';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import {
   CHANNEL_HORIZONTAL_PADDING,
   CHANNEL_VERTICAL_PADDING,
@@ -1170,20 +1171,19 @@ export function QuestsView({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">{t('Kategori')}</label>
-                <select
-                  value={questForm.category}
-                  onChange={(e) => setQuestForm((f) => ({ ...f, category: e.target.value as any }))}
-                  className="w-full h-8 px-2 rounded-md bg-muted/40 border border-border text-xs text-foreground cursor-pointer"
-                >
-                  <option value="activity">{t('Aktivitas Video')}</option>
-                  <option value="game">{t('Game & Rekreasi')}</option>
-                  <option value="social">{t('Komunitas & Chat')}</option>
-                  <option value="profile">{t('Kustomisasi Profil')}</option>
-                </select>
-              </div>
+            <div className="grid grid-cols-2 gap-3 items-end">
+              <FormDropdown
+                label={t('Kategori')}
+                value={questForm.category}
+                onChange={(val) => setQuestForm((f) => ({ ...f, category: val as any }))}
+                size="sm"
+                options={[
+                  { value: 'activity', label: t('Aktivitas Video') },
+                  { value: 'game', label: t('Game & Rekreasi') },
+                  { value: 'social', label: t('Komunitas & Chat') },
+                  { value: 'profile', label: t('Kustomisasi Profil') },
+                ]}
+              />
 
               <div>
                 <label className="text-xs font-semibold text-foreground block mb-1">{t('Promoter / Penyelenggara')}</label>

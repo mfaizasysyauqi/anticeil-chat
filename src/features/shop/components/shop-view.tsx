@@ -50,6 +50,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  FormDropdown,
 } from '@/components/ui/select';
 import {
   DropdownMenu,
@@ -2172,20 +2173,19 @@ export function ShopView({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">{t('Kategori')}</label>
-                <select
-                  value={newProductForm.category}
-                  onChange={(e) => setNewProductForm({ ...newProductForm, category: e.target.value as any })}
-                  className="w-full h-8 px-2.5 rounded-md border border-border bg-muted/40 text-foreground text-xs focus:ring-1 focus:ring-primary"
-                >
-                  <option value="avatar_decoration">Bingkai Profil (Animated Frame)</option>
-                  <option value="profile_effect">Overlay Profil (Animated Effect)</option>
-                  <option value="nameplate">Namecard (Animated Nameplate)</option>
-                  <option value="bundle">Bundel Animasi (3pc)</option>
-                </select>
-              </div>
+            <div className="grid grid-cols-2 gap-3 items-end">
+              <FormDropdown
+                label={t('Kategori')}
+                value={newProductForm.category}
+                onChange={(val) => setNewProductForm({ ...newProductForm, category: val as any })}
+                size="sm"
+                options={[
+                  { value: 'avatar_decoration', label: 'Bingkai Profil (Animated Frame)' },
+                  { value: 'profile_effect', label: 'Overlay Profil (Animated Effect)' },
+                  { value: 'nameplate', label: 'Namecard (Animated Nameplate)' },
+                  { value: 'bundle', label: 'Bundel Animasi (3pc)' },
+                ]}
+              />
 
               <div>
                 <label className="text-xs font-semibold text-foreground block mb-1">{t('Koleksi Anticeil')}</label>

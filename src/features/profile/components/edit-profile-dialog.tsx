@@ -39,6 +39,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { FormDropdown } from '@/components/ui/form-dropdown';
 import { cn } from '@/lib/utils';
 import { LAYOUT_DIALOG_SPACING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
@@ -820,22 +821,12 @@ export function EditProfileDialog({
 
             <div className="space-y-4">
               {/* 1. Nameplate Selector */}
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {t('Nameplate')}
-                  </span>
-                  <select
-                    value={profileNameplate}
-                    onChange={(e) => setProfileNameplate(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-border/80 bg-card hover:border-sidebar-primary/50 text-xs font-semibold text-foreground focus:outline-none focus:border-sidebar-primary cursor-pointer transition-colors"
-                  >
-                    {NAMEPLATE_OPTIONS.map((opt) => (
-                      <option key={opt.id} value={opt.id} className="bg-card text-foreground">
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <FormDropdown
+                label={<span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('Nameplate')}</span>}
+                value={profileNameplate}
+                onChange={(val) => setProfileNameplate(val)}
+                options={NAMEPLATE_OPTIONS.map((opt) => ({ value: opt.id, label: opt.label }))}
+              />
 
                 {/* 2. Avatar & Frame Decoration */}
                 <div className="space-y-1.5">
@@ -1001,59 +992,31 @@ export function EditProfileDialog({
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     {t('Profile Effect & Frame')}
                   </span>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[10px] text-muted-foreground block mb-1">
-                        {t('Avatar Frame')}
-                      </label>
-                      <select
-                        value={profileFrame}
-                        onChange={(e) => setProfileFrame(e.target.value)}
-                        className="w-full p-2 rounded-lg border border-border/70 bg-card text-[11px] text-foreground focus:outline-none focus:border-sidebar-primary cursor-pointer"
-                      >
-                        {FRAME_OPTIONS.map((frm) => (
-                          <option key={frm.id} value={frm.id} className="bg-card text-foreground">
-                            {frm.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-muted-foreground block mb-1">
-                        {t('Visual Effect')}
-                      </label>
-                      <select
-                        value={profileEffect}
-                        onChange={(e) => setProfileEffect(e.target.value)}
-                        className="w-full p-2 rounded-lg border border-border/70 bg-card text-[11px] text-foreground focus:outline-none focus:border-sidebar-primary cursor-pointer"
-                      >
-                        {EFFECT_OPTIONS.map((eff) => (
-                          <option key={eff.id} value={eff.id} className="bg-card text-foreground">
-                            {eff.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <FormDropdown
+                      label={<span className="text-[10px] text-muted-foreground">{t('Avatar Frame')}</span>}
+                      value={profileFrame}
+                      onChange={(val) => setProfileFrame(val)}
+                      size="sm"
+                      options={FRAME_OPTIONS.map((frm) => ({ value: frm.id, label: frm.label }))}
+                    />
+                    <FormDropdown
+                      label={<span className="text-[10px] text-muted-foreground">{t('Visual Effect')}</span>}
+                      value={profileEffect}
+                      onChange={(val) => setProfileEffect(val)}
+                      size="sm"
+                      options={EFFECT_OPTIONS.map((eff) => ({ value: eff.id, label: eff.label }))}
+                    />
                   </div>
                 </div>
 
                 {/* 5. Display Name Style */}
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {t('Display Name Style')}
-                  </span>
-                  <select
-                    value={displayNameStyle}
-                    onChange={(e) => setDisplayNameStyle(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-border/80 bg-card text-xs font-semibold text-foreground focus:outline-none focus:border-sidebar-primary cursor-pointer"
-                  >
-                    {DISPLAY_NAME_STYLE_OPTIONS.map((style) => (
-                      <option key={style.id} value={style.id} className="bg-card text-foreground">
-                        {style.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FormDropdown
+                  label={<span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('Display Name Style')}</span>}
+                  value={displayNameStyle}
+                  onChange={(val) => setDisplayNameStyle(val)}
+                  options={DISPLAY_NAME_STYLE_OPTIONS.map((style) => ({ value: style.id, label: style.label }))}
+                />
 
                 {/* 6. Profile Theme */}
                 <div className="space-y-1.5">
@@ -2310,25 +2273,16 @@ export function EditProfileDialog({
               </div>
 
               {/* Platform Selector */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-muted-foreground">
-                  {t('Pilih Platform')}
-                </label>
-                <select
-                  value={selectedPlatformToConnect.id}
-                  onChange={(e) => {
-                    const found = availablePlatforms.find((p) => p.id === e.target.value);
-                    if (found) setSelectedPlatformToConnect(found);
-                  }}
-                  className="w-full text-xs p-2 rounded-lg border border-border bg-secondary text-foreground"
-                >
-                  {availablePlatforms.map((p) => (
-                    <option key={p.id} value={p.id} className="bg-card text-foreground">
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <FormDropdown
+                label={<span className="text-[10px] font-bold uppercase text-muted-foreground">{t('Pilih Platform')}</span>}
+                value={selectedPlatformToConnect.id}
+                onChange={(val) => {
+                  const found = availablePlatforms.find((p) => p.id === val);
+                  if (found) setSelectedPlatformToConnect(found);
+                }}
+                size="sm"
+                options={availablePlatforms.map((p) => ({ value: p.id, label: p.name }))}
+              />
 
               <form onSubmit={handleConnectPlatform} className="space-y-3">
                 <div className="space-y-1">
