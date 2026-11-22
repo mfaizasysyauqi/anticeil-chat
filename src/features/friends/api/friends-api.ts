@@ -4,6 +4,12 @@ import type { FriendMember, FriendRequest } from '../types';
 export const friendsApi = {
   getFriends: async (userId?: string): Promise<FriendMember[]> => {
     try {
+      const token =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('token') || localStorage.getItem('ap_token')
+          : null;
+      if (!token) return [];
+
       const currentUserId =
         userId ||
         (typeof window !== 'undefined'
@@ -11,7 +17,9 @@ export const friendsApi = {
             JSON.parse(localStorage.getItem('user') || '{}')?.id ||
             JSON.parse(localStorage.getItem('currentUser') || '{}')?.id
           : undefined);
-      const qs = currentUserId ? `?userId=${encodeURIComponent(currentUserId)}` : '';
+      if (!currentUserId || currentUserId === 'me') return [];
+
+      const qs = `?userId=${encodeURIComponent(currentUserId)}`;
       const data = await api.get<any[]>(`/v1/community/friends${qs}`);
       if (!Array.isArray(data)) return [];
       return data.map((f: any) => {
@@ -59,6 +67,12 @@ export const friendsApi = {
 
   getFriendRequests: async (userId?: string): Promise<FriendRequest[]> => {
     try {
+      const token =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('token') || localStorage.getItem('ap_token')
+          : null;
+      if (!token) return [];
+
       const currentUserId =
         userId ||
         (typeof window !== 'undefined'
@@ -66,7 +80,9 @@ export const friendsApi = {
             JSON.parse(localStorage.getItem('user') || '{}')?.id ||
             JSON.parse(localStorage.getItem('currentUser') || '{}')?.id
           : undefined);
-      const qs = currentUserId ? `?userId=${encodeURIComponent(currentUserId)}` : '';
+      if (!currentUserId || currentUserId === 'me') return [];
+
+      const qs = `?userId=${encodeURIComponent(currentUserId)}`;
       const data = await api.get<any[]>(`/v1/community/friends/requests${qs}`);
       if (!Array.isArray(data)) return [];
       return data.map((r) => {

@@ -169,6 +169,7 @@ export function ColonyRail({
 
   // Derive friends: use friends prop, or if empty, extract active DM contacts from dmChannels / stored DMs / members
   const friendList = useMemo(() => {
+    if (!currentUser?.id) return [];
     const list: any[] = [];
     const seen = new Set<string>();
 

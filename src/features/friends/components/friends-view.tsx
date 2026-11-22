@@ -57,15 +57,20 @@ export function FriendsView({
 }: FriendsViewProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
+  const safeOnlineFriends = !currentUser ? [] : onlineFriends;
+  const safeAllFriends = !currentUser ? [] : allFriends;
+  const safeFilteredFriends = !currentUser ? [] : filteredFriends;
+  const safeFriendRequests = !currentUser ? [] : friendRequests;
+
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 min-w-0 bg-background overflow-hidden">
       {/* Top Header: Discord Friends Bar */}
       <FriendsHeader
         friendsTab={friendsTab}
         onTabChange={onTabChange}
-        onlineCount={onlineFriends.length}
-        allCount={allFriends.length}
-        pendingCount={friendRequests.length}
+        onlineCount={safeOnlineFriends.length}
+        allCount={safeAllFriends.length}
+        pendingCount={safeFriendRequests.length}
         onOpenDmSearch={onOpenDmSearch}
         onOpenAddFriendDialog={() => setIsAddDialogOpen(true)}
         onOpenSidebar={onOpenSidebar}
@@ -82,13 +87,13 @@ export function FriendsView({
                 onAddFriend={onAddFriend}
                 isAddingFriend={isAddingFriend}
                 currentUser={currentUser}
-                allFriends={allFriends}
-                friendRequests={friendRequests}
+                allFriends={safeAllFriends}
+                friendRequests={safeFriendRequests}
                 members={members}
               />
             ) : friendsTab === 'pending' ? (
               <PendingRequestsTab
-                friendRequests={friendRequests}
+                friendRequests={safeFriendRequests}
                 onAcceptRequest={onAcceptRequest}
                 onRejectRequest={onRejectRequest}
                 onCancelRequest={onCancelRequest}
@@ -98,7 +103,7 @@ export function FriendsView({
                 friendsTab={friendsTab}
                 friendsSearchQuery={friendsSearchQuery}
                 onSearchChange={onSearchChange}
-                filteredFriends={filteredFriends}
+                filteredFriends={safeFilteredFriends}
                 onStartDM={onStartDM}
                 onSwitchToAddTab={() => setIsAddDialogOpen(true)}
               />
@@ -108,7 +113,7 @@ export function FriendsView({
 
         {/* Right Column: Discord Desktop "Sedang Aktif" (Active Now) */}
         <ActiveNowSidebar
-          onlineFriends={onlineFriends}
+          onlineFriends={safeOnlineFriends}
           onStartDM={onStartDM}
           horizontalPadding={horizontalPadding}
           verticalPadding={verticalPadding}

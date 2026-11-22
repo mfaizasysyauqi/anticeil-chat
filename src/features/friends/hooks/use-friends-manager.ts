@@ -27,8 +27,13 @@ export function useFriendsManager({
   const [persistedFriends, setPersistedFriends] = useState<any[]>([]);
 
   const fetchFriendRequests = useCallback(async () => {
+    if (!currentUser?.id) {
+      setFriendRequests([]);
+      setPersistedFriends([]);
+      return;
+    }
     try {
-      const uid = currentUser?.id;
+      const uid = currentUser.id;
       const [reqs, friends] = await Promise.all([
         friendsApi.getFriendRequests(uid),
         friendsApi.getFriends(uid),
@@ -44,10 +49,20 @@ export function useFriendsManager({
   }, [currentUser?.id]);
 
   useEffect(() => {
+    const handleLogout = () => {
+      setFriendRequests([]);
+      setPersistedFriends([]);
+    };
+    window.addEventListener('anticeil_logout', handleLogout);
+    return () => window.removeEventListener('anticeil_logout', handleLogout);
+  }, []);
+
+  useEffect(() => {
     fetchFriendRequests();
   }, [fetchFriendRequests]);
 
   const allFriends = useMemo(() => {
+    if (!currentUser?.id) return [];
     const friendMap = new Map<string, FriendMember>();
 
     // 1. Persisted friends from database (accepted friend relationships)
