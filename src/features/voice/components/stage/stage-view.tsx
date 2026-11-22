@@ -23,6 +23,7 @@ import {
   Maximize,
 } from 'lucide-react';
 import { VOICE_BOTTOM_BAR_STYLES } from '../../constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING } from '@/lib/layout-constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -476,23 +477,23 @@ export function StageView({
 
   return (
     <TooltipProvider>
-      <div className="flex-1 flex flex-col h-full w-full bg-gradient-to-b from-[#141638] via-[#0f1124] to-[#090a16] text-white overflow-hidden relative select-none">
+      <div className="flex-1 min-h-0 flex flex-col h-full w-full bg-background text-foreground overflow-hidden relative select-none">
         {/* ───────────────────────────────────────────────────────────── */}
         {/* TOP BAR: Topic, Indicators & Chat Toggle                      */}
         {/* ───────────────────────────────────────────────────────────── */}
-        <div className="h-12 border-b border-white/[0.08] px-4 flex items-center justify-between shrink-0 bg-black/20 backdrop-blur-md z-10">
+        <div className={cn('h-12 border-b border-border flex items-center justify-between shrink-0 bg-background select-none z-10', CHANNEL_HORIZONTAL_PADDING)}>
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center gap-1.5 text-sm font-bold text-white truncate">
+            <div className="flex items-center gap-1.5 text-sm font-bold text-foreground truncate">
               <Podcast className="w-4 h-4 text-primary shrink-0" />
               <span className="truncate">{stageStatus === 'live' ? stageTopic : channel.name}</span>
             </div>
 
-            <div className="h-4 w-px bg-white/10 hidden sm:block" />
+            <div className="h-4 w-px bg-border hidden sm:block" />
 
             {/* Speaking / Audience indicators */}
-            <div className="hidden sm:flex items-center gap-3 text-xs text-white/60">
+            <div className="hidden sm:flex items-center gap-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
-                <Mic className="w-3.5 h-3.5 text-emerald-400" />
+                <Mic className="w-3.5 h-3.5 text-emerald-500" />
                 <span>
                   {activeSpeakingCount > 0
                     ? `${activeSpeakingCount} is speaking`
@@ -500,7 +501,7 @@ export function StageView({
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-white/50" />
+                <Users className="w-3.5 h-3.5 text-muted-foreground/60" />
                 <span>{`${audience.length} in audience`}</span>
               </div>
             </div>
@@ -515,7 +516,9 @@ export function StageView({
                   onClick={handleToggleHandRaise}
                   className={cn(
                     'w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer',
-                    isHandRaised ? 'bg-amber-500/20 text-amber-300' : 'text-white/70 hover:bg-white/10 hover:text-white',
+                    isHandRaised
+                      ? 'bg-amber-500/20 text-amber-500'
+                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
                   )}
                 >
                   <Hand className="w-4 h-4" />
@@ -534,7 +537,9 @@ export function StageView({
                   onClick={onToggleChat}
                   className={cn(
                     'w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer',
-                    isChatOpen ? 'bg-primary/20 text-primary' : 'text-white/70 hover:bg-white/10 hover:text-white',
+                    isChatOpen
+                      ? 'bg-primary/20 text-primary'
+                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
                   )}
                 >
                   <MessageSquare className="w-4 h-4" />
@@ -549,16 +554,23 @@ export function StageView({
 
         {/* ───────────────────────────────────────────────────────────── */}
         {/* MAIN BODY                                                     */}
+        {/* Symmetrical horizontal & vertical rhythm with app bar         */}
         {/* ───────────────────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 flex flex-col justify-center items-center">
+        <div
+          className={cn(
+            'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar flex flex-col',
+            CHANNEL_HORIZONTAL_PADDING,
+            CHANNEL_VERTICAL_PADDING,
+          )}
+        >
           {/* 1. WAITING STATE */}
           {stageStatus === 'waiting' && (
             <div className="w-full max-w-md mx-auto flex flex-col items-center text-center space-y-6 my-auto animate-in fade-in-50 duration-200">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
                   {t('Waiting for the Stage to start')}
                 </h1>
-                <p className="text-sm text-white/60 mt-1.5">
+                <p className="text-sm text-muted-foreground mt-1.5">
                   {t('What will you be talking about today?')}
                 </p>
               </div>
@@ -568,22 +580,22 @@ export function StageView({
                 {/* Card 1: Start the Stage */}
                 <div
                   onClick={() => setIsStartStageModalOpen(true)}
-                  className="w-full p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-between gap-4 cursor-pointer transition-all text-left group shadow-lg"
+                  className="w-full p-4 rounded-2xl bg-card hover:bg-muted/40 border border-border flex items-center justify-between gap-4 cursor-pointer transition-all text-left group shadow-xs"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                       <Podcast className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white group-hover:text-primary transition-colors">
+                      <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                         {t('Start the Stage')}
                       </h3>
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-muted-foreground">
                         {t('Pick a topic to start the conversation.')}
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-foreground transition-colors shrink-0" />
                 </div>
 
                 {/* Card 2: Create Event */}
@@ -591,22 +603,22 @@ export function StageView({
                   onClick={() => {
                     toast.info(t('Fitur Penjadwalan Acara Stage siap digunakan'));
                   }}
-                  className="w-full p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-between gap-4 cursor-pointer transition-all text-left group shadow-lg"
+                  className="w-full p-4 rounded-2xl bg-card hover:bg-muted/40 border border-border flex items-center justify-between gap-4 cursor-pointer transition-all text-left group shadow-xs"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
                       <Calendar className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">
+                      <h3 className="text-sm font-bold text-foreground group-hover:text-amber-500 transition-colors">
                         {t('Create Event')}
                       </h3>
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-muted-foreground">
                         {t('Schedule a Stage for a future date.')}
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-foreground transition-colors shrink-0" />
                 </div>
 
                 {/* Card 3: Continue without starting */}
@@ -616,27 +628,27 @@ export function StageView({
                     setUserRole(isColonyAdminOrOwner ? 'moderator' : 'speaker');
                     toast.success(t('Bergabung dalam mode mic check'));
                   }}
-                  className="w-full p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-between gap-4 cursor-pointer transition-all text-left group shadow-lg"
+                  className="w-full p-4 rounded-2xl bg-card hover:bg-muted/40 border border-border flex items-center justify-between gap-4 cursor-pointer transition-all text-left group shadow-xs"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
                       <Mic className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">
+                      <h3 className="text-sm font-bold text-foreground group-hover:text-emerald-500 transition-colors">
                         {t('Continue without starting')}
                       </h3>
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-muted-foreground">
                         {t("For mic checks. Start when you're ready.")}
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-foreground transition-colors shrink-0" />
                 </div>
               </div>
 
               {/* Waiting User Status */}
-              <div className="flex items-center gap-2 text-xs text-white/50 pt-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
                 <CommunityAvatar
                   name={userName}
                   imageUrl={currentUser?.imageUrl}
@@ -649,28 +661,30 @@ export function StageView({
 
           {/* 2. LIVE STAGE STATE */}
           {stageStatus === 'live' && (
-            <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col justify-start space-y-8 animate-in fade-in-50 duration-200">
+            <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col justify-start space-y-6 animate-in fade-in-50 duration-200">
               {/* Screen Share on Stage if active */}
               {isAnyoneScreenSharing && activeScreenStream && (
-                <div className="w-full aspect-video max-h-[380px] rounded-2xl overflow-hidden bg-black/90 border border-white/10 shadow-2xl relative mb-4">
+                <div className="w-full aspect-video max-h-[380px] rounded-2xl overflow-hidden bg-card border border-border shadow-2xl relative mb-4">
                   <ScreenVideoView stream={activeScreenStream} className="w-full h-full" />
                 </div>
               )}
 
               {/* Speakers Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/60">
-                  <Mic className="w-3.5 h-3.5" />
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <Mic className="w-3.5 h-3.5 text-primary" />
                   <span>{t('Speakers — {{count}}', { count: speakers.length })}</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 sm:gap-4">
                   {speakers.map((speaker) => (
                     <div
                       key={speaker.id}
                       className={cn(
-                        'aspect-[4/3] rounded-2xl bg-[#2b2d31]/80 hover:bg-[#313338] border transition-all p-4 flex flex-col items-center justify-center relative shadow-lg group overflow-hidden',
-                        speaker.isSpeaking ? 'border-emerald-500 shadow-emerald-500/20' : 'border-white/[0.08]',
+                        'aspect-[4/3] rounded-2xl bg-card hover:bg-muted/30 border transition-all p-4 flex flex-col items-center justify-center relative shadow-xs group overflow-hidden',
+                        speaker.isSpeaking
+                          ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-emerald-500/20'
+                          : 'border-border',
                       )}
                     >
                       {/* Video Stream or Avatar */}
@@ -700,15 +714,15 @@ export function StageView({
                       )}
 
                       {/* Name Tag */}
-                      <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-xs font-semibold text-white max-w-[80%] truncate z-10">
+                      <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-background/80 backdrop-blur-sm border border-border/40 text-xs font-semibold text-foreground max-w-[80%] truncate z-10">
                         <span className="truncate">{speaker.name}</span>
-                        {speaker.isMuted && <MicOff className="w-3 h-3 text-rose-400 shrink-0" />}
+                        {speaker.isMuted && <MicOff className="w-3 h-3 text-destructive shrink-0" />}
                       </div>
 
                       {/* Moderator Shield Badge */}
                       {speaker.isModerator && (
                         <div
-                          className="absolute top-3 right-3 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center shadow z-10"
+                          className="absolute top-3 right-3 w-6 h-6 rounded-full bg-background/80 border border-border/40 text-primary flex items-center justify-center shadow z-10"
                           title={t('Stage Moderator')}
                         >
                           <Shield className="w-3.5 h-3.5 text-primary" />
@@ -720,9 +734,9 @@ export function StageView({
               </div>
 
               {/* Audience Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/60">
-                  <Users className="w-3.5 h-3.5" />
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <Users className="w-3.5 h-3.5 text-primary" />
                   <span>{t('Audience — {{count}}', { count: audience.length })}</span>
                 </div>
 
@@ -745,15 +759,15 @@ export function StageView({
                             </div>
                           )}
                         </div>
-                        <span className="text-xs text-white/70 group-hover:text-white transition-colors truncate max-w-[70px]">
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors truncate max-w-[70px]">
                           {member.name}
                         </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2.5 py-3 px-4 rounded-xl bg-white/[0.02] border border-white/[0.05] text-xs text-white/40">
-                    <Users className="w-4 h-4 text-white/30 shrink-0" />
+                  <div className="flex items-center gap-2.5 py-3 px-4 rounded-xl bg-card border border-border text-xs text-muted-foreground">
+                    <Users className="w-4 h-4 text-muted-foreground/60 shrink-0" />
                     <span>{t('Belum ada audiens yang bergabung di panggung ini.')}</span>
                   </div>
                 )}
