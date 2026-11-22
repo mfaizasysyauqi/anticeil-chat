@@ -212,6 +212,23 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
           if (activeColony?.role === 'owner') myRole = 'owner';
           else if (activeColony?.role === 'admin') myRole = 'admin';
 
+          let activityIcon = 'app';
+          if (appId === 'watch-together' || appId === 'youtube') {
+            activityIcon = 'youtube';
+          } else if (appId === 'tradingview') {
+            activityIcon = 'tradingview';
+          } else if (appId === 'whiteboard') {
+            activityIcon = 'whiteboard';
+          } else if (appId === 'chess') {
+            activityIcon = 'chess';
+          } else if (appId === 'screenshare') {
+            activityIcon = 'screenshare';
+          } else if (appId === 'anticeil-platform' || appId === 'anticeil-flow') {
+            activityIcon = 'platform';
+          } else if (typeof (app as any)?.icon === 'string' && !/[\u{1F300}-\u{1FAFF}]/u.test((app as any).icon)) {
+            activityIcon = (app as any).icon;
+          }
+
           const payload: Partial<ColonyMessage> = {
             channelId: textChannelToSendId,
             senderId: currentUserId,
@@ -230,21 +247,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
                   name: app.title,
                   developer: app.developer,
                   description: app.description,
-                  icon: (appId === 'watch-together' || appId === 'youtube')
-                    ? 'youtube'
-                    : appId === 'tradingview'
-                    ? 'tradingview'
-                    : appId === 'whiteboard'
-                    ? 'whiteboard'
-                    : appId === 'chess'
-                    ? 'chess'
-                    : appId === 'screenshare'
-                    ? 'screenshare'
-                    : (appId === 'anticeil-platform' || appId === 'anticeil-flow')
-                    ? 'platform'
-                    : typeof (app as any).icon === 'string' && !/[\u{1F300}-\u{1FAFF}]/u.test((app as any).icon)
-                    ? (app as any).icon
-                    : 'app',
+                  icon: activityIcon,
                   iconBg: app.iconBg,
                   bannerGradient: app.bannerGradient,
                   startedBy: currentUserName,
