@@ -682,7 +682,7 @@ export function StageView({
                       key={speaker.id}
                       className={cn(
                         'aspect-[4/3] rounded-2xl bg-card hover:bg-muted/30 border transition-all p-4 flex flex-col items-center justify-center relative shadow-xs group overflow-hidden',
-                        speaker.isSpeaking
+                        speaker.isCameraOn && speaker.isSpeaking
                           ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-emerald-500/20'
                           : 'border-border',
                       )}
@@ -698,18 +698,17 @@ export function StageView({
                         </div>
                       ) : (
                         <div className="relative">
-                          <div
+                          <CommunityAvatar
+                            name={speaker.name}
+                            imageUrl={speaker.avatar}
+                            size={64}
                             className={cn(
-                              'p-1 rounded-full transition-all',
-                              speaker.isSpeaking && 'ring-2 ring-emerald-400 animate-pulse',
+                              'shrink-0 rounded-full transition-all aspect-square',
+                              speaker.isSpeaking
+                                ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-card shadow-xs'
+                                : 'ring-1 ring-border/40',
                             )}
-                          >
-                            <CommunityAvatar
-                              name={speaker.name}
-                              imageUrl={speaker.avatar}
-                              size={64}
-                            />
-                          </div>
+                          />
                         </div>
                       )}
 
