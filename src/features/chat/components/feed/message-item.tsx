@@ -250,7 +250,9 @@ export function MessageItem({
                         className="shrink-0"
                         showStatus={false}
                       />
-                      <span className="font-semibold text-foreground/90 shrink-0 group-hover/reply:underline">@{msg.replyTo.senderName}</span>
+                      <span className="font-semibold text-foreground/90 shrink-0 group-hover/reply:underline">
+                        @{msg.replyTo.senderUsername?.replace(/^@/, '').trim() || (msg.replyTo as any)?.username?.replace(/^@/, '').trim() || msg.replyTo.senderName}
+                      </span>
                       <span className="truncate max-w-[320px] sm:max-w-[480px] md:max-w-[650px] pr-1.5 text-muted-foreground/80 group-hover/reply:text-foreground/90 transition-colors">
                         {msg.replyTo.content ? (
                           <DecryptedMessageText content={msg.replyTo.content} channelId={msg.channelId} inline />

@@ -146,6 +146,7 @@ export type ColonyMessageReply = {
   id: string;
   senderId: string;
   senderName: string;
+  senderUsername?: string | null;
   content: string;
   senderAvatar?: string | null;
 };

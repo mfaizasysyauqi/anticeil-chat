@@ -178,6 +178,7 @@ export function useMessageActions({
         id: replyingToMessage.id,
         senderId: replyingToMessage.senderId,
         senderName: replyingToMessage.senderName,
+        senderUsername: (replyingToMessage as any).senderUsername?.replace(/^@/, '').trim() || members.find((m) => m.id === replyingToMessage.senderId)?.username?.replace(/^@/, '').trim() || null,
         content:
           (replyingToMessage.content
             ? isEncryptedMessage(replyingToMessage.content)
@@ -246,19 +247,19 @@ export function useMessageActions({
             });
           }
 
-          // 2. Mention by candidate member or friend name, username, or email
+          // 2. Mention by candidate member or friend username, name, or email
           const candidateUsers = [...members, ...(allFriends || [])];
           candidateUsers.forEach((m) => {
             const cleanName = m.name?.trim().replace(/\s+/g, ' ');
-            const username = m.username?.trim();
-            const emailPrefix = m.email?.split('@')[0];
+            const rawUsername = m.username?.replace(/^@/, '').trim();
+            const emailPrefix = m.email?.split('@')[0]?.trim();
 
-            if (cleanName && new RegExp(`@${cleanName}\\b`, 'i').test(textToScan)) {
-              if (m.id !== currentUserId && m.email !== currentUser?.email && m.name !== currentUserName) {
+            if (rawUsername && new RegExp(`@${rawUsername}\\b`, 'i').test(textToScan)) {
+              if (m.id !== currentUserId && m.email !== currentUser?.email && rawUsername !== currentUser?.username?.replace(/^@/, '').trim()) {
                 recipientIds.add(m.id);
               }
-            } else if (username && new RegExp(`@${username}\\b`, 'i').test(textToScan)) {
-              if (m.id !== currentUserId && m.email !== currentUser?.email && m.username !== currentUser?.username) {
+            } else if (cleanName && new RegExp(`@${cleanName}\\b`, 'i').test(textToScan)) {
+              if (m.id !== currentUserId && m.email !== currentUser?.email && m.name !== currentUserName) {
                 recipientIds.add(m.id);
               }
             } else if (emailPrefix && new RegExp(`@${emailPrefix}\\b`, 'i').test(textToScan)) {

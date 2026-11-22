@@ -92,7 +92,7 @@ export interface ChatInputBarProps {
   // Apps props
   isTemplatePopoverOpen: boolean;
   setIsTemplatePopoverOpen: (open: boolean) => void;
-  replyingTo?: { id: string; senderName: string; content: string } | null;
+  replyingTo?: { id: string; senderName: string; content: string; senderId?: string; senderUsername?: string } | null;
   onCancelReply?: () => void;
   appsSearchQuery: string;
   setAppsSearchQuery: (q: string) => void;
@@ -191,22 +191,21 @@ export function ChatInputBar({
 
     const mems: MentionOption[] = members.map((m) => {
       const cleanName = m.name?.trim() || 'Pengguna';
-      const handle = m.username
-        ? `_${m.username.replace(/^@/, '')}_`
-        : m.email
-        ? `_${m.email.split('@')[0]}_`
-        : undefined;
+      const cleanUsername = (m.username?.replace(/^@/, '').trim())
+        || (m.email ? m.email.split('@')[0]?.trim() : '')
+        || cleanName.toLowerCase().replace(/\s+/g, '');
+      const handle = `@${cleanUsername}`;
       return {
         id: `member_${m.id}`,
         type: 'member' as const,
         label: cleanName,
-        value: `@${cleanName}`,
+        value: `@${cleanUsername}`,
         name: cleanName,
         tag: handle,
         avatar: m.avatar,
         status: m.status || 'offline',
       };
-    }).filter((m) => !cleanQ || m.name.toLowerCase().includes(cleanQ) || (m.tag && m.tag.toLowerCase().includes(cleanQ)));
+    }).filter((m) => !cleanQ || m.name.toLowerCase().includes(cleanQ) || m.value.toLowerCase().includes(cleanQ) || (m.tag && m.tag.toLowerCase().includes(cleanQ)));
 
     const specials: MentionOption[] = [
       {
@@ -462,7 +461,12 @@ export function ChatInputBar({
         <div className="px-3 py-1.5 rounded-[12px] bg-[#111214] border border-white/10 shadow-lg flex items-center justify-between text-xs animate-in slide-in-from-bottom-1 select-none">
           <div className="flex items-center gap-2 min-w-0 pr-2">
             <span className="text-muted-foreground shrink-0">
-              Membalas <span className="font-semibold text-primary">@{replyingTo.senderName}</span>:
+              Membalas <span className="font-semibold text-primary">@{(() => {
+                const repUser = (replyingTo as any)?.senderUsername?.replace(/^@/, '').trim()
+                  || members.find((m) => (replyingTo.senderId && m.id === replyingTo.senderId) || m.name === replyingTo.senderName)?.username?.replace(/^@/, '').trim()
+                  || members.find((m) => (replyingTo.senderId && m.id === replyingTo.senderId) || m.name === replyingTo.senderName)?.email?.split('@')[0]?.trim();
+                return repUser || replyingTo.senderName;
+              })()}</span>:
             </span>
             <span className="truncate max-w-[280px] sm:max-w-[480px] md:max-w-[650px] pr-1.5 text-[#dbdee1]/90 inline-block">
               {replyingTo.content ? (

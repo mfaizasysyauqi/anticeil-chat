@@ -44,17 +44,16 @@ export function MentionAutocomplete({
   const memberOptions = useMemo<MentionOption[]>(() => {
     return members.map((m) => {
       const cleanName = m.name?.trim() || 'Pengguna';
-      const handle = m.username
-        ? `_${m.username.replace(/^@/, '')}_`
-        : m.email
-        ? `_${m.email.split('@')[0]}_`
-        : undefined;
+      const cleanUsername = (m.username?.replace(/^@/, '').trim())
+        || (m.email ? m.email.split('@')[0]?.trim() : '')
+        || cleanName.toLowerCase().replace(/\s+/g, '');
+      const handle = `@${cleanUsername}`;
 
       return {
         id: `member_${m.id}`,
         type: 'member',
         label: cleanName,
-        value: `@${cleanName}`,
+        value: `@${cleanUsername}`,
         name: cleanName,
         tag: handle,
         avatar: m.avatar,
@@ -135,6 +134,7 @@ export function MentionAutocomplete({
     if (!cleanQuery) return memberOptions;
     return memberOptions.filter((m) =>
       m.name.toLowerCase().includes(cleanQuery) ||
+      m.value.toLowerCase().includes(cleanQuery) ||
       (m.tag && m.tag.toLowerCase().includes(cleanQuery))
     );
   }, [memberOptions, cleanQuery]);
