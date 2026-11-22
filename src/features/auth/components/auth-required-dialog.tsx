@@ -13,15 +13,11 @@ import { useTranslation } from '@/core/i18n';
 import {
   Sparkles,
   Bot,
-  Shield,
   Building2,
-  Crown,
-  CheckCircle2,
   ArrowRight,
 } from 'lucide-react';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { isDevLoginEnabled, MOCK_DEV_USERS } from '../hooks/use-auth-session';
-import { cn } from '@/lib/utils';
 
 export interface AuthRequiredDialogProps {
   isOpen: boolean;
@@ -35,8 +31,6 @@ export interface AuthRequiredDialogProps {
   featureTitle?: string;
   featureDescription?: string;
 }
-
-export type SsoProvider = 'google_workspace' | 'microsoft_entra' | 'okta_saml';
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -86,7 +80,6 @@ export function AuthRequiredDialog({
   onGoogleSignIn,
   onMicrosoftSignIn,
   onOktaSignIn,
-  onGuestLogin,
   onDevMockLogin,
   onSsoLogin,
   featureTitle,
@@ -94,21 +87,14 @@ export function AuthRequiredDialog({
 }: AuthRequiredDialogProps) {
   const { t } = useTranslation();
   const [ssoEmail, setSsoEmail] = useState('');
-  const [selectedIdp, setSelectedIdp] = useState<SsoProvider>('google_workspace');
 
   const handleSsoSubmit = () => {
     const email = ssoEmail.trim();
     if (!email || !email.includes('@')) {
       return;
     }
-    const providerName =
-      selectedIdp === 'google_workspace'
-        ? 'Google Workspace'
-        : selectedIdp === 'microsoft_entra'
-        ? 'Microsoft Entra ID'
-        : 'Okta SAML 2.0';
     onClose();
-    onSsoLogin?.(email, providerName);
+    onSsoLogin?.(email, 'Corporate SSO');
   };
 
   const handleMicrosoftClick = () => {
@@ -137,68 +123,66 @@ export function AuthRequiredDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent size="md" className="max-h-[92vh] overflow-y-auto custom-scrollbar p-0 bg-background border border-border shadow-2xl rounded-2xl select-none">
+      <DialogContent size="sm" className="max-w-[400px] max-h-[92vh] overflow-y-auto custom-scrollbar p-0 bg-background border border-border shadow-2xl rounded-2xl select-none">
         {/* Banner with gradient & Anticeil branding */}
-        <div className="relative w-full h-24 sm:h-28 bg-gradient-to-br from-amber-500/20 via-primary/20 to-purple-500/20 flex flex-col items-center justify-center border-b border-border/60 shrink-0">
+        <div className="relative w-full h-22 sm:h-24 bg-gradient-to-br from-amber-500/15 via-primary/20 to-purple-500/15 flex flex-col items-center justify-center border-b border-border/60 shrink-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/15 via-transparent to-transparent pointer-events-none" />
-          <div className="size-13 sm:size-14 rounded-2xl bg-background/90 p-2 shadow-xl border border-border/80 flex items-center justify-center relative z-10 animate-in zoom-in-95 duration-200">
+          <div className="size-12 rounded-2xl bg-background/95 p-2 shadow-lg border border-border/80 flex items-center justify-center relative z-10 animate-in zoom-in-95 duration-200">
             <AnticeilLogo className="size-full text-foreground" />
           </div>
         </div>
 
         <div className="p-4 sm:p-5 flex flex-col items-center text-center space-y-4">
-          <DialogHeader className="space-y-1.5 flex flex-col items-center pr-0">
-            <DialogTitle className="text-lg font-bold tracking-tight text-foreground flex items-center gap-1.5">
+          <DialogHeader className="space-y-1 flex flex-col items-center pr-0">
+            <DialogTitle className="text-base font-bold tracking-tight text-foreground">
               {featureTitle || t('Masuk ke Anticeil')}
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground max-w-[360px] leading-relaxed">
+            <DialogDescription className="text-xs text-muted-foreground max-w-[320px] leading-relaxed">
               {featureDescription ||
-                t('Masuk dengan akun pribadi Anda atau hubungkan email kantor untuk Single Sign-On (SSO).')}
+                t('Pilih akun untuk melanjutkan ke percakapan, colony, dan aktivitas.')}
             </DialogDescription>
           </DialogHeader>
 
-          {/* ── 1. Direct Dual OAuth: Google, Microsoft 365, & Okta ── */}
+          {/* ── 1-Click Direct SSO Providers (Google, Microsoft, Okta) ── */}
           <div className="w-full space-y-2">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
-              {/* Google Button */}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  onClose();
-                  onGoogleSignIn();
-                }}
-                className="h-11 px-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
-                title={t('Lanjutkan dengan Akun Google')}
-              >
-                <GoogleIcon className="size-4 shrink-0" />
-                <span className="truncate">{t('Google')}</span>
-              </Button>
+            {/* Google Button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                onClose();
+                onGoogleSignIn();
+              }}
+              className="w-full h-10 px-3 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+              title={t('Lanjutkan dengan Akun Google')}
+            >
+              <GoogleIcon className="size-4 shrink-0" />
+              <span className="truncate">{t('Lanjutkan dengan Google')}</span>
+            </Button>
 
-              {/* Microsoft 365 (Entra ID) Button */}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleMicrosoftClick}
-                className="h-11 px-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
-                title={t('Lanjutkan dengan Microsoft 365 / Entra ID')}
-              >
-                <MicrosoftIcon className="size-4 shrink-0" />
-                <span className="truncate">{t('Microsoft')}</span>
-              </Button>
+            {/* Microsoft 365 Button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleMicrosoftClick}
+              className="w-full h-10 px-3 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+              title={t('Lanjutkan dengan Microsoft 365 / Entra ID')}
+            >
+              <MicrosoftIcon className="size-4 shrink-0" />
+              <span className="truncate">{t('Lanjutkan dengan Microsoft')}</span>
+            </Button>
 
-              {/* Okta (Auth0) Button */}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleOktaClick}
-                className="h-11 px-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
-                title={t('Lanjutkan dengan Okta / Auth0')}
-              >
-                <OktaIcon className="size-4 shrink-0 text-blue-400" />
-                <span className="truncate">{t('Okta')}</span>
-              </Button>
-            </div>
+            {/* Okta Button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleOktaClick}
+              className="w-full h-10 px-3 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+              title={t('Lanjutkan dengan Okta / Auth0')}
+            >
+              <OktaIcon className="size-4 shrink-0 text-blue-400" />
+              <span className="truncate">{t('Lanjutkan dengan Okta')}</span>
+            </Button>
           </div>
 
           {/* Divider */}
@@ -207,93 +191,22 @@ export function AuthRequiredDialog({
               <span className="w-full border-t border-border/60" />
             </div>
             <span className="relative bg-background px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {t('Atau Single Sign-On (SSO)')}
+              {t('Atau Email Kantor')}
             </span>
           </div>
 
-          {/* ── 2. Prominent Corporate SSO & Domain Capture (Royal Enterprise) ── */}
-          <div className="w-full rounded-2xl border border-amber-500/35 bg-gradient-to-b from-amber-500/10 via-card/75 to-card p-3.5 sm:p-4 text-left space-y-3 shadow-md relative overflow-hidden">
-            {/* Header with Royal Badge */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <div className="size-6 rounded-md bg-amber-500/20 text-amber-400 flex items-center justify-center">
-                  <Building2 className="size-3.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-foreground">
-                    {t('Masuk SSO Akun Perusahaan')}
-                  </h4>
-                </div>
-              </div>
-              <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/40 text-[9px] font-bold py-0 h-4 gap-1 shrink-0">
-                <Crown className="size-2.5 fill-amber-400" />
-                {t('ROYAL ENTERPRISE')}
-              </Badge>
+          {/* ── Corporate SSO Email Input ── */}
+          <div className="w-full rounded-xl border border-border/70 bg-card/50 p-2.5 text-left space-y-1.5">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Building2 className="size-3.5 text-primary" />
+              <span className="text-[11px] font-medium text-foreground">
+                {t('Single Sign-On Perusahaan')}
+              </span>
             </div>
-
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              {t('Login dengan email kantor (@perusahaan.com). Tanpa register, otomatis terhubung ke Colony kantor Anda via JIT Provisioning.')}
-            </p>
-
-            {/* Provider Selector Tabs: Google Workspace | Microsoft Entra | Okta SAML */}
-            <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-background/80 border border-border/60">
-              <button
-                type="button"
-                onClick={() => setSelectedIdp('google_workspace')}
-                className={cn(
-                  'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none',
-                  selectedIdp === 'google_workspace'
-                    ? 'bg-primary/15 text-primary border border-primary/30 shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                )}
-                title={t('Google Workspace SAML & OIDC')}
-              >
-                <GoogleIcon className="size-3.5 shrink-0" />
-                <span className="truncate">Google</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedIdp('microsoft_entra')}
-                className={cn(
-                  'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none',
-                  selectedIdp === 'microsoft_entra'
-                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                )}
-                title={t('Microsoft Entra ID / Office 365 Tenant')}
-              >
-                <MicrosoftIcon className="size-3.5 shrink-0" />
-                <span className="truncate">Entra ID</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedIdp('okta_saml')}
-                className={cn(
-                  'flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer select-none',
-                  selectedIdp === 'okta_saml'
-                    ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30 shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                )}
-                title={t('Okta Verify SAML 2.0 Identity Provider')}
-              >
-                <OktaIcon className="size-3.5 shrink-0 text-blue-400" />
-                <span className="truncate">Okta / SAML</span>
-              </button>
-            </div>
-
-            {/* Email Input & Submit */}
-            <div className="flex items-center gap-2 pt-0.5">
+            <div className="flex items-center gap-1.5">
               <Input
                 type="email"
-                placeholder={
-                  selectedIdp === 'google_workspace'
-                    ? t('nama@workspace-perusahaan.com...')
-                    : selectedIdp === 'microsoft_entra'
-                    ? t('nama@corp.onmicrosoft.com...')
-                    : t('nama@okta-domain.com...')
-                }
+                placeholder={t('nama@perusahaan.com')}
                 value={ssoEmail}
                 onChange={(e) => setSsoEmail(e.target.value)}
                 onKeyDown={(e) => {
@@ -302,30 +215,20 @@ export function AuthRequiredDialog({
                     handleSsoSubmit();
                   }
                 }}
-                className="h-9 text-xs rounded-xl bg-background/90 border-border"
+                className="h-8.5 text-xs rounded-lg bg-background border-border"
               />
               <Button
                 type="button"
                 onClick={handleSsoSubmit}
-                className="h-9 px-3.5 text-xs font-bold shrink-0 rounded-xl bg-amber-500 hover:bg-amber-600 text-black shadow-md cursor-pointer transition-all"
-                title={t('Lanjutkan login SSO perusahaan')}
+                className="h-8.5 px-3 text-xs font-semibold shrink-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer"
               >
-                <span>{t('Masuk SSO')}</span>
+                <span>{t('Masuk')}</span>
                 <ArrowRight className="size-3.5 ml-1" />
               </Button>
             </div>
-
-            {/* SSO Perks Footer */}
-            <div className="pt-1.5 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="size-3 text-emerald-400" />
-                <span>{t('JIT Auto-Provisioning')}</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <Shield className="size-3 text-amber-400" />
-                <span>{t('Domain Auto-Capture')}</span>
-              </span>
-            </div>
+            <p className="text-[10px] text-muted-foreground/75 leading-tight">
+              {t('Terhubung otomatis ke Colony kantor via domain email.')}
+            </p>
           </div>
 
           {/* Close / Later Button */}
@@ -372,7 +275,7 @@ export function AuthRequiredDialog({
           )}
 
           {/* Footer note */}
-          <div className="pt-2 border-t border-border/50 w-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/75">
+          <div className="pt-1.5 border-t border-border/50 w-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/75">
             <Sparkles className="size-3 text-amber-500" />
             <span>{t('Gratis & langsung terhubung ke seluruh fitur')}</span>
           </div>
