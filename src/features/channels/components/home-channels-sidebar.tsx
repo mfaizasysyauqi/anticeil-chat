@@ -500,20 +500,21 @@ export function HomeChannelsSidebar({
                       <div className="w-[18px] h-[18px] rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
                         <Users className="w-3 h-3" />
                       </div>
-                    ) : member ? (
-                      <CommunityAvatar
-                        name={member.name}
-                        imageUrl={member.avatar}
-                        size={18}
-                        status={member.status}
-                        showStatus
-                      />
                     ) : (
-                      <MessageSquare
-                        className={cn(
-                          'w-3.5 h-3.5 shrink-0 transition-colors',
-                          isActiveDm ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
-                        )}
+                      <CommunityAvatar
+                        name={member?.name || member?.username || dm.name || 'Pengguna'}
+                        imageUrl={
+                          member?.avatar ||
+                          (member as any)?.imageUrl ||
+                          (dm as any).avatar ||
+                          (dm as any).imageUrl ||
+                          (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name)
+                            ? currentUser.imageUrl || currentUser.avatar
+                            : undefined)
+                        }
+                        size={18}
+                        status={member?.status || (dm as any).status || (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name) ? 'online' : undefined)}
+                        showStatus={Boolean(member?.status || (dm as any).status || (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name)))}
                       />
                     )}
                     <span className="truncate flex-1">{isGroup ? dm.name : (member?.name || member?.username || dm.name)}</span>

@@ -110,6 +110,7 @@ export function DmSearchDialog({
                     {t('Percakapan Sebelumnya')}
                   </div>
                   {filteredDms.map((dm) => {
+                    const isGroup = Boolean(dm.isGroupDm || dm.id.startsWith('gdm-'));
                     const member = members.find((m) => `dm-${m.id}` === dm.id);
                     return (
                       <button
@@ -120,18 +121,26 @@ export function DmSearchDialog({
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent transition-colors"
                       >
-                        {member ? (
+                        {isGroup ? (
+                          <div className="size-7 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                            <Users className="w-3.5 h-3.5" />
+                          </div>
+                        ) : (
                           <CommunityAvatar
-                            name={member.name}
-                            imageUrl={member.avatar}
+                            name={member?.name || member?.username || dm.name || 'Pengguna'}
+                            imageUrl={
+                              member?.avatar ||
+                              (member as any)?.imageUrl ||
+                              (dm as any).avatar ||
+                              (dm as any).imageUrl ||
+                              (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name)
+                                ? currentUser.imageUrl || currentUser.avatar
+                                : undefined)
+                            }
                             size={28}
-                            status={member.status}
+                            status={member?.status || (dm as any).status}
                             showStatus
                           />
-                        ) : (
-                          <div className="size-7 rounded-full bg-muted flex items-center justify-center">
-                            <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
-                          </div>
                         )}
                         <div className="flex flex-col min-w-0">
                           <span className="text-xs font-medium truncate text-foreground">{dm.name}</span>
