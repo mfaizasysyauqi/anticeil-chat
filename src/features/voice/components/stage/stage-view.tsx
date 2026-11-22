@@ -1205,8 +1205,8 @@ export function StageView({
           open={isEndStageModalOpen}
           onOpenChange={setIsEndStageModalOpen}
           title={t('Do you want to also end the Stage?')}
+          titleClassName="text-base font-bold text-foreground"
           description={t('A Stage with no speakers will automatically end after a few minutes.')}
-          icon={<Podcast className="w-5 h-5 text-destructive" />}
           confirmLabel={t('Disconnect and End')}
           cancelLabel={t('No, just disconnect quietly')}
           variant="destructive"

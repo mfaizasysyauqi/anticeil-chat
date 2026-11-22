@@ -23,6 +23,7 @@ export interface SmallDialogProps {
   onOpenChange?: (open: boolean) => void;
   onClose?: () => void;
   title: React.ReactNode;
+  titleClassName?: string;
   description?: React.ReactNode;
   icon?: React.ReactNode;
   children?: React.ReactNode;
@@ -42,6 +43,7 @@ export function SmallDialog({
   onOpenChange,
   onClose,
   title,
+  titleClassName,
   description,
   icon,
   children,
@@ -77,7 +79,7 @@ export function SmallDialog({
             <DialogTitle
               className={cn(
                 'text-base font-bold leading-tight',
-                variant === 'destructive' ? 'text-destructive' : 'text-foreground'
+                titleClassName ?? (variant === 'destructive' ? 'text-destructive' : 'text-foreground')
               )}
             >
               {title}

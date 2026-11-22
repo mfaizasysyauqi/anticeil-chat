@@ -23,14 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { SmallDialog } from '@/components/ui/small-dialog';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { colonyApi } from '@/chat/chat-api';
 import { toast } from 'sonner';
@@ -457,36 +450,21 @@ export function MembersTab({
         </div>
       </div>
 
-      {/* Prune Confirmation Dialog */}
-      <Dialog open={isPruning} onOpenChange={setIsPruning}>
-        <DialogContent size="sm" className="bg-[#1e1f22] border-border/80">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">
-              {t('Prune Inactive Members')}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              {t(
-                'Members who have not been seen for 7 or 30 days and have no roles assigned will be kicked from the server.',
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4 gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsPruning(false)}
-              className="text-xs"
-            >
-              {t('Cancel')}
-            </Button>
-            <Button
-              onClick={handlePrune}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs font-semibold"
-            >
-              {t('Prune Members')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Prune Confirmation Dialog (SmallDialog Template) */}
+      <SmallDialog
+        open={isPruning}
+        onOpenChange={setIsPruning}
+        title={t('Prune Inactive Members')}
+        titleClassName="text-base font-bold text-foreground"
+        description={t(
+          'Members who have not been seen for 7 or 30 days and have no roles assigned will be kicked from the server.',
+        )}
+        confirmLabel={t('Prune Members')}
+        cancelLabel={t('Cancel')}
+        variant="destructive"
+        onConfirm={handlePrune}
+        onClose={() => setIsPruning(false)}
+      />
     </div>
   );
 }

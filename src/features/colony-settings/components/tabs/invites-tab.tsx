@@ -272,7 +272,7 @@ export function InvitesTab({
 
       {/* Create Invite Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent size="md" className="bg-[#1e1f22] border-border/80">
+        <DialogContent size="md" className="bg-card border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="text-foreground">
               {t('Create Invite Link')}

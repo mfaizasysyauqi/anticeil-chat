@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
 import { UserPlus, Copy, Check, MessageSquare, Send } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { MediumDialog } from '@/components/ui/medium-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -105,134 +99,130 @@ export function VoiceInviteDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="md" className="p-5 bg-background text-foreground border-border shadow-2xl rounded-2xl">
-        <DialogHeader className="space-y-1.5 pb-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <UserPlus className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="text-sm font-semibold tracking-tight truncate">
-                Undang Teman ke Panggilan
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground truncate flex items-center gap-1.5 mt-0.5">
-                <span>{activeColony?.name || 'Colony'} • #{channel.name}</span>
-                {currentActiveApp && (
-                  <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-primary/15 text-primary border border-primary/20 shrink-0">
-                    🎮 {currentActiveApp.title}
-                  </span>
-                )}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+    <MediumDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Undang Teman ke Panggilan"
+      description={
+        <span className="flex items-center gap-1.5 truncate">
+          <span>{activeColony?.name || 'Colony'} • #{channel.name}</span>
+          {currentActiveApp && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/15 text-primary border border-primary/20 shrink-0">
+              🎮 {currentActiveApp.title}
+            </span>
+          )}
+        </span>
+      }
+      icon={
+        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <UserPlus className="w-4 h-4" />
+        </div>
+      }
+    >
+      <div className="space-y-3.5">
+        {/* Compact Helper Note */}
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {currentActiveApp ? (
+            <>
+              Bagikan link ini ke rekan Anda. Saat membuka link, mereka akan{' '}
+              <strong className="text-foreground">otomatis bergabung ke server</strong>,{' '}
+              <strong className="text-foreground">langsung masuk ke panggilan</strong>, dan langsung membuka aktivitas{' '}
+              <strong className="text-primary font-semibold">{currentActiveApp.title}</strong> bersama.
+            </>
+          ) : (
+            <>
+              Bagikan link ini ke rekan Anda. Saat membuka link, mereka akan{' '}
+              <strong className="text-foreground">otomatis bergabung ke server</strong> dan{' '}
+              <strong className="text-foreground">langsung masuk ke panggilan</strong> di channel ini.
+            </>
+          )}
+        </p>
 
-        <div className="space-y-3.5 pt-1">
-          {/* Compact Helper Note */}
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {currentActiveApp ? (
-              <>
-                Bagikan link ini ke rekan Anda. Saat membuka link, mereka akan{' '}
-                <strong className="text-foreground">otomatis bergabung ke server</strong>,{' '}
-                <strong className="text-foreground">langsung masuk ke panggilan</strong>, dan langsung membuka aktivitas{' '}
-                <strong className="text-primary font-semibold">{currentActiveApp.title}</strong> bersama.
-              </>
-            ) : (
-              <>
-                Bagikan link ini ke rekan Anda. Saat membuka link, mereka akan{' '}
-                <strong className="text-foreground">otomatis bergabung ke server</strong> dan{' '}
-                <strong className="text-foreground">langsung masuk ke panggilan</strong> di channel ini.
-              </>
+        {/* Reusable Input + Button */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold text-muted-foreground tracking-wide">
+            Link Panggilan Langsung
+          </label>
+          <div className="flex items-center gap-2">
+            <Input
+              readOnly
+              value={finalCallInviteUrl}
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+              className="h-9 text-xs font-mono select-all bg-muted/50 border-input focus-visible:ring-1"
+            />
+            <Button
+              type="button"
+              onClick={handleCopy}
+              size="sm"
+              className={cn(
+                'h-9 px-3.5 text-xs font-semibold transition-all shrink-0 gap-1.5 shadow-sm rounded-lg cursor-pointer',
+                copied
+                  ? 'bg-primary/80 text-primary-foreground'
+                  : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+              )}
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? 'Tersalin' : 'Salin'}</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Guest Mode Instant Link */}
+        <div className="flex items-center justify-between p-2 rounded-xl bg-primary/5 border border-primary/20">
+          <div className="min-w-0 pr-2">
+            <p className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+              <span>👤 Link Tamu Cepat (Guest Join)</span>
+            </p>
+            <p className="text-[10px] text-muted-foreground truncate">
+              Teman Anda dapat langsung join & tonton tanpa perlu login Google.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleCopyGuestLink}
+            className={cn(
+              'h-7 px-2.5 text-[11px] font-medium shrink-0 rounded-lg cursor-pointer transition-all',
+              guestCopied
+                ? 'bg-primary/20 text-primary border-primary/40'
+                : 'hover:bg-primary hover:text-primary-foreground border-border'
             )}
-          </p>
+          >
+            {guestCopied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+            <span>{guestCopied ? 'Tersalin' : 'Salin Link Tamu'}</span>
+          </Button>
+        </div>
 
-          {/* Reusable Input + Button */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold text-muted-foreground tracking-wide">
-              Link Panggilan Langsung
-            </label>
-            <div className="flex items-center gap-2">
-              <Input
-                readOnly
-                value={finalCallInviteUrl}
-                onClick={(e) => (e.target as HTMLInputElement).select()}
-                className="h-9 text-xs font-mono select-all bg-muted/50 border-input focus-visible:ring-1"
-              />
-              <Button
-                type="button"
-                onClick={handleCopy}
-                size="sm"
-                className={cn(
-                  'h-9 px-3.5 text-xs font-semibold transition-all shrink-0 gap-1.5 shadow-sm rounded-lg cursor-pointer',
-                  copied
-                    ? 'bg-primary/80 text-primary-foreground'
-                    : 'bg-primary hover:bg-primary/90 text-primary-foreground'
-                )}
-              >
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Tersalin' : 'Salin'}</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Guest Mode Instant Link */}
-          <div className="flex items-center justify-between p-2 rounded-xl bg-primary/5 border border-primary/20">
-            <div className="min-w-0 pr-2">
-              <p className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
-                <span>👤 Link Tamu Cepat (Guest Join)</span>
-              </p>
-              <p className="text-[10px] text-muted-foreground truncate">
-                Teman Anda dapat langsung join & tonton tanpa perlu login Google.
-              </p>
-            </div>
+        {/* Quick Share Buttons */}
+        <div className="space-y-1.5 pt-0.5">
+          <label className="text-[11px] font-semibold text-muted-foreground tracking-wide">
+            Atau Bagikan Cepat Melalui
+          </label>
+          <div className="grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleCopyGuestLink}
-              className={cn(
-                'h-7 px-2.5 text-[11px] font-medium shrink-0 rounded-lg cursor-pointer transition-all',
-                guestCopied
-                  ? 'bg-primary/20 text-primary border-primary/40'
-                  : 'hover:bg-primary hover:text-primary-foreground border-border'
-              )}
+              onClick={handleShareWhatsApp}
+              className="h-8.5 text-xs font-medium gap-1.5 border-border/80 hover:bg-accent hover:text-accent-foreground"
             >
-              {guestCopied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
-              <span>{guestCopied ? 'Tersalin' : 'Salin Link Tamu'}</span>
+              <MessageSquare className="w-3.5 h-3.5 text-[#25D366] shrink-0" />
+              <span>WhatsApp</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleShareTelegram}
+              className="h-8.5 text-xs font-medium gap-1.5 border-border/80 hover:bg-accent hover:text-accent-foreground"
+            >
+              <Send className="w-3.5 h-3.5 text-[#0088cc] shrink-0" />
+              <span>Telegram</span>
             </Button>
           </div>
-
-          {/* Quick Share Buttons */}
-          <div className="space-y-1.5 pt-0.5">
-            <label className="text-[11px] font-semibold text-muted-foreground tracking-wide">
-              Atau Bagikan Cepat Melalui
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleShareWhatsApp}
-                className="h-8.5 text-xs font-medium gap-1.5 border-border/80 hover:bg-accent hover:text-accent-foreground"
-              >
-                <MessageSquare className="w-3.5 h-3.5 text-[#25D366] shrink-0" />
-                <span>WhatsApp</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleShareTelegram}
-                className="h-8.5 text-xs font-medium gap-1.5 border-border/80 hover:bg-accent hover:text-accent-foreground"
-              >
-                <Send className="w-3.5 h-3.5 text-[#0088cc] shrink-0" />
-                <span>Telegram</span>
-              </Button>
-            </div>
-          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </MediumDialog>
   );
 }
