@@ -300,6 +300,12 @@ export function AppDetailView({
                     <img
                       src={screenshots[currentSlideIndex]}
                       alt={`${app.title} Preview ${currentSlideIndex + 1}`}
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (app.bannerImage && target.src !== app.bannerImage) {
+                          target.src = app.bannerImage;
+                        }
+                      }}
                       className="w-full h-full object-cover transition-all duration-300"
                     />
 
