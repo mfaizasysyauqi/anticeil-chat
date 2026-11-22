@@ -79,50 +79,22 @@ import { uploadMediaToR2 } from '@/lib/upload';
 import { shopApi, type ShopItem, type ShopCollection, type ShopBalance, FALLBACK_SHOP_ITEMS } from '../api/shop-api';
 import { api } from '@/lib/api';
 import { loadMidtransSnap } from '@/features/billing/api/subscriptions-api';
+import {
+  ITEM_TYPE_OPTIONS,
+  COLOR_OPTIONS,
+  THEME_OPTIONS,
+  APP_SHOPS_ITEMS,
+} from '../data/shop-constants';
+import { ShopItemModal } from './shop-item-modal';
+import { ShopWishlistModal } from './shop-wishlist-modal';
+import { ShopAddProductModal } from './shop-add-product-modal';
 
-// Discord-style 1:1 Filter Definitions
-export const ITEM_TYPE_OPTIONS = [
-  { id: 'avatar_decoration', label: 'Avatar Decorations' },
-  { id: 'nameplate', label: 'Nameplates' },
-  { id: 'profile_effect', label: 'Profile Effects' },
-  { id: 'bundle', label: 'Bundles' },
-];
-
-export const COLOR_OPTIONS = [
-  { id: 'purple', label: 'Purple', hex: '#8b5cf6', keywords: ['purple', 'violet', 'magenta', 'indigo', 'ungu'] },
-  { id: 'blue', label: 'Blue', hex: '#3b82f6', keywords: ['blue', 'cyan', 'azure', 'biru', 'sian', 'neon', 'aurora'] },
-  { id: 'green', label: 'Green', hex: '#22c55e', keywords: ['green', 'emerald', 'mint', 'hijau', 'zamrud', 'forest'] },
-  { id: 'brown', label: 'Brown', hex: '#92400e', keywords: ['brown', 'amber', 'bronze', 'cokelat', 'wood'] },
-  { id: 'yellow', label: 'Yellow', hex: '#eab308', keywords: ['yellow', 'gold', 'kuning', 'emas', 'sun', 'starlight'] },
-  { id: 'orange', label: 'Orange', hex: '#f97316', keywords: ['orange', 'sunset', 'oranye', 'fire', 'api'] },
-  { id: 'red', label: 'Red', hex: '#ef4444', keywords: ['red', 'crimson', 'ruby', 'merah', 'blood', 'rose'] },
-  { id: 'pink', label: 'Pink', hex: '#ec4899', keywords: ['pink', 'sakura', 'merah muda', 'blush', 'cozy'] },
-  { id: 'white', label: 'White', hex: '#f8fafc', keywords: ['white', 'putih', 'silver', 'pearl', 'clear', 'light'] },
-  { id: 'dark', label: 'Dark / Black', hex: '#18181b', keywords: ['dark', 'black', 'obsidian', 'void', 'gelap', 'hitam', 'shadow', 'matrix', 'cyber'] },
-];
-
-export const THEME_OPTIONS = [
-  { id: 'anime', label: 'Anime', icon: '🌸', keywords: ['anime', 'sakura', 'zen', 'manga', 'miyabi', 'kawaii'] },
-  { id: 'gaming', label: 'Gaming', icon: '🎮', keywords: ['gaming', 'game', 'arcade', 'pixel', 'retro', '8bit'] },
-  { id: 'cute_cozy', label: 'Cute & Cozy', icon: '☕', keywords: ['cute', 'cozy', 'sweet', 'warm', 'pastel'] },
-  { id: 'sci_fi', label: 'Sci-Fi', icon: '🪐', keywords: ['sci-fi', 'cyber', 'void', 'matrix', 'neon', 'core', 'future'] },
-  { id: 'food_drinks', label: 'Food & Drinks', icon: '🍔', keywords: ['food', 'drink', 'tea', 'boba', 'coffee'] },
-  { id: 'fantasy', label: 'Fantasy', icon: '🧙', keywords: ['fantasy', 'magic', 'celestial', 'crown', 'astral', 'myth'] },
-  { id: 'animals_pets', label: 'Animals & Pets', icon: '🐾', keywords: ['animal', 'pet', 'cat', 'dog', 'fox', 'bunny', 'bear'] },
-  { id: 'nature', label: 'Nature', icon: '🍃', keywords: ['nature', 'forest', 'aurora', 'borealis', 'sakura', 'leaf', 'alam'] },
-  { id: 'movies_tv', label: 'Movies & TV', icon: '🎬', keywords: ['movie', 'tv', 'cinema', 'show', 'film'] },
-  { id: 'dark_moody', label: 'Dark & Moody', icon: '🥀', keywords: ['dark', 'moody', 'void', 'obsidian', 'night', 'shadow', 'gothic'] },
-];
-
-// Discord-style App Shops dropdown items (Anticeil Native Ecosystem)
-export const APP_SHOPS_ITEMS = [
-  { id: 'app_watch_together', name: 'YouTube Watch Together', icon: Video, tag: 'Video', query: 'watch together' },
-  { id: 'app_jamspace', name: 'Jamspace Whiteboard', icon: Palette, tag: 'Board', query: 'whiteboard' },
-  { id: 'app_chess', name: 'Anticeil Chess', icon: Crown, tag: 'Game', query: 'chess' },
-  { id: 'app_wordle', name: 'Wordle Daily Party', icon: Gamepad2, tag: 'Game', query: 'wordle' },
-  { id: 'app_trivia', name: 'Cyber Trivia Battle', icon: Gamepad2, tag: 'Game', query: 'trivia' },
-  { id: 'app_cyber_core', name: 'Anticeil Cyber Core', icon: Sparkles, tag: 'Official', query: 'cyber' },
-];
+export {
+  ITEM_TYPE_OPTIONS,
+  COLOR_OPTIONS,
+  THEME_OPTIONS,
+  APP_SHOPS_ITEMS,
+};
 
 export interface ShopViewProps {
   currentUser?: any;
@@ -1898,497 +1870,48 @@ export function ShopView({
       </AppFilterDrawer>
 
       {/* ── 3. Reusable Dialog: Item Detail & Purchase Modal ── */}
-      <Dialog open={Boolean(activeModalItem)} onOpenChange={(open) => !open && setActiveModalItem(null)}>
-        {activeModalItem && (
-          <DialogContent className={DIALOG_STYLES.MODAL_PREVIEW}>
-            {/* Header Preview Banner with Real Animated Cosmetic in Action */}
-            <div className="relative h-44 bg-[#111214] flex items-center justify-center p-6 border-b border-border overflow-hidden">
-              {activeModalItem.category === 'avatar_decoration' ? (
-                <div className="relative size-22 rounded-full bg-[#1e1f22] border-2 border-[#2b2d31] flex items-center justify-center shadow-2xl z-10">
-                  {currentUser?.avatar ? (
-                    <img src={currentUser.avatar} alt="User Avatar" className="size-full rounded-full object-cover" />
-                  ) : (
-                    <div className="size-full rounded-full bg-[#2b2d31] flex items-center justify-center text-muted-foreground/60 font-black text-2xl select-none">
-                      ❄
-                    </div>
-                  )}
-                  {(activeModalItem.gifUrl || activeModalItem.previewIcon) && (
-                    <img
-                      src={activeModalItem.gifUrl || activeModalItem.previewIcon}
-                      alt={activeModalItem.name}
-                      className="absolute -inset-4.5 size-[calc(100%+36px)] object-contain pointer-events-none select-none z-20 drop-shadow-[0_0_16px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 duration-300"
-                    />
-                  )}
-                </div>
-              ) : activeModalItem.category === 'nameplate' ? (
-                <div className="w-[90%] h-14 rounded-xl bg-[#1e1f22] border border-border/80 p-2.5 flex items-center gap-3 relative overflow-hidden shadow-2xl z-10">
-                  {(activeModalItem.gifUrl || activeModalItem.previewIcon) && (
-                    <img
-                      src={activeModalItem.gifUrl || activeModalItem.previewIcon}
-                      alt={activeModalItem.name}
-                      className="absolute inset-0 size-full object-cover opacity-85 mix-blend-screen pointer-events-none select-none"
-                    />
-                  )}
-                  <div className="size-8 rounded-full bg-[#2b2d31] border border-white/20 flex items-center justify-center text-xs font-black text-muted-foreground z-10 shrink-0">
-                    ❄
-                  </div>
-                  <div className="min-w-0 z-10 space-y-0.5">
-                    <div className="text-xs font-bold text-white drop-shadow-md flex items-center gap-2 leading-none">
-                      <span>{currentUser?.name || 'Username Anda'}</span>
-                      <span className="text-[8px] px-1.5 py-0.5 rounded bg-primary/40 text-primary-foreground font-bold">NAMECARD</span>
-                    </div>
-                    <p className="text-[10px] text-white/70 leading-none">Pratinjau tampilan strip namecard animasi di chat</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="absolute inset-0 size-full overflow-hidden">
-                  {(activeModalItem.gifUrl || activeModalItem.previewIcon) && (
-                    <img
-                      src={activeModalItem.gifUrl || activeModalItem.previewIcon}
-                      alt={activeModalItem.name}
-                      className="absolute inset-0 size-full object-cover opacity-85 pointer-events-none select-none"
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
-                  <div className="absolute bottom-3 left-4 flex items-center gap-2.5 z-10">
-                    <div className="size-9 rounded-full bg-white/20 border border-white/40 backdrop-blur-xs flex items-center justify-center text-white font-bold text-xs shrink-0">
-                      ❄
-                    </div>
-                    <div className="space-y-0.5">
-                      <div className="text-xs font-bold text-white drop-shadow-md">{activeModalItem.name}</div>
-                      <div className="text-[10px] text-white/80">Overlay animasi latar profil</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Content Details */}
-            <div className="p-5 space-y-4">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                    {activeModalItem.collection || 'ANTICEIL NATIVE'}
-                  </span>
-                  {activeModalItem.badge && (
-                    <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[9px] font-bold uppercase border border-primary/30">
-                      {activeModalItem.badge}
-                    </span>
-                  )}
-                </div>
-                <DialogTitle className="text-base font-bold text-foreground mt-1">
-                  {activeModalItem.name}
-                </DialogTitle>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  {activeModalItem.description}
-                </p>
-              </div>
-
-              {/* Pricing Grid */}
-              {(() => {
-                const canUseDew = activeModalItem.allowDew !== false && (activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0) > 0;
-                return (
-                  <>
-                    <div className={cn("grid gap-3 p-3 rounded-lg bg-muted/40 border border-border", canUseDew ? "grid-cols-2" : "grid-cols-1")}>
-                      <div className="space-y-0.5">
-                        <div className="text-[10px] text-muted-foreground font-semibold">{t('Harga Resmi IDR')}</div>
-                        <div className="text-xs sm:text-sm font-bold text-foreground">
-                          IDR {(activeModalItem?.priceIdr ?? 0).toLocaleString('id-ID')}
-                        </div>
-                      </div>
-                      {canUseDew ? (
-                        <div className="space-y-0.5 text-right">
-                          <div className="text-[10px] text-muted-foreground font-semibold">{t('Harga Dew')}</div>
-                          <div className="text-xs sm:text-sm font-bold text-cyan-400 flex items-center justify-end gap-1">
-                            <span>💧</span>
-                            <span>{activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0} Dew</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-0.5 text-right">
-                          <div className="text-[10px] text-muted-foreground font-semibold">{t('Metode Pembayaran')}</div>
-                          <div className="text-xs font-semibold text-amber-400 flex items-center justify-end gap-1">
-                            <span>💵</span>
-                            <span>{t('Hanya Uang Asli (IDR)')}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="pt-2 space-y-2">
-                      {ownedItemIds.has(activeModalItem.id) ? (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          disabled={isEquipping}
-                          onClick={() => handleEquip(activeModalItem)}
-                          className="w-full h-9 font-bold text-xs cursor-pointer flex items-center justify-center gap-2"
-                        >
-                          {isEquipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                          <span>{t('Pasang ke Profil Anda')}</span>
-                        </Button>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            {canUseDew && (
-                              <Button
-                                size="sm"
-                                variant="default"
-                                disabled={isPurchasing || (balance.dew ?? balance.orbs ?? 0) < (activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0)}
-                                onClick={() => handlePurchase(activeModalItem, 'dew')}
-                                className="flex-1 h-9 font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5"
-                              >
-                                {isPurchasing ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <>
-                                    <span>💧</span>
-                                    <span>Beli ({activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0} Dew)</span>
-                                  </>
-                                )}
-                              </Button>
-                            )}
-
-                            <Button
-                              size="sm"
-                              variant={canUseDew ? "outline" : "default"}
-                              disabled={isPurchasing}
-                              onClick={() => handlePurchase(activeModalItem, 'idr')}
-                              className="flex-1 h-9 font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5"
-                            >
-                              <ShoppingBag className="w-3.5 h-3.5" />
-                              <span>Beli IDR {(activeModalItem?.priceIdr ?? 0).toLocaleString('id-ID')}</span>
-                            </Button>
-
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={(e) => handleToggleWishlist(e, activeModalItem)}
-                              className="h-9 px-3 cursor-pointer shrink-0"
-                              title="Wishlist"
-                            >
-                              <Heart
-                                className={cn(
-                                  'w-4 h-4',
-                                  wishlistedItemIds.has(activeModalItem.id) && 'text-pink-500 fill-pink-500'
-                                )}
-                              />
-                            </Button>
-
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenEditProduct(activeModalItem);
-                              }}
-                              className="h-9 px-3 cursor-pointer shrink-0 text-muted-foreground hover:text-foreground"
-                              title={t('Edit Item')}
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Button>
-
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteProduct(e, activeModalItem.id);
-                                setActiveModalItem(null);
-                              }}
-                              className="h-9 px-3 cursor-pointer text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 border border-border/80 bg-background/80 shrink-0 transition-colors"
-                              title={t('Hapus Item')}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-
-                          {canUseDew && (balance.dew ?? balance.orbs ?? 0) < (activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0) && (
-                            <div className="flex items-center justify-between text-[11px] text-muted-foreground bg-muted/40 p-2 rounded-lg border border-border">
-                              <span>Saldo Dew belum cukup ({balance.dew ?? balance.orbs ?? 0} / {activeModalItem.priceDew ?? activeModalItem.priceOrbs ?? 0})</span>
-                              <button
-                                type="button"
-                                onClick={() => handleTopupDew(500)}
-                                className="text-cyan-400 hover:underline font-bold cursor-pointer"
-                              >
-                                + Klaim 500 Dew
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </DialogContent>
-        )}
-      </Dialog>
+      <ShopItemModal
+        open={Boolean(activeModalItem)}
+        item={activeModalItem}
+        onClose={() => setActiveModalItem(null)}
+        currentUser={currentUser}
+        balance={balance}
+        ownedItemIds={ownedItemIds}
+        wishlistedItemIds={wishlistedItemIds}
+        isPurchasing={isPurchasing}
+        isEquipping={isEquipping}
+        onPurchase={handlePurchase}
+        onEquip={handleEquip}
+        onToggleWishlist={handleToggleWishlist}
+        onOpenEditProduct={handleOpenEditProduct}
+        onDeleteProduct={handleDeleteProduct}
+        onTopupDew={handleTopupDew}
+      />
 
       {/* ── 4. Reusable Dialog: Wishlist Modal ── */}
-      <Dialog open={isWishlistDrawerOpen} onOpenChange={setIsWishlistDrawerOpen}>
-        <DialogContent size="md" className="p-0 overflow-hidden rounded-2xl bg-card border border-border shadow-xl z-[150]">
-          <div className="p-4 pr-12 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
-              <DialogTitle className="text-sm font-bold text-foreground">
-                {t('Wishlist Shop')} ({wishlist.length})
-              </DialogTitle>
-            </div>
-          </div>
-
-          <div className="max-h-[350px] overflow-y-auto p-3 space-y-2 custom-scrollbar">
-            {wishlist.length === 0 ? (
-              <div className="py-10 text-center text-xs text-muted-foreground space-y-2">
-                <Heart className="w-8 h-8 mx-auto opacity-30 text-pink-500" />
-                <p>{t('Belum ada item di wishlist Anda.')}</p>
-                <p className="text-[11px] text-muted-foreground/70">
-                  {t('Klik ikon hati pada item untuk menyimpannya di sini.')}
-                </p>
-              </div>
-            ) : (
-              wishlist.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => {
-                    setIsWishlistDrawerOpen(false);
-                    setActiveModalItem(item);
-                  }}
-                  className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 border border-border hover:border-primary/60 cursor-pointer transition-colors"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-9 rounded-md bg-card border border-border flex items-center justify-center overflow-hidden shrink-0">
-                      <img src={item.previewIcon} alt={item.name} className="size-full object-cover" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-bold text-foreground truncate">{item.name}</div>
-                      <div className="text-[10px] text-muted-foreground truncate">{item.collection}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    <div className="text-right">
-                      <div className="text-xs font-bold text-foreground">IDR {(item.priceIdr ?? 0).toLocaleString('id-ID')}</div>
-                      <div className="text-[10px] text-cyan-400 font-bold">💧 {item.priceDew ?? item.priceOrbs ?? 0} Dew</div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => handleToggleWishlist(e, item)}
-                      className="p-1 rounded-md text-pink-500 hover:text-muted-foreground hover:bg-muted/60 transition-colors cursor-pointer"
-                      title={t('Hapus dari Wishlist')}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ShopWishlistModal
+        open={isWishlistDrawerOpen}
+        onOpenChange={setIsWishlistDrawerOpen}
+        wishlist={wishlist}
+        onSelectItem={(item) => setActiveModalItem(item)}
+        onToggleWishlist={handleToggleWishlist}
+      />
 
       {/* ── 5. Reusable Dialog: Add or Edit Product (Fullstack CRUD) ── */}
-      <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
-        <DialogContent className={DIALOG_STYLES.MODAL_STANDARD}>
-          <DialogHeader>
-            <DialogTitle className={DIALOG_STYLES.HEADER_TITLE}>
-              {editingProduct ? <Pencil className="w-4 h-4 text-primary" /> : <Plus className="w-4 h-4 text-primary" />}
-              <span>{editingProduct ? t('Edit Item Katalog Shop') : t('Tambah Produk ke Database Shop')}</span>
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleSaveProduct} className="space-y-3 pt-2">
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">{t('Nama Produk')}</label>
-              <Input
-                value={newProductForm.name}
-                onChange={(e) => setNewProductForm({ ...newProductForm, name: e.target.value })}
-                placeholder="Contoh: Neon Cyber Shield"
-                className="h-8 text-xs bg-muted/40 border-border"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 items-end">
-              <FormDropdown
-                label={t('Kategori')}
-                value={newProductForm.category}
-                onChange={(val) => setNewProductForm({ ...newProductForm, category: val as any })}
-                size="sm"
-                options={[
-                  { value: 'avatar_decoration', label: 'Bingkai Profil (Animated Frame)' },
-                  { value: 'profile_effect', label: 'Overlay Profil (Animated Effect)' },
-                  { value: 'nameplate', label: 'Namecard (Animated Nameplate)' },
-                  { value: 'bundle', label: 'Bundel Animasi (3pc)' },
-                ]}
-              />
-
-              <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">{t('Koleksi Anticeil')}</label>
-                <Input
-                  value={newProductForm.collection}
-                  onChange={(e) => setNewProductForm({ ...newProductForm, collection: e.target.value })}
-                  placeholder="Contoh: Anticeil Cyber Core"
-                  className="h-8 text-xs bg-muted/40 border-border"
-                />
-              </div>
-            </div>
-
-            {/* Toggle Allow Dew vs Only IDR */}
-            <div className="flex items-center justify-between p-2.5 rounded-lg border border-border/80 bg-muted/20">
-              <div className="space-y-0.5 pr-2">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer">
-                  <span>💧 {t('Bisa Dibeli dengan Dew')}</span>
-                </label>
-                <p className="text-[11px] text-muted-foreground">
-                  {newProductForm.allowDew
-                    ? t('Item ini bisa dibeli menggunakan Dew maupun Uang Asli (IDR).')
-                    : t('Item ini eksklusif hanya bisa dibeli menggunakan Uang Asli (IDR).')}
-                </p>
-              </div>
-              <Switch
-                checked={newProductForm.allowDew}
-                onCheckedChange={(checked) =>
-                  setNewProductForm((f) => ({
-                    ...f,
-                    allowDew: checked,
-                    priceDew: checked ? (f.priceDew || 500) : 0,
-                  }))
-                }
-              />
-            </div>
-
-            <div className={cn("grid gap-3", newProductForm.allowDew ? "grid-cols-2" : "grid-cols-1")}>
-              <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">{t('Harga IDR (Uang Asli)')}</label>
-                <Input
-                  type="number"
-                  value={newProductForm.priceIdr}
-                  onChange={(e) => setNewProductForm({ ...newProductForm, priceIdr: Number(e.target.value) })}
-                  className="h-8 text-xs bg-muted/40 border-border"
-                />
-              </div>
-
-              {newProductForm.allowDew && (
-                <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1">{t('Harga Dew (Poin)')}</label>
-                  <Input
-                    type="number"
-                    value={newProductForm.priceDew}
-                    onChange={(e) => setNewProductForm({ ...newProductForm, priceDew: Number(e.target.value) })}
-                    className="h-8 text-xs bg-muted/40 border-border"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-1.5">
-                {t('File Animasi GIF / Gambar (Upload ke Cloudflare R2)')}
-              </label>
-              <input
-                ref={productFileInputRef}
-                type="file"
-                accept="image/gif,image/png,image/webp,image/*"
-                onChange={handleProductFileChange}
-                className="hidden"
-              />
-
-              {productImagePreview ? (
-                <div className="relative group rounded-xl border border-border/80 bg-muted/20 overflow-hidden p-2">
-                  <div className="relative w-full h-28 rounded-lg overflow-hidden bg-black/50 flex items-center justify-center p-2">
-                    <img
-                      src={productImagePreview}
-                      alt="Product Preview"
-                      className="max-h-full max-w-full object-contain"
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => productFileInputRef.current?.click()}
-                        className="h-7 text-xs gap-1.5 shadow-md cursor-pointer"
-                      >
-                        <UploadCloud className="w-3.5 h-3.5" />
-                        <span>{t('Ganti File')}</span>
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="destructive"
-                        onClick={handleRemoveProductImage}
-                        className="h-7 text-xs gap-1.5 shadow-md cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>{t('Hapus')}</span>
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground px-1">
-                    <span className="truncate max-w-[240px]">
-                      {productImageFile ? productImageFile.name : t('File animasi tersimpan')}
-                    </span>
-                    <span className="text-[10px] text-emerald-400 font-medium shrink-0">
-                      {productImageFile ? t('Pratinjau lokal • disimpan ke R2') : t('Tersimpan di Cloudflare R2')}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => productFileInputRef.current?.click()}
-                  className="w-full h-24 border-2 border-dashed border-border/70 hover:border-primary/60 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer p-3 group"
-                >
-                  <div className="p-1.5 rounded-full bg-primary/10 text-primary group-hover:scale-105 transition-transform">
-                    <UploadCloud className="w-4 h-4" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs font-medium text-foreground">
-                      {t('Klik untuk upload file animasi GIF atau gambar')}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {t('Format GIF (transparan / loop), PNG, WebP. Pratinjau lokal sebelum disimpan ke Cloudflare R2.')}
-                    </p>
-                  </div>
-                </button>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">{t('Deskripsi Singkat')}</label>
-              <Input
-                value={newProductForm.description}
-                onChange={(e) => setNewProductForm({ ...newProductForm, description: e.target.value })}
-                placeholder="Efek visual neon berkilau untuk kartu profil Anticeil..."
-                className="h-8 text-xs bg-muted/40 border-border"
-              />
-            </div>
-
-            <div className="pt-2 flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsAddProductOpen(false)}
-                className="h-8 text-xs"
-              >
-                {t('Batal')}
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                disabled={isCreatingProduct}
-                className="h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer"
-              >
-                {isCreatingProduct ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                <span>{t('Simpan ke Database')}</span>
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ShopAddProductModal
+        open={isAddProductOpen}
+        onOpenChange={setIsAddProductOpen}
+        editingProduct={editingProduct}
+        newProductForm={newProductForm}
+        setNewProductForm={setNewProductForm}
+        productImagePreview={productImagePreview}
+        productImageFile={productImageFile}
+        isCreatingProduct={isCreatingProduct}
+        onSaveProduct={handleSaveProduct}
+        onProductFileChange={handleProductFileChange}
+        onRemoveProductImage={handleRemoveProductImage}
+        productFileInputRef={productFileInputRef}
+      />
     </div>
   );
 }

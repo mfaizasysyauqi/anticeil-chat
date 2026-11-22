@@ -747,7 +747,7 @@ export function AppsView({
                   </p>
                 </div>
 
-                {/* Grid: 4 columns in desktop (lg:grid-cols-4), 2 in tablet and mobile (grid-cols-2) */}
+                {/* Grid: 4 columns in desktop (xl:grid-cols-4), 2 in tablet and mobile (grid-cols-2) */}
                 <div className={SURFACE_STYLES.CARD_GRID}>
                   {sectionApps.map((app) => (
                     <ActivityCard
