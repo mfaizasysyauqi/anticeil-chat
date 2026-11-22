@@ -578,6 +578,12 @@ export function ChatChannelView({
               onOpenServerEvents={onOpenServerEvents}
               onDisconnect={() => {
                 setActiveCallChannelId(null);
+                const fallbackChannel =
+                  colonyChannels.find((c) => c.type === 'text') ||
+                  colonyChannels.find((c) => c.id !== activeChannel?.id);
+                if (fallbackChannel) {
+                  setActiveChannelId(fallbackChannel.id);
+                }
               }}
               onToggleChat={() => setIsActivityChatSplitOpen((prev) => !prev)}
               isChatOpen={isActivityChatSplitOpen}

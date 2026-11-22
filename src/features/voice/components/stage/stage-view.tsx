@@ -419,6 +419,8 @@ export function StageView({
   const handleEndStage = async () => {
     setStageStatus('waiting');
     setIsEndStageModalOpen(false);
+    ambientSynth.stop();
+    setIsMusicPlaying(false);
 
     try {
       await api.post(`/v1/colony/channels/${channel.id}/stage/end`);
@@ -788,6 +790,7 @@ export function StageView({
         {/* ───────────────────────────────────────────────────────────── */}
         {/* BOTTOM CONTROL DOCK - Unified with Voice Channel (DRY)         */}
         {/* ───────────────────────────────────────────────────────────── */}
+        {stageStatus === 'live' && (
         <div className={VOICE_BOTTOM_BAR_STYLES.CONTAINER}>
           {/* Left: Invite to Stage */}
           <div className="flex items-center justify-start">
@@ -1160,6 +1163,7 @@ export function StageView({
             </Tooltip>
           </div>
         </div>
+        )}
 
         {/* ───────────────────────────────────────────────────────────── */}
         {/* MODAL 1: START THE STAGE (MEDIUM DIALOG TEMPLATE)              */}
