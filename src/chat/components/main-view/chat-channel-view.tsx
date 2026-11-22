@@ -138,6 +138,7 @@ export interface ChatChannelViewProps {
   messageRequests?: any[];
   handleAcceptMessageRequest?: (item: any) => void;
   handleIgnoreMessageRequest?: (item: any) => void;
+  onAddMemberToGroup?: (memberId: string) => void;
   colonies?: Colony[];
   members?: ColonyMember[];
   t: (key: string) => string;
@@ -182,6 +183,7 @@ export function ChatChannelView({
   colonyChannels,
   colonies = [],
   members = [],
+  onAddMemberToGroup,
   friends,
   handleCreateCallLog,
   isActivityOpen,
@@ -436,6 +438,7 @@ export function ChatChannelView({
         colonies={colonies}
         friends={friends}
         members={displayMembers || members}
+        onAddMemberToGroup={onAddMemberToGroup}
         t={t}
       />
 

@@ -13,6 +13,8 @@ import {
   Pencil,
   Volume2,
   Megaphone,
+  UserPlus,
+  Search,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
@@ -21,6 +23,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -66,6 +77,7 @@ export interface MessagesFeedProps {
   activeCallChannelId?: string | null;
   messagesEndRef?: React.RefObject<HTMLDivElement | null>;
   colonies?: Colony[];
+  onAddMemberToGroup?: (memberId: string) => void;
   friends?: {
     allFriends?: any[];
     onDeleteFriend?: (id: string) => Promise<void> | void;
@@ -96,11 +108,57 @@ export function MessagesFeed({
   activeCallChannelId,
   messagesEndRef,
   colonies = [],
+  onAddMemberToGroup,
   friends,
   members = [],
   t,
 }: MessagesFeedProps) {
-  const isDm = Boolean(activeChannel?.isDirectMessage || activeChannel?.id?.startsWith('dm-') || activeChannel?.dmUserId);
+  const isGroupDm = Boolean(
+    activeChannel?.isGroupDm ||
+    activeChannel?.id?.startsWith('gdm-') ||
+    (activeChannel?.dmUserIds && activeChannel.dmUserIds.length > 1)
+  );
+  const isDm = Boolean(
+    activeChannel?.isDirectMessage ||
+    activeChannel?.id?.startsWith('dm-') ||
+    activeChannel?.dmUserId ||
+    isGroupDm
+  );
+
+  // Group DM Invite Modal
+  const [isInviteGroupDmOpen, setIsInviteGroupDmOpen] = React.useState(false);
+  const [inviteSearchQuery, setInviteSearchQuery] = React.useState('');
+  const [selectedInviteFriendId, setSelectedInviteFriendId] = React.useState<string | null>(null);
+
+  const groupMemberIds = React.useMemo(() => activeChannel?.dmUserIds || [], [activeChannel?.dmUserIds]);
+
+  const availableFriendsToAdd = React.useMemo(() => {
+    const list =
+      friends?.allFriends && friends.allFriends.length > 0
+        ? friends.allFriends
+        : members || [];
+    const q = inviteSearchQuery.trim().toLowerCase();
+    return list.filter((m: any) => {
+      if (groupMemberIds.includes(m.id)) return false;
+      if (currentUser?.id && m.id === currentUser.id) return false;
+      if (!q) return true;
+      return (
+        (m.name || '').toLowerCase().includes(q) ||
+        (m.username || '').toLowerCase().includes(q)
+      );
+    });
+  }, [friends?.allFriends, members, groupMemberIds, currentUser?.id, inviteSearchQuery]);
+
+  const handleExecuteInvite = () => {
+    if (!selectedInviteFriendId) return;
+    if (onAddMemberToGroup) {
+      onAddMemberToGroup(selectedInviteFriendId);
+    }
+    toast.success(t('Teman berhasil ditambahkan ke grup!'));
+    setSelectedInviteFriendId(null);
+    setInviteSearchQuery('');
+    setIsInviteGroupDmOpen(false);
+  };
 
   // Block state
   const [blockedUsers, setBlockedUsers] = React.useState<string[]>(() => {
@@ -262,8 +320,51 @@ export function MessagesFeed({
         </div>
       ) : (
         <>
-          {/* Welcome banner at top of channel / DM (Discord Style) */}
-          {isDm ? (
+          {/* Welcome banner at top of channel / Group DM / DM (Discord Style) */}
+          {isGroupDm ? (
+            <div className="mb-6 pt-4 pb-2">
+              <CommunityAvatar
+                name={activeChannel.name}
+                imageUrl={activeChannel.avatar || (activeChannel as any).iconUrl}
+                size={80}
+                className="w-20 h-20 text-3xl font-bold mb-3 shadow-md"
+              />
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+                {activeChannel.name}
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-xl leading-relaxed">
+                {t('Welcome to the beginning of the')}{' '}
+                <span className="font-semibold text-foreground">{activeChannel.name}</span>{' '}
+                {t('group')}.
+              </p>
+
+              <div className="flex items-center gap-2 mt-4 pt-1">
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={() => setIsInviteGroupDmOpen(true)}
+                  className="font-semibold text-xs shadow-2xs gap-1.5 cursor-pointer"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>{t('Invite to Group DM')}</span>
+                </Button>
+
+                {onOpenEditChannel && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onOpenEditChannel(activeChannel)}
+                    className="font-semibold text-xs shadow-2xs gap-1.5 cursor-pointer"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    <span>{t('Edit Group')}</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : isDm ? (
             <div className="mb-6 pt-4 pb-2">
               <CommunityAvatar
                 name={dmFriend?.name || activeChannel.name}
@@ -318,35 +419,36 @@ export function MessagesFeed({
 
                 <div className="flex items-center gap-2">
                   {isFriend ? (
-                    <button
+                    <Button
                       type="button"
+                      variant="secondary"
+                      size="sm"
                       onClick={handleRemoveFriend}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer shadow-2xs active:scale-95"
+                      className="font-semibold text-xs shadow-2xs cursor-pointer active:scale-95"
                     >
                       {t('Remove Friend')}
-                    </button>
+                    </Button>
                   ) : (
-                    <button
+                    <Button
                       type="button"
+                      variant="default"
+                      size="sm"
                       onClick={handleAddFriend}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground transition-all cursor-pointer shadow-2xs active:scale-95"
+                      className="font-semibold text-xs shadow-2xs cursor-pointer active:scale-95"
                     >
                       {t('Add Friend')}
-                    </button>
+                    </Button>
                   )}
 
-                  <button
+                  <Button
                     type="button"
+                    variant={isBlocked ? 'destructive' : 'secondary'}
+                    size="sm"
                     onClick={handleToggleBlock}
-                    className={cn(
-                      'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs active:scale-95',
-                      isBlocked
-                        ? 'bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/20'
-                        : 'bg-muted hover:bg-muted/80 text-foreground'
-                    )}
+                    className="font-semibold text-xs shadow-2xs cursor-pointer active:scale-95"
                   >
                     {isBlocked ? t('Unblock') : t('Block')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -373,15 +475,17 @@ export function MessagesFeed({
               </p>
 
               {onOpenEditChannel && (
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => onOpenEditChannel(activeChannel)}
-                  className="mt-3.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted/80 hover:bg-muted text-foreground transition-all cursor-pointer border border-border/60 hover:border-border shadow-2xs group"
+                  className="mt-3.5 gap-2 shadow-2xs font-semibold text-xs cursor-pointer"
                   title={t('Edit Channel')}
                 >
                   <Pencil className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
                   <span>{t('Edit Channel')}</span>
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -459,6 +563,100 @@ export function MessagesFeed({
   )}
         </>
       )}
+      {/* Group DM Invite Dialog */}
+      <Dialog open={isInviteGroupDmOpen} onOpenChange={setIsInviteGroupDmOpen}>
+        <DialogContent size="sm" className="p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-5 pt-4 pb-2 border-b border-border/40">
+            <DialogTitle className="text-sm font-bold text-foreground">
+              {t('Invite to Group DM')}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              {t('Pilih teman yang ingin Anda undang ke dalam obrolan grup ini.')}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-5 py-2.5 border-b border-border/50">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Input
+                type="text"
+                value={inviteSearchQuery}
+                onChange={(e) => setInviteSearchQuery(e.target.value)}
+                placeholder={t('Cari teman...')}
+                className="h-8 pl-8 text-xs bg-muted/40"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="max-h-[220px] overflow-y-auto px-2 py-1 custom-scrollbar divide-y divide-border/20">
+            {availableFriendsToAdd.length === 0 ? (
+              <div className="py-6 text-center text-xs text-muted-foreground">
+                {t('Semua teman Anda sudah berada di dalam grup ini.')}
+              </div>
+            ) : (
+              availableFriendsToAdd.map((friend: any) => {
+                const isSelected = selectedInviteFriendId === friend.id;
+                return (
+                  <div
+                    key={friend.id}
+                    onClick={() => setSelectedInviteFriendId(friend.id)}
+                    className={cn(
+                      'flex items-center justify-between px-3 py-2 rounded-md transition-colors cursor-pointer',
+                      isSelected ? 'bg-primary/10' : 'hover:bg-muted/60'
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <CommunityAvatar
+                        name={friend.name}
+                        imageUrl={friend.avatar || friend.imageUrl}
+                        size={28}
+                        status={friend.status}
+                        showStatus
+                      />
+                      <span className="text-xs font-semibold text-foreground truncate">
+                        {friend.name}
+                      </span>
+                    </div>
+                    <div
+                      className={cn(
+                        'w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ml-2',
+                        isSelected
+                          ? 'bg-primary border-primary text-primary-foreground'
+                          : 'border-muted-foreground/40'
+                      )}
+                    >
+                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <DialogFooter className="px-5 py-3 border-t border-border flex items-center justify-end gap-2 bg-muted/10">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsInviteGroupDmOpen(false)}
+              className="text-xs cursor-pointer"
+            >
+              {t('Batal')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!selectedInviteFriendId}
+              onClick={handleExecuteInvite}
+              className="text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-2xs"
+            >
+              {t('Tambahkan')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div ref={messagesEndRef} />
     </div>
   );
