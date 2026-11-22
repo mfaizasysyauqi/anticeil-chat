@@ -9,17 +9,21 @@ export function useNotifications(initialData: NotificationItem[] = [], userId?: 
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
+    if (!userId) {
+      setNotifications([]);
+      return;
+    }
     setIsLoading(true);
     try {
       const data = await notificationsApi.getNotifications(userId);
       if (Array.isArray(data)) {
         const filtered = data.filter((n) => {
           // Never show a notification where current user is the sender/actor
-          if (userId && n.actorId === userId) {
+          if (n.actorId === userId) {
             return false;
           }
           const targets = n.targetUserIds || (n.targetUserId ? [n.targetUserId] : []);
-          if (targets.length > 0 && userId) {
+          if (targets.length > 0) {
             return targets.includes(userId);
           }
           return true;
@@ -36,8 +40,13 @@ export function useNotifications(initialData: NotificationItem[] = [], userId?: 
   useEffect(() => {
     fetchNotifications();
     const handleUpdate = () => fetchNotifications();
+    const handleLogout = () => setNotifications([]);
     window.addEventListener('anticeil_notification_updated', handleUpdate);
-    return () => window.removeEventListener('anticeil_notification_updated', handleUpdate);
+    window.addEventListener('anticeil_logout', handleLogout);
+    return () => {
+      window.removeEventListener('anticeil_notification_updated', handleUpdate);
+      window.removeEventListener('anticeil_logout', handleLogout);
+    };
   }, [fetchNotifications]);
 
   const handleMarkAsRead = async (id: string) => {

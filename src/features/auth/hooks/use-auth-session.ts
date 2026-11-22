@@ -181,9 +181,9 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
 
     toast.success(t('Berhasil keluar dari akun.'));
 
-    // 7. Hard redirect to clean URL
+    // 7. Hard redirect to clean public landing URL
     setTimeout(() => {
-      window.location.href = window.location.origin + window.location.pathname;
+      window.location.href = `${window.location.origin}/ai`;
     }, 150);
   };
 

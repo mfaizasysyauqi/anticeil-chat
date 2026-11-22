@@ -64,13 +64,17 @@ export function NotificationsView({
   const [activeTab, setActiveTab] = useState<NotificationsTab>('all');
 
   const visibleNotifications = notifications.filter((n) => {
+    // 0. If user is logged out, never show any notifications
+    if (!currentUserId) {
+      return false;
+    }
     // 1. Never show a notification where current user is the actor (the sender who mentioned someone else)
-    if (currentUserId && n.actorId === currentUserId) {
+    if (n.actorId === currentUserId) {
       return false;
     }
     // 2. If target recipients are specified, current user MUST be one of the targets
     const targets = n.targetUserIds || (n.targetUserId ? [n.targetUserId] : []);
-    if (targets.length > 0 && currentUserId) {
+    if (targets.length > 0) {
       if (!targets.includes(currentUserId)) return false;
     }
     return true;
