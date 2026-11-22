@@ -751,7 +751,7 @@ export function ChatInputBar({
               }}
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold"
             >
-              <AtSign className="w-4 h-4 shrink-0 text-primary" />
+              <AtSign className="w-4 h-4 shrink-0" />
               <span>{t('Mention (@)')}</span>
             </DropdownMenuItem>
 
