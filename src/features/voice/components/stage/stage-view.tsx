@@ -63,6 +63,7 @@ export interface StageViewProps {
   } | null;
   socket?: any;
   isPlusOrAbove?: boolean;
+  onOpenServerEvents?: () => void;
   onDisconnect?: () => void;
   onToggleChat?: () => void;
   isChatOpen?: boolean;
@@ -151,6 +152,7 @@ export function StageView({
   currentUser,
   socket,
   isPlusOrAbove = false,
+  onOpenServerEvents,
   onDisconnect,
   onToggleChat,
   isChatOpen = false,
@@ -601,7 +603,7 @@ export function StageView({
                 {/* Card 2: Create Event */}
                 <div
                   onClick={() => {
-                    toast.info(t('Fitur Penjadwalan Acara Stage siap digunakan'));
+                    onOpenServerEvents?.();
                   }}
                   className="w-full p-4 rounded-2xl bg-card hover:bg-muted/40 border border-border flex items-center justify-between gap-4 cursor-pointer transition-all text-left group shadow-xs"
                 >

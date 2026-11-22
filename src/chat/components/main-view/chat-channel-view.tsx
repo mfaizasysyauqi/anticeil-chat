@@ -48,6 +48,7 @@ export interface ChatChannelViewProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onOpenEditChannel?: (channel: ColonyChannel) => void;
+  onOpenServerEvents?: () => void;
 
   activeColony: Colony | null;
   currentUser: any;
@@ -168,6 +169,7 @@ export function ChatChannelView({
   setIsMobileMembersOpen,
   searchQuery,
   setSearchQuery,
+  onOpenServerEvents,
   activeColony,
   currentUser,
   isPlusOrAbove,
@@ -573,6 +575,7 @@ export function ChatChannelView({
               currentUser={currentUser}
               socket={socket}
               isPlusOrAbove={isPlusOrAbove}
+              onOpenServerEvents={onOpenServerEvents}
               onDisconnect={() => {
                 setActiveCallChannelId(null);
               }}
