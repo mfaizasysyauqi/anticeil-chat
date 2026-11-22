@@ -123,7 +123,7 @@ export function AuthRequiredDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent size="sm" className="max-w-[400px] max-h-[92vh] overflow-y-auto custom-scrollbar p-0 bg-background border border-border shadow-2xl rounded-2xl select-none">
+      <DialogContent size="md" className="max-h-[92vh] overflow-y-auto custom-scrollbar p-0 bg-background border border-border shadow-2xl rounded-2xl select-none">
         {/* Banner with gradient & Anticeil branding */}
         <div className="relative w-full h-22 sm:h-24 bg-gradient-to-br from-amber-500/15 via-primary/20 to-purple-500/15 flex flex-col items-center justify-center border-b border-border/60 shrink-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/15 via-transparent to-transparent pointer-events-none" />
@@ -132,12 +132,12 @@ export function AuthRequiredDialog({
           </div>
         </div>
 
-        <div className="p-4 sm:p-5 flex flex-col items-center text-center space-y-4">
+        <div className="p-5 sm:p-6 flex flex-col items-center text-center space-y-4">
           <DialogHeader className="space-y-1 flex flex-col items-center pr-0">
             <DialogTitle className="text-base font-bold tracking-tight text-foreground">
               {featureTitle || t('Masuk ke Anticeil')}
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground max-w-[320px] leading-relaxed">
+            <DialogDescription className="text-xs text-muted-foreground max-w-xs sm:max-w-sm leading-relaxed">
               {featureDescription ||
                 t('Pilih akun untuk melanjutkan ke percakapan, colony, dan aktivitas.')}
             </DialogDescription>
@@ -153,7 +153,7 @@ export function AuthRequiredDialog({
                 onClose();
                 onGoogleSignIn();
               }}
-              className="w-full h-10 px-3 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+              className="w-full h-10 px-3.5 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
               title={t('Lanjutkan dengan Akun Google')}
             >
               <GoogleIcon className="size-4 shrink-0" />
@@ -165,7 +165,7 @@ export function AuthRequiredDialog({
               type="button"
               variant="outline"
               onClick={handleMicrosoftClick}
-              className="w-full h-10 px-3 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+              className="w-full h-10 px-3.5 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
               title={t('Lanjutkan dengan Microsoft 365 / Entra ID')}
             >
               <MicrosoftIcon className="size-4 shrink-0" />
@@ -177,7 +177,7 @@ export function AuthRequiredDialog({
               type="button"
               variant="outline"
               onClick={handleOktaClick}
-              className="w-full h-10 px-3 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+              className="w-full h-10 px-3.5 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
               title={t('Lanjutkan dengan Okta / Auth0')}
             >
               <OktaIcon className="size-4 shrink-0 text-blue-400" />
@@ -196,14 +196,14 @@ export function AuthRequiredDialog({
           </div>
 
           {/* ── Corporate SSO Email Input ── */}
-          <div className="w-full rounded-xl border border-border/70 bg-card/50 p-2.5 text-left space-y-1.5">
+          <div className="w-full rounded-xl border border-border/70 bg-card/50 p-3 text-left space-y-2">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Building2 className="size-3.5 text-primary" />
-              <span className="text-[11px] font-medium text-foreground">
+              <span className="text-xs font-medium text-foreground">
                 {t('Single Sign-On Perusahaan')}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Input
                 type="email"
                 placeholder={t('nama@perusahaan.com')}
@@ -215,18 +215,18 @@ export function AuthRequiredDialog({
                     handleSsoSubmit();
                   }
                 }}
-                className="h-8.5 text-xs rounded-lg bg-background border-border"
+                className="h-9 text-xs rounded-lg bg-background border-border"
               />
               <Button
                 type="button"
                 onClick={handleSsoSubmit}
-                className="h-8.5 px-3 text-xs font-semibold shrink-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer"
+                className="h-9 px-3.5 text-xs font-semibold shrink-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer"
               >
                 <span>{t('Masuk')}</span>
                 <ArrowRight className="size-3.5 ml-1" />
               </Button>
             </div>
-            <p className="text-[10px] text-muted-foreground/75 leading-tight">
+            <p className="text-[11px] text-muted-foreground/75 leading-tight">
               {t('Terhubung otomatis ke Colony kantor via domain email.')}
             </p>
           </div>
