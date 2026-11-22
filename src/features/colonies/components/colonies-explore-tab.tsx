@@ -18,6 +18,7 @@ import { ColonyHeroCard } from './colony-hero-card';
 import { ColonyCard } from './colony-card';
 import type { Colony } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
+import { SURFACE_STYLES } from '@/lib/design-tokens';
 
 export interface ColoniesExploreTabProps {
   filteredExplore: Colony[];
@@ -201,7 +202,7 @@ export function ColoniesExploreTab({
           }
         />
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className={SURFACE_STYLES.CARD_GRID}>
           {categorizedList.map((pub) => (
             <ColonyCard
               key={pub.id}
