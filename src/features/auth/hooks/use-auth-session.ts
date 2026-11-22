@@ -200,30 +200,12 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     toast.success(`[DEV MODE] Masuk sebagai ${selected.name}`);
   };
 
-  const handleGuestLogin = (nickname?: string) => {
-    const guestNum = Math.floor(1000 + Math.random() * 9000);
-    const cleanName = (nickname || '').trim() || `Guest #${guestNum}`;
-    const guestUser = {
-      id: `guest_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      name: cleanName,
-      firstName: cleanName,
-      lastName: '',
-      username: cleanName.toLowerCase().replace(/[^a-z0-9_]/g, '') || `guest${guestNum}`,
-      email: `guest_${guestNum}@anticeil.com`,
-      avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=guest_${guestNum}`,
-      imageUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=guest_${guestNum}`,
-      role: 'GUEST',
-      isGuest: true,
-    };
-    const guestToken = `guest_jwt_${guestUser.id}`;
-    localStorage.setItem('token', guestToken);
-    localStorage.setItem('ap_token', guestToken);
-    localStorage.setItem('anticeil_current_user', JSON.stringify(guestUser));
-    setCurrentUser(guestUser);
-    setIsAuthRequiredOpen(false);
-    window.dispatchEvent(new Event('storage'));
-    toast.success(t('Masuk sebagai tamu: {{name}} 👤', { name: cleanName }));
-    return guestUser;
+  const handleGuestLogin = () => {
+    setAuthFeatureInfo({
+      title: t('Login Diperlukan'),
+      desc: t('Masuk dengan akun Google, Microsoft, atau Okta untuk mengakses fitur Anticeil.'),
+    });
+    setIsAuthRequiredOpen(true);
   };
 
   const handleSsoLogin = async (corporateEmail: string, displayName?: string, idpProvider?: string) => {
@@ -440,9 +422,17 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     const inviteParam = params.get('invite');
     const activityParam = params.get('activity');
 
-    // Auto guest mode if explicit param, or if arriving via invite / activity link without prior session
+    // Guest mode disabled: require real authentication via Google / Microsoft / Okta
     if (guestParam || guestNameParam) {
-      handleGuestLogin(guestNameParam || undefined);
+      setAuthFeatureInfo({
+        title: t('Login Diperlukan'),
+        desc: t('Mode Tamu dinonaktifkan untuk keamanan. Silakan masuk menggunakan akun Google, Microsoft, atau Okta.'),
+      });
+      setIsAuthRequiredOpen(true);
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('guest');
+      cleanUrl.searchParams.delete('guest_name');
+      window.history.replaceState({}, document.title, cleanUrl.toString());
       return;
     }
 
@@ -461,7 +451,7 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     if (!storedToken && (inviteParam || activityParam)) {
       setAuthFeatureInfo({
         title: activityParam ? t('Gabung Aktivitas & Panggilan Anticeil') : t('Gabung Colony & Komunitas'),
-        desc: t('Masuk dengan akun Google atau gunakan Guest Mode untuk langsung bergabung ke aktivitas bersama kawan.'),
+        desc: t('Masuk dengan akun Google, Microsoft, atau Okta untuk langsung bergabung ke aktivitas bersama kawan.'),
       });
       setIsAuthRequiredOpen(true);
     }
@@ -472,7 +462,16 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
         setCurrentUser(null);
         return;
       }
-      if (token.startsWith('guest_jwt_') || token.startsWith('mock_jwt_')) {
+      if (token.startsWith('guest_jwt_')) {
+        // Disallow persistent guest session: force real login
+        localStorage.removeItem('token');
+        localStorage.removeItem('ap_token');
+        localStorage.removeItem('anticeil_current_user');
+        setCurrentUser(null);
+        setIsAuthRequiredOpen(true);
+        return;
+      }
+      if (token.startsWith('mock_jwt_')) {
         const stored = localStorage.getItem('anticeil_current_user');
         if (stored) {
           try {

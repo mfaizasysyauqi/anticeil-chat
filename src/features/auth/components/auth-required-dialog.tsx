@@ -14,7 +14,6 @@ import {
   Sparkles,
   Bot,
   Shield,
-  UserPlus,
   Building2,
   Crown,
   CheckCircle2,
@@ -94,7 +93,6 @@ export function AuthRequiredDialog({
   featureDescription,
 }: AuthRequiredDialogProps) {
   const { t } = useTranslation();
-  const [guestName, setGuestName] = useState('');
   const [ssoEmail, setSsoEmail] = useState('');
   const [selectedIdp, setSelectedIdp] = useState<SsoProvider>('google_workspace');
 
@@ -327,49 +325,6 @@ export function AuthRequiredDialog({
                 <Shield className="size-3 text-amber-400" />
                 <span>{t('Domain Auto-Capture')}</span>
               </span>
-            </div>
-          </div>
-
-          {/* ── 3. Quick Guest Mode Join ── */}
-          <div className="w-full pt-1 text-left space-y-2 border-t border-border/50">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <UserPlus className="size-3.5 text-primary" />
-                <span>{t('Atau Masuk sebagai Tamu (Guest Mode)')}</span>
-              </span>
-              <Badge variant="outline" className="text-[9px] py-0 h-4 border-primary/30 text-primary">
-                {t('Tanpa Akun')}
-              </Badge>
-            </div>
-            <p className="text-[11px] text-muted-foreground leading-normal">
-              {t('Langsung gabung ke aktivitas, Watch Together, atau voice channel tanpa login.')}
-            </p>
-            <div className="flex items-center gap-2 pt-0.5">
-              <Input
-                type="text"
-                placeholder={t('Nama panggilan tamu...')}
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    onClose();
-                    onGuestLogin?.(guestName);
-                  }
-                }}
-                className="h-9 text-xs rounded-xl bg-muted/40 border-border"
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  onClose();
-                  onGuestLogin?.(guestName);
-                }}
-                className="h-9 px-3.5 text-xs font-semibold shrink-0 rounded-xl hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer"
-              >
-                {t('Masuk Tamu 👤')}
-              </Button>
             </div>
           </div>
 
