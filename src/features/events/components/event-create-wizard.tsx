@@ -18,10 +18,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CommunityAvatar } from '@/chat/chat-avatar';
+import { MediumDialog } from '@/components/ui/medium-dialog';
+import { cn } from '@/lib/utils';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
 import type { CalendarEvent } from '@/features/calendar/types';
 
 export interface EventCreateWizardProps {
+  open?: boolean;
   activeColony: Colony | null;
   channels: ColonyChannel[];
   voiceChannels: ColonyChannel[];
@@ -31,6 +34,7 @@ export interface EventCreateWizardProps {
 }
 
 export function EventCreateWizard({
+  open = true,
   activeColony,
   channels,
   voiceChannels,
@@ -77,35 +81,113 @@ export function EventCreateWizard({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header Wizard Steps indicator */}
-      <div className="px-6 pt-5 pb-3 border-b border-border space-y-2">
-        <div className="grid grid-cols-3 gap-2">
-          <div
-            className={`h-1 rounded-full transition-all ${
-              step >= 1 ? 'bg-primary' : 'bg-muted'
-            }`}
-          />
-          <div
-            className={`h-1 rounded-full transition-all ${
-              step >= 2 ? 'bg-primary' : 'bg-muted'
-            }`}
-          />
-          <div
-            className={`h-1 rounded-full transition-all ${
-              step >= 3 ? 'bg-primary' : 'bg-muted'
-            }`}
-          />
+    <MediumDialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onCancel();
+      }}
+      title={
+        step === 1
+          ? 'Where is your event?'
+          : step === 2
+          ? "What's your event about?"
+          : "Review Event"
+      }
+      description={
+        step === 1
+          ? 'So no one gets lost on where to go.'
+          : step === 2
+          ? 'Fill out the details of your event.'
+          : "Here's a preview of your upcoming event."
+      }
+      icon={<CalendarIcon className="w-5 h-5 text-primary" />}
+      headerContent={
+        <div className="space-y-1.5 pt-1">
+          <div className="grid grid-cols-3 gap-2">
+            <div
+              className={cn(
+                'h-1 rounded-full transition-all',
+                step >= 1 ? 'bg-primary' : 'bg-muted'
+              )}
+            />
+            <div
+              className={cn(
+                'h-1 rounded-full transition-all',
+                step >= 2 ? 'bg-primary' : 'bg-muted'
+              )}
+            />
+            <div
+              className={cn(
+                'h-1 rounded-full transition-all',
+                step >= 3 ? 'bg-primary' : 'bg-muted'
+              )}
+            />
+          </div>
+          <div className="flex justify-between text-[11px] font-semibold text-muted-foreground">
+            <span className={step === 1 ? 'text-primary font-bold' : ''}>Location</span>
+            <span className={step === 2 ? 'text-primary font-bold' : ''}>Event Info</span>
+            <span className={step === 3 ? 'text-primary font-bold' : ''}>Review</span>
+          </div>
         </div>
-        <div className="flex justify-between text-[11px] font-semibold text-muted-foreground">
-          <span className={step === 1 ? 'text-primary font-bold' : ''}>Location</span>
-          <span className={step === 2 ? 'text-primary font-bold' : ''}>Event Info</span>
-          <span className={step === 3 ? 'text-primary font-bold' : ''}>Review</span>
-        </div>
-      </div>
+      }
+      footer={
+        <div className="flex items-center justify-between w-full">
+          {step > 1 ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setStep((s) => (s - 1) as any)}
+              className="h-9 px-4 text-xs font-semibold cursor-pointer"
+            >
+              Back
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onCancel}
+              className="h-9 px-4 text-xs font-semibold cursor-pointer"
+            >
+              Cancel
+            </Button>
+          )}
 
-      {/* Wizard Body */}
-      <div className="px-6 py-4 space-y-4 max-h-[480px] overflow-y-auto custom-scrollbar">
+          <div className="flex items-center gap-2">
+            {step < 3 ? (
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (step === 1 && locationType === 'external' && !externalLocation.trim()) {
+                    return;
+                  }
+                  if (step === 2 && !topic.trim()) {
+                    return;
+                  }
+                  setStep((s) => (s + 1) as any);
+                }}
+                disabled={
+                  (step === 1 && locationType === 'external' && !externalLocation.trim()) ||
+                  (step === 2 && !topic.trim())
+                }
+                className="h-9 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs rounded-lg"
+              >
+                Next
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="h-9 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs rounded-lg"
+              >
+                {isSubmitting ? 'Creating Event...' : 'Create Event'}
+              </Button>
+            )}
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-4 py-1">
         {/* ── STEP 1: LOCATION ── */}
         {step === 1 && (
           <div className="space-y-4">
@@ -315,59 +397,6 @@ export function EventCreateWizard({
           </div>
         )}
       </div>
-
-      {/* Footer Buttons */}
-      <div className="flex items-center justify-between px-6 py-4 bg-muted/30 border-t border-border">
-        {step > 1 ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setStep((s) => (s - 1) as any)}
-            className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-          >
-            Back
-          </Button>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onCancel}
-            className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-          >
-            Cancel
-          </Button>
-        )}
-
-        <div className="flex items-center gap-2">
-          {step < 3 ? (
-            <Button
-              size="sm"
-              onClick={() => {
-                if (step === 1 && locationType === 'external' && !externalLocation.trim()) {
-                  return;
-                }
-                if (step === 2 && !topic.trim()) {
-                  return;
-                }
-                setStep((s) => (s + 1) as any);
-              }}
-              disabled={(step === 1 && locationType === 'external' && !externalLocation.trim()) || (step === 2 && !topic.trim())}
-              className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-            >
-              Next
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer shadow-md"
-            >
-              {isSubmitting ? 'Creating Event...' : 'Create Event'}
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
+    </MediumDialog>
   );
 }

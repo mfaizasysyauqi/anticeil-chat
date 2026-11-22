@@ -33,14 +33,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { MediumDialog } from '@/components/ui/medium-dialog';
+import { SmallDialog } from '@/components/ui/small-dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -1059,152 +1053,101 @@ export function StageView({
         </div>
 
         {/* ───────────────────────────────────────────────────────────── */}
-        {/* MODAL 1: START THE STAGE                                      */}
+        {/* MODAL 1: START THE STAGE (MEDIUM DIALOG TEMPLATE)              */}
         {/* ───────────────────────────────────────────────────────────── */}
-        <Dialog open={isStartStageModalOpen} onOpenChange={setIsStartStageModalOpen}>
-          <DialogContent size="md" className="bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
-            <DialogHeader className="space-y-3 text-center">
-              {/* Studio Mic Illustration */}
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center mx-auto shadow-lg shadow-purple-500/30">
-                <Mic className="w-8 h-8 text-white" />
-              </div>
-              <DialogTitle className="text-xl font-extrabold text-white">
-                {t('What will you be talking about?')}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-white/60">
-                {t('Write a topic to start your Stage.')}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-2">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-white/70 block">
-                  {t('Stage Topic')} <span className="text-rose-400">*</span>
-                </label>
-                <Input
-                  value={newTopicInput}
-                  onChange={(e) => setNewTopicInput(e.target.value)}
-                  placeholder={channel.topic || channel.description || `Topik #${channel.name}`}
-                  className="bg-[#1e1f22] border-white/10 text-white text-xs h-10 rounded-lg focus-visible:ring-primary"
-                  autoFocus
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <Checkbox
-                  id="notify-everyone"
-                  checked={notifyEveryone}
-                  onCheckedChange={(c) => setNotifyEveryone(!!c)}
-                />
-                <label
-                  htmlFor="notify-everyone"
-                  className="text-xs text-white/80 cursor-pointer font-medium select-none"
-                >
-                  {t('Notify @everyone')}
-                </label>
-              </div>
+        <MediumDialog
+          open={isStartStageModalOpen}
+          onOpenChange={setIsStartStageModalOpen}
+          title={t('What will you be talking about?')}
+          description={t('Write a topic to start your Stage.')}
+          icon={
+            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-xs">
+              <Mic className="w-5 h-5" />
             </div>
-
-            <DialogFooter className="pt-3 gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setIsStartStageModalOpen(false)}
-                className="h-9 px-4 text-xs font-semibold cursor-pointer"
-              >
-                {t('Cancel')}
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleStartStage}
-                className="h-9 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs rounded-lg"
-              >
-                {t('Start Stage')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* ───────────────────────────────────────────────────────────── */}
-        {/* MODAL 2: END STAGE CONFIRMATION                               */}
-        {/* ───────────────────────────────────────────────────────────── */}
-        <Dialog open={isEndStageModalOpen} onOpenChange={setIsEndStageModalOpen}>
-          <DialogContent size="sm" className="bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
-            <DialogHeader className="space-y-2">
-              <DialogTitle className="text-lg font-bold text-white">
-                {t('Do you want to also end the Stage?')}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-white/60 leading-relaxed">
-                {t('A Stage with no speakers will automatically end after a few minutes.')}
-              </DialogDescription>
-            </DialogHeader>
-
-            <DialogFooter className="pt-4 flex flex-col gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setIsEndStageModalOpen(false);
-                  onDisconnect?.();
-                }}
-                className="w-full bg-[#4e5058]/40 hover:bg-[#4e5058]/60 text-white text-xs font-semibold h-10 rounded-lg cursor-pointer"
-              >
-                {t('No, just disconnect quietly')}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleEndStage}
-                className="w-full bg-[#da373c] hover:bg-[#c03135] text-white text-xs font-semibold h-10 rounded-lg cursor-pointer"
-              >
-                {t('Disconnect and End')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* ───────────────────────────────────────────────────────────── */}
-        {/* MODAL 3: CHANGE THE TOPIC                                     */}
-        {/* ───────────────────────────────────────────────────────────── */}
-        <Dialog open={isChangeTopicModalOpen} onOpenChange={setIsChangeTopicModalOpen}>
-          <DialogContent size="md" className="bg-[#313338] border-white/10 text-white p-6 rounded-2xl shadow-2xl">
-            <DialogHeader className="space-y-1">
-              <DialogTitle className="text-base font-bold text-white">
-                {t('Change the topic')}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-white/60">
-                {t('Update the live discussion topic for all audience members.')}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="py-2">
+          }
+          confirmLabel={t('Start Stage')}
+          cancelLabel={t('Batal')}
+          onConfirm={handleStartStage}
+        >
+          <div className="space-y-4 py-1">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground flex items-center gap-1">
+                <span>{t('Stage Topic')}</span> <span className="text-destructive">*</span>
+              </label>
               <Input
                 value={newTopicInput}
                 onChange={(e) => setNewTopicInput(e.target.value)}
                 placeholder={channel.topic || channel.description || `Topik #${channel.name}`}
-                className="bg-[#1e1f22] border-white/10 text-white text-xs h-10 rounded-lg focus-visible:ring-primary"
+                className="bg-card border-border text-foreground text-xs h-9 rounded-lg focus-visible:ring-primary"
+                autoFocus
               />
             </div>
 
-            <DialogFooter className="pt-2 gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setIsChangeTopicModalOpen(false)}
-                className="h-9 px-4 text-xs font-semibold cursor-pointer"
+            <div className="flex items-center gap-2 pt-1">
+              <Checkbox
+                id="notify-everyone"
+                checked={notifyEveryone}
+                onCheckedChange={(c) => setNotifyEveryone(!!c)}
+              />
+              <label
+                htmlFor="notify-everyone"
+                className="text-xs text-foreground cursor-pointer font-medium select-none"
               >
-                {t('Batal')}
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleSaveTopic}
-                className="h-9 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs rounded-lg"
-              >
-                {t('Simpan Topik')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                {t('Notify @everyone')}
+              </label>
+            </div>
+          </div>
+        </MediumDialog>
+
+        {/* ───────────────────────────────────────────────────────────── */}
+        {/* MODAL 2: END STAGE CONFIRMATION (SMALL DIALOG TEMPLATE)        */}
+        {/* ───────────────────────────────────────────────────────────── */}
+        <SmallDialog
+          open={isEndStageModalOpen}
+          onOpenChange={setIsEndStageModalOpen}
+          title={t('Do you want to also end the Stage?')}
+          description={t('A Stage with no speakers will automatically end after a few minutes.')}
+          icon={<Podcast className="w-5 h-5 text-destructive" />}
+          confirmLabel={t('Disconnect and End')}
+          cancelLabel={t('No, just disconnect quietly')}
+          variant="destructive"
+          onConfirm={handleEndStage}
+          onClose={() => {
+            setIsEndStageModalOpen(false);
+            onDisconnect?.();
+          }}
+        />
+
+        {/* ───────────────────────────────────────────────────────────── */}
+        {/* MODAL 3: CHANGE THE TOPIC (MEDIUM DIALOG TEMPLATE)             */}
+        {/* ───────────────────────────────────────────────────────────── */}
+        <MediumDialog
+          open={isChangeTopicModalOpen}
+          onOpenChange={setIsChangeTopicModalOpen}
+          title={t('Change the topic')}
+          description={t('Update the live discussion topic for all audience members.')}
+          icon={
+            <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-xs">
+              <Podcast className="w-4 h-4" />
+            </div>
+          }
+          confirmLabel={t('Simpan Topik')}
+          cancelLabel={t('Batal')}
+          onConfirm={handleSaveTopic}
+        >
+          <div className="space-y-1.5 py-1">
+            <label className="text-xs font-semibold text-foreground block">
+              {t('Topik Baru')}
+            </label>
+            <Input
+              value={newTopicInput}
+              onChange={(e) => setNewTopicInput(e.target.value)}
+              placeholder={channel.topic || channel.description || `Topik #${channel.name}`}
+              className="bg-card border-border text-foreground text-xs h-9 rounded-lg focus-visible:ring-primary"
+              autoFocus
+            />
+          </div>
+        </MediumDialog>
 
         {/* Continuous Audio Streams for Stage Participants */}
         {participants.map((p) => (

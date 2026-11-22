@@ -16,7 +16,7 @@ import {
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { MediumDialog } from '@/components/ui/medium-dialog';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
@@ -128,219 +128,222 @@ export function ColonyEventsModal({
     toast.success('Link event berhasil disalin!');
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        size="md"
-        aria-describedby={undefined}
-        className="p-0 bg-background border-border text-foreground rounded-2xl overflow-hidden shadow-2xl focus:outline-none"
+  if (viewState === 'create') {
+    return (
+      <EventCreateWizard
+        open={isOpen}
+        activeColony={activeColony}
+        channels={channels}
+        voiceChannels={voiceChannels}
+        onCancel={() => setViewState('list')}
+        onFinish={handleFinishCreate}
+        currentUser={currentUser}
+      />
+    );
+  }
+
+  if (viewState === 'share') {
+    return (
+      <MediumDialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewState('list');
+            onClose();
+          }
+        }}
+        title="All set. Now share your event!"
+        description="Copy the event link below to invite people to your event. This also acts as a server invite link."
+        icon={<Sparkles className="w-5 h-5 text-primary" />}
+        footer={
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => {
+              setViewState('list');
+            }}
+            className="h-9 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs rounded-lg"
+          >
+            Done
+          </Button>
+        }
       >
-        <DialogTitle className="sr-only">Server Events</DialogTitle>
+        <div className="space-y-4 py-2 text-center">
+          <div className="relative w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto shadow-inner">
+            <CalendarIcon className="w-7 h-7 text-primary" />
+            <Sparkles className="w-3.5 h-3.5 text-primary absolute top-1 right-1" />
+          </div>
 
-        {/* ── VIEW 1: EVENTS LIST MODAL ── */}
-        {viewState === 'list' && (
-          <div className="flex flex-col max-h-[85vh]">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-primary" />
-                  <span className="font-bold text-sm tracking-wide text-foreground">
-                    {serverEvents.length} {serverEvents.length === 1 ? 'Event' : 'Events'}
-                  </span>
+          <div className="flex items-center gap-2 p-1.5 bg-card border border-border rounded-lg">
+            <Input
+              readOnly
+              value={getShareLink()}
+              className="bg-transparent border-0 text-xs h-8 text-muted-foreground select-all focus-visible:ring-0"
+            />
+            <Button
+              size="sm"
+              onClick={copyShareLink}
+              className="h-8 px-4 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-md shrink-0 shadow-xs cursor-pointer"
+            >
+              Copy
+            </Button>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground/70 text-left">
+            Your invite link expires in 7 days.
+          </p>
+        </div>
+      </MediumDialog>
+    );
+  }
+
+  return (
+    <MediumDialog
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      title={activeColony ? `${activeColony.name} Events` : 'Server Events'}
+      description="Rencanakan dan ikuti jadwal aktivitas komunitas."
+      icon={<CalendarIcon className="w-5 h-5 text-primary" />}
+      headerContent={
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-xs font-semibold text-muted-foreground">
+            {serverEvents.length} {serverEvents.length === 1 ? 'Event' : 'Events'}
+          </span>
+          <Button
+            size="sm"
+            onClick={handleOpenCreate}
+            className="h-7 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-md shadow-xs cursor-pointer"
+          >
+            Create Event
+          </Button>
+        </div>
+      }
+      footer={
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onClose}
+          className="h-9 px-4 text-xs font-semibold cursor-pointer"
+        >
+          Tutup
+        </Button>
+      }
+    >
+      <div className="space-y-3 py-1">
+        {serverEvents.length === 0 ? (
+          <EmptyState
+            compact
+            icon={<CalendarIcon className="w-6 h-6 stroke-[1.8] text-primary/80" />}
+            title="Belum ada event terjadwal"
+            description="Rencanakan acara komunitas, streaming game bareng, atau rapat suara terjadwal di sini."
+            action={
+              <Button
+                size="sm"
+                onClick={handleOpenCreate}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 shadow-xs cursor-pointer"
+              >
+                Buat Event Pertama
+              </Button>
+            }
+          />
+        ) : (
+          serverEvents.map((ev) => {
+            const evDate = dayjs(ev.startTime);
+            const isFuture = evDate.isAfter(dayjs());
+            const diffMin = evDate.diff(dayjs(), 'minute');
+
+            let timeLabel = `Today at ${evDate.format('HH:mm')}`;
+            if (!evDate.isSame(dayjs(), 'day')) {
+              timeLabel = evDate.format('MMM D, YYYY [at] HH:mm');
+            }
+            if (isFuture && diffMin < 60 && diffMin >= 0) {
+              timeLabel = `Starting in ${diffMin}m`;
+            }
+
+            return (
+              <div
+                key={ev.id}
+                className="p-3.5 bg-card hover:bg-muted/30 border border-border rounded-xl space-y-2.5 transition-colors shadow-2xs"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary text-primary-foreground uppercase tracking-wider">
+                      NEW
+                    </span>
+                    <span className="text-xs font-semibold text-primary">{timeLabel}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CommunityAvatar
+                      name={currentUser?.name || 'Creator'}
+                      imageUrl={currentUser?.avatar}
+                      size={20}
+                    />
+                    <div className="flex items-center gap-1 text-[11px]">
+                      <Users className="w-3.5 h-3.5" />
+                      <span>{interestedEventIds.has(ev.id) ? 2 : 1}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="w-px h-4 bg-border" />
-                <Button
-                  size="sm"
-                  onClick={handleOpenCreate}
-                  className="h-7 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-md shadow-xs cursor-pointer"
-                >
-                  Create Event
-                </Button>
-              </div>
-            </div>
 
-            {/* List Body */}
-            <div className="p-4 space-y-3 overflow-y-auto max-h-[500px] max-md:scrollbar-none custom-scrollbar">
-              {serverEvents.length === 0 ? (
-                <EmptyState
-                  compact
-                  icon={<CalendarIcon className="w-6 h-6 stroke-[1.8] text-primary/80" />}
-                  title="Belum ada event terjadwal"
-                  description="Rencanakan acara komunitas, streaming game bareng, atau rapat suara terjadwal di sini."
-                  action={
+                <div>
+                  <h4 className="text-sm font-bold text-foreground">{ev.title}</h4>
+                  {ev.description && (
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">
+                      {ev.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5 truncate max-w-[200px]">
+                    {ev.channelId ? (
+                      <>
+                        <Volume2 className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                        <span className="truncate">{ev.channelName || 'Voice Channel'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                        <span className="truncate">{ev.channelName || 'Somewhere Else'}</span>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {ev.channelId && onJoinChannel && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          onJoinChannel(ev.channelId!);
+                          onClose();
+                        }}
+                        className="h-7 text-xs px-2.5 font-semibold cursor-pointer"
+                      >
+                        Join Voice
+                      </Button>
+                    )}
                     <Button
                       size="sm"
-                      onClick={handleOpenCreate}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-4 shadow-xs cursor-pointer"
+                      variant={interestedEventIds.has(ev.id) ? "default" : "secondary"}
+                      className={cn(
+                        "h-7 text-xs px-3 font-semibold flex items-center gap-1 rounded-md shadow-xs cursor-pointer transition-colors",
+                        interestedEventIds.has(ev.id)
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          : "hover:bg-accent text-foreground"
+                      )}
+                      onClick={() => toggleInterest(ev.id)}
                     >
-                      Buat Event Pertama
+                      <Check className="w-3.5 h-3.5" />
+                      {interestedEventIds.has(ev.id) ? 'Interested' : 'Interest'}
                     </Button>
-                  }
-                />
-              ) : (
-                serverEvents.map((ev) => {
-                  const evDate = dayjs(ev.startTime);
-                  const isFuture = evDate.isAfter(dayjs());
-                  const diffMin = evDate.diff(dayjs(), 'minute');
-
-                  let timeLabel = `Today at ${evDate.format('HH:mm')}`;
-                  if (!evDate.isSame(dayjs(), 'day')) {
-                    timeLabel = evDate.format('MMM D, YYYY [at] HH:mm');
-                  }
-                  if (isFuture && diffMin < 60 && diffMin >= 0) {
-                    timeLabel = `Starting in ${diffMin}m`;
-                  }
-
-                  return (
-                    <div
-                      key={ev.id}
-                      className="p-4 bg-card hover:bg-muted/30 border border-border rounded-xl space-y-3 transition-colors shadow-2xs"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary text-primary-foreground uppercase tracking-wider">
-                            NEW
-                          </span>
-                          <span className="text-xs font-semibold text-primary">{timeLabel}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <CommunityAvatar
-                            name={currentUser?.name || 'Creator'}
-                            imageUrl={currentUser?.avatar}
-                            size={20}
-                          />
-                          <div className="flex items-center gap-1 text-[11px]">
-                            <Users className="w-3.5 h-3.5" />
-                            <span>{interestedEventIds.has(ev.id) ? 2 : 1}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="text-sm font-bold text-foreground">{ev.title}</h4>
-                        {ev.description && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-                            {ev.description}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1.5 truncate max-w-[200px]">
-                          {ev.channelId ? (
-                            <>
-                              <Volume2 className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-                              <span className="truncate">{ev.channelName || 'Voice Channel'}</span>
-                            </>
-                          ) : (
-                            <>
-                              <MapPin className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-                              <span className="truncate">{ev.channelName || 'Somewhere Else'}</span>
-                            </>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          {ev.channelId && onJoinChannel && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => {
-                                onJoinChannel(ev.channelId!);
-                                onClose();
-                              }}
-                              className="h-7 text-xs px-2.5 font-semibold cursor-pointer"
-                            >
-                              Join Voice
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant={interestedEventIds.has(ev.id) ? "default" : "secondary"}
-                            className={cn(
-                              "h-7 text-xs px-3 font-semibold flex items-center gap-1 rounded-md shadow-xs cursor-pointer transition-colors",
-                              interestedEventIds.has(ev.id)
-                                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                                : "hover:bg-accent text-foreground"
-                            )}
-                            onClick={() => toggleInterest(ev.id)}
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            {interestedEventIds.has(ev.id) ? 'Interested' : 'Interest'}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
         )}
-
-        {/* ── VIEW 2: CREATE EVENT WIZARD ── */}
-        {viewState === 'create' && (
-          <EventCreateWizard
-            activeColony={activeColony}
-            channels={channels}
-            voiceChannels={voiceChannels}
-            onCancel={() => setViewState('list')}
-            onFinish={handleFinishCreate}
-            currentUser={currentUser}
-          />
-        )}
-
-        {/* ── VIEW 3: SHARE EVENT MODAL (DISCORD STYLE) ── */}
-        {viewState === 'share' && (
-          <div className="p-6 text-center space-y-4">
-            <div className="relative w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto shadow-inner">
-              <CalendarIcon className="w-8 h-8 text-primary" />
-              <Sparkles className="w-4 h-4 text-primary absolute top-1 right-1" />
-              <Sparkles className="w-3.5 h-3.5 text-secondary absolute bottom-1 left-1" />
-            </div>
-
-            <div>
-              <h3 className="text-lg font-bold text-foreground">All set. Now share your event!</h3>
-              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto leading-relaxed">
-                Copy the event link below to invite people to your event. This also acts as a server invite link.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 p-1.5 bg-card border border-border rounded-lg">
-              <Input
-                readOnly
-                value={getShareLink()}
-                className="bg-transparent border-0 text-xs h-8 text-muted-foreground select-all focus-visible:ring-0"
-              />
-              <Button
-                size="sm"
-                onClick={copyShareLink}
-                className="h-8 px-4 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-md shrink-0 shadow-xs cursor-pointer"
-              >
-                Copy
-              </Button>
-            </div>
-
-            <p className="text-[11px] text-muted-foreground/70 text-left">
-              Your invite link expires in 7 days.
-            </p>
-
-            <div className="pt-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setViewState('list');
-                }}
-                className="w-full text-xs h-9 cursor-pointer"
-              >
-                Done
-              </Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </MediumDialog>
   );
 }
