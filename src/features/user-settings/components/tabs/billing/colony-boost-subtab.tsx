@@ -22,6 +22,7 @@ import { coloniesApi } from '@/features/colonies/api/colonies-api';
 import {
   subscriptionsApi,
   loadMidtransSnap,
+  DEFAULT_MIDTRANS_CLIENT_KEY,
   type UserSubscription,
 } from '@/features/billing/api/subscriptions-api';
 import type { Colony } from '@/chat/chat-types';
@@ -145,7 +146,7 @@ export function ColonyBoostSubtab({
       }
 
       await loadMidtransSnap(
-        res.clientKey || (import.meta.env.VITE_MIDTRANS_CLIENT_KEY as string) || '',
+        res.clientKey || DEFAULT_MIDTRANS_CLIENT_KEY,
       );
 
       if (typeof window !== 'undefined' && (window as any).snap) {

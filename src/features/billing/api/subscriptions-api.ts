@@ -34,13 +34,23 @@ export interface MidtransVerifyResponse {
   message?: string;
 }
 
-export const loadMidtransSnap = (clientKey: string, isProduction = false): Promise<void> => {
+export const DEFAULT_MIDTRANS_CLIENT_KEY =
+  (import.meta.env.VITE_MIDTRANS_CLIENT_KEY as string) ||
+  ((import.meta.env as any).AP_MIDTRANS_CLIENT_KEY as string) ||
+  'Mid-client-yRBpRaqmL0lFDRLN';
+
+export const loadMidtransSnap = (clientKey?: string, isProduction?: boolean): Promise<void> => {
   return new Promise((resolve) => {
     if ((window as any).snap) {
       resolve();
       return;
     }
-    const src = isProduction
+    const resolvedKey = clientKey || DEFAULT_MIDTRANS_CLIENT_KEY;
+    const isProd =
+      isProduction ??
+      (import.meta.env.VITE_MIDTRANS_IS_PRODUCTION === 'true' ||
+        (import.meta.env as any).AP_MIDTRANS_IS_PRODUCTION === 'true');
+    const src = isProd
       ? 'https://app.midtrans.com/snap/snap.js'
       : 'https://app.sandbox.midtrans.com/snap/snap.js';
     const existing = document.querySelector(`script[src="${src}"]`);
@@ -50,8 +60,9 @@ export const loadMidtransSnap = (clientKey: string, isProduction = false): Promi
     }
     const script = document.createElement('script');
     script.src = src;
-    script.setAttribute('data-client-key', clientKey);
+    script.setAttribute('data-client-key', resolvedKey);
     script.onload = () => resolve();
+    script.onerror = () => resolve();
     document.head.appendChild(script);
   });
 };
@@ -60,21 +71,33 @@ export const subscriptionsApi = {
   createMidtransToken: async (
     planId: 'nectar_basic' | 'nectar_boost' | 'royal_enterprise'
   ): Promise<MidtransTokenResponse> => {
-    return api.post<MidtransTokenResponse>('/v1/billing/midtrans-token', {
+    const res = await api.post<MidtransTokenResponse>('/v1/billing/midtrans-token', {
       plan: planId,
       cycle: 'month',
     });
+    return {
+      snapToken: res?.snapToken || '',
+      redirectUrl: res?.redirectUrl,
+      orderId: res?.orderId || `AC-SUB-${Date.now()}`,
+      clientKey: res?.clientKey || DEFAULT_MIDTRANS_CLIENT_KEY,
+    };
   },
 
   createBoostToken: async (
     count: number,
     colonyId?: string
   ): Promise<MidtransTokenResponse> => {
-    return api.post<MidtransTokenResponse>('/v1/billing/midtrans-token', {
+    const res = await api.post<MidtransTokenResponse>('/v1/billing/midtrans-token', {
       type: 'colony_boost',
       count,
       colonyId,
     });
+    return {
+      snapToken: res?.snapToken || '',
+      redirectUrl: res?.redirectUrl,
+      orderId: res?.orderId || `AC-BST-${Date.now()}`,
+      clientKey: res?.clientKey || DEFAULT_MIDTRANS_CLIENT_KEY,
+    };
   },
 
   purchaseBoostSlots: async (

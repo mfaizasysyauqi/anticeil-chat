@@ -20,7 +20,7 @@ import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
-import { subscriptionsApi, loadMidtransSnap } from '@/features/billing/api/subscriptions-api';
+import { subscriptionsApi, loadMidtransSnap, DEFAULT_MIDTRANS_CLIENT_KEY } from '@/features/billing/api/subscriptions-api';
 
 export interface NectarSubtabProps {
   theme?: any;
@@ -40,7 +40,7 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         throw new Error('Gagal mendapatkan token pembayaran dari server');
       }
 
-      await loadMidtransSnap(res.clientKey || (import.meta.env.VITE_MIDTRANS_CLIENT_KEY as string) || '');
+      await loadMidtransSnap(res.clientKey || DEFAULT_MIDTRANS_CLIENT_KEY);
 
       if (typeof window !== 'undefined' && (window as any).snap) {
         (window as any).snap.pay(res.snapToken, {

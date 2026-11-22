@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
-import { giftsApi, loadMidtransSnap, type GiftItem } from '@/features/billing/api/gifts-api';
+import { giftsApi, loadMidtransSnap, DEFAULT_MIDTRANS_CLIENT_KEY, type GiftItem } from '@/features/billing/api/gifts-api';
 
 const GIFT_OPTIONS = [
   {
@@ -110,7 +110,7 @@ export function GiftInventorySubtab() {
         return;
       }
 
-      const clientKey = tokenRes.clientKey || import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
+      const clientKey = tokenRes.clientKey || DEFAULT_MIDTRANS_CLIENT_KEY;
       await loadMidtransSnap(clientKey);
 
       if (window.snap) {

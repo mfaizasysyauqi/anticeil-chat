@@ -1,5 +1,7 @@
 import { api } from '@/lib/api';
 import { billingApi } from './billing-api';
+import { loadMidtransSnap, DEFAULT_MIDTRANS_CLIENT_KEY } from './subscriptions-api';
+export { loadMidtransSnap, DEFAULT_MIDTRANS_CLIENT_KEY };
 
 export interface GiftItem {
   id: string;
@@ -39,28 +41,6 @@ declare global {
       ) => void;
     };
   }
-}
-
-export function loadMidtransSnap(clientKey: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (window.snap) {
-      resolve(true);
-      return;
-    }
-    const scriptId = 'midtrans-snap-script';
-    const existingScript = document.getElementById(scriptId);
-    if (existingScript) {
-      existingScript.onload = () => resolve(true);
-      return;
-    }
-    const script = document.createElement('script');
-    script.id = scriptId;
-    script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
-    script.setAttribute('data-client-key', clientKey);
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
 }
 
 export const giftsApi = {
@@ -110,10 +90,16 @@ export const giftsApi = {
   createGiftToken: async (
     giftType: 'nectar_basic' | 'nectar_boost' | 'boost_1m' | 'nectar_1y',
   ): Promise<{ snapToken: string; redirectUrl?: string; orderId: string; clientKey?: string }> => {
-    return api.post<{ snapToken: string; redirectUrl?: string; orderId: string; clientKey?: string }>(
+    const res = await api.post<{ snapToken: string; redirectUrl?: string; orderId: string; clientKey?: string }>(
       '/v1/billing/midtrans-token',
       { isGift: true, giftType, plan: giftType },
     );
+    return {
+      snapToken: res?.snapToken || '',
+      redirectUrl: res?.redirectUrl,
+      orderId: res?.orderId || `AC-GFT-${Date.now()}`,
+      clientKey: res?.clientKey || DEFAULT_MIDTRANS_CLIENT_KEY,
+    };
   },
 
   verifyGiftPayment: async (
