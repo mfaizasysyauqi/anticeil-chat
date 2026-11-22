@@ -627,8 +627,16 @@ export function StageView({
                 <div
                   onClick={() => {
                     setStageStatus('live');
-                    setUserRole(isColonyAdminOrOwner ? 'moderator' : 'speaker');
-                    toast.success(t('Bergabung dalam mode mic check'));
+                    setUserRole('audience');
+                    if (!isMuted) {
+                      handleToggleMute();
+                    }
+                    socket?.emit('COMMUNITY_STAGE_EVENT', {
+                      channelId: channel.id,
+                      action: 'STAGE_SPEAKER_DEMOTE',
+                      userId: currentUser?.id,
+                    });
+                    toast.success(t('Bergabung sebagai audiens'));
                   }}
                   className="w-full p-4 rounded-2xl bg-card hover:bg-muted/40 border border-border flex items-center justify-between gap-4 cursor-pointer transition-all text-left group shadow-xs"
                 >
