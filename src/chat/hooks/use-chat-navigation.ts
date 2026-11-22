@@ -75,12 +75,9 @@ export function useChatNavigation({
         const parts = activeChannelId.slice(3).split('-').filter(Boolean);
         const otherUserId =
           parts.find((p) => p !== currentUser?.id) || parts[0];
-        const otherMember = members.find((m) => m.id === otherUserId);
-        if (!otherMember || otherUserId === 'u1') {
-          return null;
-        }
+        const otherMember = members.find((m) => m.id === otherUserId || m.email === otherUserId);
         const dmName =
-          otherMember.name || otherMember.username || 'Pengguna';
+          otherMember?.name || otherMember?.username || 'Pengguna Anticeil';
         return {
           id: activeChannelId,
           name: dmName,
@@ -92,6 +89,8 @@ export function useChatNavigation({
           type: 'text',
         } as ColonyChannel;
       }
+      const regularCh = channels.find((c) => c.id === activeChannelId || c.name === activeChannelId);
+      if (regularCh) return regularCh;
       return null;
     }
     if (colonyChannels.length === 0) {

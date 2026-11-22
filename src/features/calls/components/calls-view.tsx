@@ -235,24 +235,13 @@ export function CallsView({
                 >
                   <div className="relative">
                     <div className="size-11 rounded-[14px] bg-sidebar-accent border border-sidebar-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
-                      {f.imageUrl || f.avatar ? (
-                        <CommunityAvatar
-                          name={f.name}
-                          imageUrl={f.imageUrl || f.avatar}
-                          size={44}
-                          className="rounded-[14px]"
-                          variant="squircle"
-                        />
-                      ) : f.id === 'anticeil' || f.name === 'Anticeil Official' ? (
-                        <AnticeilLogo className="size-6 text-foreground" />
-                      ) : (
-                        <CommunityAvatar
-                          name={f.name}
-                          size={44}
-                          className="rounded-[14px]"
-                          variant="squircle"
-                        />
-                      )}
+                      <CommunityAvatar
+                        name={f.name}
+                        imageUrl={f.imageUrl || f.avatar}
+                        size={44}
+                        className="rounded-[14px]"
+                        variant="squircle"
+                      />
                     </div>
                     <span
                       className={cn(

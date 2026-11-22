@@ -497,7 +497,7 @@ export function HomeChannelsSidebar({
                     )}
                   >
                     {isGroup ? (
-                      <div className="w-[18px] h-[18px] rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
                         <Users className="w-3 h-3" />
                       </div>
                     ) : (
@@ -512,7 +512,7 @@ export function HomeChannelsSidebar({
                             ? currentUser.imageUrl || currentUser.avatar
                             : undefined)
                         }
-                        size={18}
+                        size={20}
                         status={member?.status || (dm as any).status || (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name) ? 'online' : undefined)}
                         showStatus={Boolean(member?.status || (dm as any).status || (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name)))}
                       />

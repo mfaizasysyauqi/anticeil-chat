@@ -14,8 +14,12 @@ export function useNotifications(initialData: NotificationItem[] = [], userId?: 
       const data = await notificationsApi.getNotifications(userId);
       if (Array.isArray(data)) {
         const filtered = data.filter((n) => {
+          // Never show a notification where current user is the sender/actor
           if (userId && n.actorId === userId) {
-            const targets = n.targetUserIds || (n.targetUserId ? [n.targetUserId] : []);
+            return false;
+          }
+          const targets = n.targetUserIds || (n.targetUserId ? [n.targetUserId] : []);
+          if (targets.length > 0 && userId) {
             return targets.includes(userId);
           }
           return true;

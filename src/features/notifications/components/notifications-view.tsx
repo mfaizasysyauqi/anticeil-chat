@@ -64,8 +64,13 @@ export function NotificationsView({
   const [activeTab, setActiveTab] = useState<NotificationsTab>('all');
 
   const visibleNotifications = notifications.filter((n) => {
+    // 1. Never show a notification where current user is the actor (the sender who mentioned someone else)
     if (currentUserId && n.actorId === currentUserId) {
-      const targets = n.targetUserIds || (n.targetUserId ? [n.targetUserId] : []);
+      return false;
+    }
+    // 2. If target recipients are specified, current user MUST be one of the targets
+    const targets = n.targetUserIds || (n.targetUserId ? [n.targetUserId] : []);
+    if (targets.length > 0 && currentUserId) {
       if (!targets.includes(currentUserId)) return false;
     }
     return true;
@@ -181,7 +186,7 @@ export function NotificationsView({
 
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar">
-        <div className={cn(horizontalPadding, verticalPadding, 'w-full')}>
+        <div className={cn(horizontalPadding, verticalPadding, 'w-full max-w-4xl mx-auto space-y-2.5')}>
         {filteredNotifications.length === 0 ? (
           <EmptyState
             icon={<BellOff className="w-8 h-8 stroke-[1.8] text-primary" />}
@@ -197,13 +202,13 @@ export function NotificationsView({
             )}
           />
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {filteredNotifications.map((item) => (
               <div
                 key={item.id}
                 onClick={() => onJumpToMessage(item)}
                 className={cn(
-                  'flex items-start gap-3 sm:gap-3.5 p-3.5 rounded-lg border transition-all cursor-pointer group',
+                  'w-full flex items-start gap-3.5 px-4 py-3.5 rounded-xl border transition-all cursor-pointer group shadow-2xs',
                   !item.isRead
                     ? 'bg-accent/40 border-primary/30 hover:border-primary/50'
                     : 'bg-card/40 border-border/40 hover:bg-accent/20 hover:border-border/80',

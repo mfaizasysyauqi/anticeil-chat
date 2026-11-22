@@ -16,6 +16,8 @@ export interface ColonyRailWrapperProps {
   unreadCounts: Record<string, number | string>;
   currentUser: any;
   channels: ColonyChannel[];
+  dmChannels?: ColonyChannel[];
+  members?: any[];
   platformName?: string;
   railMode: 'servers' | 'friends';
   friends: any[];
@@ -45,6 +47,8 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
   unreadCounts,
   currentUser,
   channels,
+  dmChannels,
+  members,
   platformName,
   railMode,
   friends,
@@ -129,10 +133,23 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
       railMode={railMode}
       onToggleRailMode={onToggleRailMode}
       friends={friends}
+      dmChannels={dmChannels || channels.filter((c) => c.isDirectMessage || c.id.startsWith('dm-'))}
+      members={members}
       activeChannelId={activeChannelId}
       onSelectFriend={(f) => {
-        setUnreadCounts((prev) => ({ ...prev, [f.id]: 0, [`dm-${f.id}`]: 0 }));
-        handleStartDM(f);
+        setUnreadCounts((prev) => ({
+          ...prev,
+          [f.id]: 0,
+          [`dm-${f.id}`]: 0,
+          ...(f.dmChannelId ? { [f.dmChannelId]: 0 } : {}),
+        }));
+        if (f.dmChannelId) {
+          setActiveColonyId('anticeil');
+          setActiveChannelId(f.dmChannelId);
+          setHomeView?.(undefined);
+        } else {
+          handleStartDM(f);
+        }
       }}
       onOpenAddFriend={() =>
         requireAuth(

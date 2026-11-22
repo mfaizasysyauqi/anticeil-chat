@@ -258,6 +258,8 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       unreadCounts,
       currentUser,
       channels,
+      dmChannels,
+      members: allKnownMembers,
       platformName: platform?.name,
       railMode,
       homeView,

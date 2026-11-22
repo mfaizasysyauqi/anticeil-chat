@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Plus, Users, Globe, UserPlus, Compass, LayoutGrid, Sparkles, PanelLeftOpen } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
@@ -25,6 +25,8 @@ export interface ColonyRailProps {
   railMode?: 'colonies' | 'servers' | 'friends';
   onToggleRailMode?: () => void;
   friends?: any[];
+  dmChannels?: any[];
+  members?: any[];
   activeChannelId?: string;
   onSelectFriend?: (friend: any) => void;
   onOpenAddFriend?: () => void;
@@ -104,6 +106,8 @@ export function ColonyRail({
   railMode,
   onToggleRailMode,
   friends = [],
+  dmChannels = [],
+  members = [],
   activeChannelId,
   onSelectFriend,
   onOpenAddFriend,
@@ -151,7 +155,37 @@ export function ColonyRail({
 
   const mainServer = serverList[0];
   const otherServers = serverList.slice(1);
-  const friendList = friends || [];
+
+  // Derive friends: use friends prop, or if empty, extract active DM contacts from dmChannels
+  const friendList = useMemo(() => {
+    if (friends && friends.length > 0) return friends;
+    if (!dmChannels || dmChannels.length === 0) return [];
+
+    const derived: any[] = [];
+    const seen = new Set<string>();
+    for (const dm of dmChannels) {
+      if (!dm.id || dm.isGroupDm || dm.id.startsWith('gdm-') || dm.type === 'voice' || dm.type === 'forum') continue;
+      const otherMember = members?.find((m: any) => {
+        if (dm.dmUserId && m.id === dm.dmUserId) return true;
+        if (m.name && dm.name && m.name.toLowerCase() === dm.name.toLowerCase()) return true;
+        if (m.id && dm.id.includes(m.id)) return true;
+        return false;
+      });
+      const friendId = otherMember?.id || dm.dmUserId || dm.id.replace('dm-', '');
+      if (seen.has(friendId)) continue;
+      seen.add(friendId);
+      derived.push({
+        id: friendId,
+        dmChannelId: dm.id,
+        name: otherMember?.name || dm.name || 'Pengguna',
+        username: otherMember?.username || null,
+        imageUrl: otherMember?.avatar || (otherMember as any)?.imageUrl || (dm as any).avatar || (dm as any).imageUrl || null,
+        status: otherMember?.status || (dm as any).status || 'online',
+        unreadCount: unreadCounts?.[dm.id] ?? 0,
+      });
+    }
+    return derived;
+  }, [friends, dmChannels, members, unreadCounts]);
 
   // Logo Anticeil: ONLY notification count, not chat messages
   const mainUnread = formatUnreadBadge(unreadCounts?.['anticeil'] ?? 0);

@@ -383,19 +383,23 @@ export function useColonyPageState(): ChatPageContentProps {
     if (!item) return;
     handleMarkNotificationRead(item.id);
     const targetColonyId = item.colonyId || 'anticeil';
-    if (targetColonyId !== activeColonyId) {
-      setActiveColonyId(targetColonyId);
-    }
+    const isDirectMessage = Boolean(
+      item.channelId?.startsWith('dm-') || item.channelId?.startsWith('gdm-')
+    );
+
+    setActiveColonyId(targetColonyId);
     if (item.channelId) {
       setActiveChannelId(item.channelId);
     }
     setHomeView(null as any);
 
     // Sync URL with React Router navigate
-    if (targetColonyId && targetColonyId !== 'anticeil') {
+    if (isDirectMessage) {
+      navigate(`/channels/@me/${item.channelId}`);
+    } else if (targetColonyId && targetColonyId !== 'anticeil') {
       navigate(`/channels/${targetColonyId}${item.channelId ? '/' + item.channelId : ''}`);
     } else if (item.channelId) {
-      navigate(`/channels/@me/${item.channelId}`);
+      navigate(`/channels/${targetColonyId}/${item.channelId}`);
     }
 
     // Scroll & highlight target message with polling retry until rendered
@@ -407,12 +411,12 @@ export function useColonyPageState(): ChatPageContentProps {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           el.classList.add('bg-primary/20', 'transition-colors', 'duration-500');
           setTimeout(() => el.classList.remove('bg-primary/20'), 2500);
-        } else if (attempts < 15) {
+        } else if (attempts < 20) {
           attempts++;
           setTimeout(tryJump, 150);
         }
       };
-      setTimeout(tryJump, 100);
+      setTimeout(tryJump, 150);
     }
   };
 

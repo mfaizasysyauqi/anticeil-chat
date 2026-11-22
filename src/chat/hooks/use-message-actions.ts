@@ -228,11 +228,17 @@ export function useMessageActions({
             const emailPrefix = m.email?.split('@')[0];
 
             if (cleanName && new RegExp(`@${cleanName}\\b`, 'i').test(textToScan)) {
-              if (m.id !== currentUserId) recipientIds.add(m.id);
+              if (m.id !== currentUserId && m.email !== currentUser?.email && m.name !== currentUserName) {
+                recipientIds.add(m.id);
+              }
             } else if (username && new RegExp(`@${username}\\b`, 'i').test(textToScan)) {
-              if (m.id !== currentUserId) recipientIds.add(m.id);
+              if (m.id !== currentUserId && m.email !== currentUser?.email && m.username !== currentUser?.username) {
+                recipientIds.add(m.id);
+              }
             } else if (emailPrefix && new RegExp(`@${emailPrefix}\\b`, 'i').test(textToScan)) {
-              if (m.id !== currentUserId) recipientIds.add(m.id);
+              if (m.id !== currentUserId && m.email !== currentUser?.email) {
+                recipientIds.add(m.id);
+              }
             }
           });
 
@@ -243,16 +249,17 @@ export function useMessageActions({
             if (roleName && new RegExp(`@${roleName}\\b`, 'i').test(textToScan)) {
               members.forEach((m) => {
                 if (m.role?.toLowerCase() === roleName.toLowerCase() || (m as any).roleId === r.id) {
-                  if (m.id !== currentUserId) recipientIds.add(m.id);
+                  if (m.id !== currentUserId && m.email !== currentUser?.email) {
+                    recipientIds.add(m.id);
+                  }
                 }
               });
             }
           });
 
-          // Only self-mention if sender explicitly typed @<their-own-name>
-          if (currentUserName && new RegExp(`@${currentUserName}\\b`, 'i').test(textToScan)) {
-            recipientIds.add(currentUserId);
-          }
+          // Ensure sender is never included as a notification recipient
+          recipientIds.delete(currentUserId);
+          if (currentUser?.id) recipientIds.delete(currentUser.id);
 
           if (recipientIds.size > 0) {
             const targetUserIds = Array.from(recipientIds);
