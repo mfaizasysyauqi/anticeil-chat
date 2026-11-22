@@ -34,6 +34,7 @@ export interface MediaPickerPopoverProps {
   onSendGif: (gif: DiscordGifItem) => void;
   onOpenQuickAddEmoji: () => void;
   onOpenQuickAddSticker: () => void;
+  hideGifsAndStickers?: boolean;
 }
 
 export function MediaPickerPopover({
@@ -53,6 +54,7 @@ export function MediaPickerPopover({
   onSendGif,
   onOpenQuickAddEmoji,
   onOpenQuickAddSticker,
+  hideGifsAndStickers = false,
 }: MediaPickerPopoverProps) {
   const [hoveredEmoji, setHoveredEmoji] = useState<DiscordEmoji | null>(null);
   const [hoveredSticker, setHoveredSticker] = useState<DiscordSticker | null>(null);
@@ -93,48 +95,52 @@ export function MediaPickerPopover({
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <div className="flex items-center gap-2">
-          {/* GIF Button (Desktop only, hidden on mobile/tablet) */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveMediaTab('gifs');
-              setMediaSearchQuery('');
-              setSelectedGifCategory(null);
-              onOpenChange(true);
-            }}
-            className={cn(
-              "hidden lg:flex h-6 px-0.5 items-center justify-center transition-colors cursor-pointer",
-              open && activeMediaTab === 'gifs' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
-            )}
-            title="Buka pemilih GIF"
-          >
-            <span className="text-[9px] font-black tracking-tight border-[1.5px] border-current px-1 py-0.5 rounded-[4px] leading-none select-none">
-              GIF
-            </span>
-          </button>
+          {/* GIF Button (Desktop only, hidden on mobile/tablet or when hideGifsAndStickers is true) */}
+          {!hideGifsAndStickers && (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveMediaTab('gifs');
+                setMediaSearchQuery('');
+                setSelectedGifCategory(null);
+                onOpenChange(true);
+              }}
+              className={cn(
+                "hidden lg:flex h-6 px-0.5 items-center justify-center transition-colors cursor-pointer",
+                open && activeMediaTab === 'gifs' ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+              )}
+              title="Buka pemilih GIF"
+            >
+              <span className="text-[9px] font-black tracking-tight border-[1.5px] border-current px-1 py-0.5 rounded-[4px] leading-none select-none">
+                GIF
+              </span>
+            </button>
+          )}
 
-          {/* Sticker Button (Desktop only, hidden on mobile/tablet) */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveMediaTab('stickers');
-              setMediaSearchQuery('');
-              onOpenChange(true);
-            }}
-            className={cn(
-              "hidden lg:flex w-6 h-6 items-center justify-center transition-colors cursor-pointer",
-              open && activeMediaTab === 'stickers' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-            )}
-            title="Buka pemilih stiker"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h8l6-6V4a2 2 0 0 0-2-2z" />
-              <path d="M14 2v6h6" />
-              <circle cx="9" cy="11" r="1" fill="currentColor" />
-              <circle cx="13" cy="11" r="1" fill="currentColor" />
-              <path d="M8 15s1.5 1.5 3 1.5 3-1.5 3-1.5" />
-            </svg>
-          </button>
+          {/* Sticker Button (Desktop only, hidden on mobile/tablet or when hideGifsAndStickers is true) */}
+          {!hideGifsAndStickers && (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveMediaTab('stickers');
+                setMediaSearchQuery('');
+                onOpenChange(true);
+              }}
+              className={cn(
+                "hidden lg:flex w-6 h-6 items-center justify-center transition-colors cursor-pointer",
+                open && activeMediaTab === 'stickers' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+              )}
+              title="Buka pemilih stiker"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h8l6-6V4a2 2 0 0 0-2-2z" />
+                <path d="M14 2v6h6" />
+                <circle cx="9" cy="11" r="1" fill="currentColor" />
+                <circle cx="13" cy="11" r="1" fill="currentColor" />
+                <path d="M8 15s1.5 1.5 3 1.5 3-1.5 3-1.5" />
+              </svg>
+            </button>
+          )}
 
           {/* Emoji Button (Visible on mobile, tablet, and desktop) */}
           <button
@@ -163,38 +169,45 @@ export function MediaPickerPopover({
         {/* Header: Segmented Tabs & Search Bar */}
         <div className="p-3 pb-2.5 border-b border-border bg-background">
           <div className="flex items-center gap-1.5 mb-2.5">
-            <div className="flex items-center p-1 rounded-lg bg-muted text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setActiveMediaTab('gifs')}
-                className={cn(
-                  "px-3 py-1 rounded-md transition-all text-xs font-bold cursor-pointer",
-                  activeMediaTab === 'gifs' ? 'bg-card text-card-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                GIFs
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveMediaTab('stickers')}
-                className={cn(
-                  "px-3 py-1 rounded-md transition-all text-xs font-bold cursor-pointer",
-                  activeMediaTab === 'stickers' ? 'bg-card text-card-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                Stickers
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveMediaTab('emojis')}
-                className={cn(
-                  "px-3 py-1 rounded-md transition-all text-xs font-bold cursor-pointer",
-                  activeMediaTab === 'emojis' ? 'bg-card text-card-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                Emoji
-              </button>
-            </div>
+            {!hideGifsAndStickers ? (
+              <div className="flex items-center p-1 rounded-lg bg-muted text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setActiveMediaTab('gifs')}
+                  className={cn(
+                    "px-3 py-1 rounded-md transition-all text-xs font-bold cursor-pointer",
+                    activeMediaTab === 'gifs' ? 'bg-card text-card-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  GIFs
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveMediaTab('stickers')}
+                  className={cn(
+                    "px-3 py-1 rounded-md transition-all text-xs font-bold cursor-pointer",
+                    activeMediaTab === 'stickers' ? 'bg-card text-card-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  Stickers
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveMediaTab('emojis')}
+                  className={cn(
+                    "px-3 py-1 rounded-md transition-all text-xs font-bold cursor-pointer",
+                    activeMediaTab === 'emojis' ? 'bg-card text-card-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  Emoji
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-1 py-0.5 text-xs font-bold text-foreground">
+                <Smile className="w-4 h-4 text-primary" />
+                <span>Pilih Emoji</span>
+              </div>
+            )}
           </div>
 
           {/* Search Bar */}

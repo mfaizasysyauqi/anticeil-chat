@@ -98,6 +98,7 @@ export interface ChatInputBarProps {
   setAppsSearchQuery: (q: string) => void;
   onLaunchActivity: (id: string) => void;
   onSendVoiceNote?: (blob: Blob, durationSeconds: number) => void;
+  hideGifsAndStickers?: boolean;
   t: (key: string) => string;
 }
 
@@ -144,6 +145,7 @@ export function ChatInputBar({
   appsSearchQuery,
   setAppsSearchQuery,
   onLaunchActivity,
+  hideGifsAndStickers = false,
   t,
 }: ChatInputBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -956,6 +958,7 @@ export function ChatInputBar({
             onSendGif={onSendGif}
             onOpenQuickAddEmoji={onOpenQuickAddEmoji}
             onOpenQuickAddSticker={onOpenQuickAddSticker}
+            hideGifsAndStickers={hideGifsAndStickers}
           />
 
           {/* Apps & Activity Popover */}

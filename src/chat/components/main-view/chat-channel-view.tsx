@@ -320,6 +320,74 @@ export function ChatChannelView({
     window.addEventListener('pointerup', onPointerUp);
   };
 
+  const stageContainerRef = React.useRef<HTMLDivElement>(null);
+  const [stageChatWidth, setStageChatWidth] = React.useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('anticeil_stage_chat_width');
+      if (saved) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= 280 && val <= 800) return val;
+      }
+    } catch {}
+    return 360;
+  });
+  const [isResizingStageChat, setIsResizingStageChat] = React.useState(false);
+
+  const handleStageChatResizeStart = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const handleEl = e.currentTarget;
+    try {
+      handleEl.setPointerCapture(e.pointerId);
+    } catch {}
+    setIsResizingStageChat(true);
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      if (!stageContainerRef.current) return;
+      const rect = stageContainerRef.current.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const minWidth = 280;
+      const maxWidth = Math.max(minWidth, Math.min(rect.width - 320, 750));
+      const newWidth = Math.min(Math.max(rect.right - moveEv.clientX, minWidth), maxWidth);
+      setStageChatWidth(Math.round(newWidth));
+    };
+
+    const onPointerUp = (upEv: PointerEvent) => {
+      try {
+        handleEl.releasePointerCapture(upEv.pointerId);
+      } catch {}
+      setIsResizingStageChat(false);
+      setStageChatWidth((current) => {
+        try {
+          localStorage.setItem('anticeil_stage_chat_width', String(current));
+        } catch {}
+        return current;
+      });
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  const handleStageChatResizeReset = () => {
+    setStageChatWidth(360);
+    try {
+      localStorage.removeItem('anticeil_stage_chat_width');
+    } catch {}
+  };
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (!stageContainerRef.current) return;
+      const rect = stageContainerRef.current.getBoundingClientRect();
+      const maxAllowed = Math.max(rect.width - 320, 280);
+      setStageChatWidth((prev) => Math.min(prev, maxAllowed));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const isDm = Boolean(
     isHome ||
     activeChannel?.category === 'DIRECT MESSAGES' ||
@@ -334,7 +402,7 @@ export function ChatChannelView({
     return messageRequests.find((r: any) => r.userId === dmUserId || r.id === dmUserId || (r.username && activeChannel.name && r.username.toLowerCase() === activeChannel.name.toLowerCase()));
   }, [isDm, activeChannel, messageRequests]);
 
-  const renderChatFeedAndInput = (isSplit = false) => (
+  const renderChatFeedAndInput = (isSplit = false, isStage = false) => (
     <>
       <MessagesFeed
         activeChannel={activeChannel}
@@ -437,6 +505,7 @@ export function ChatChannelView({
         onOpenCreateThreadModal={() => setIsCreateThreadModalOpen(true)}
         onScheduleMessage={handleScheduleMessage}
         onSubmitPoll={handleCreatePoll}
+        hideGifsAndStickers={isStage || activeChannel?.type === 'stage'}
         t={t}
       />
     </>
@@ -496,7 +565,7 @@ export function ChatChannelView({
       )}
 
       {activeChannel?.type === 'stage' ? (
-        <div className="flex-1 min-h-0 flex w-full h-full relative overflow-hidden">
+        <div ref={stageContainerRef} className="flex-1 min-h-0 flex w-full h-full relative overflow-hidden">
           <div className="flex-1 flex flex-col h-full min-h-0 min-w-0">
             <StageView
               channel={activeChannel}
@@ -512,7 +581,32 @@ export function ChatChannelView({
             />
           </div>
           {isActivityChatSplitOpen && (
-            <div className="w-80 border-l border-white/10 flex flex-col bg-background h-full min-h-0 z-20 shadow-2xl animate-in slide-in-from-right-4 duration-200">
+            <div
+              style={{ width: `min(100%, ${stageChatWidth}px)` }}
+              className={cn(
+                "border-l border-border flex flex-col bg-background h-full min-h-0 z-20 shadow-2xl relative shrink-0 animate-in slide-in-from-right-4 duration-200",
+                !isResizingStageChat && "transition-[width] duration-150 ease-out"
+              )}
+            >
+              {/* Resize Handle on Left Border */}
+              <div
+                role="separator"
+                aria-orientation="vertical"
+                title={t('Tarik untuk mengubah ukuran obrolan stage (Double-klik untuk reset)')}
+                onPointerDown={handleStageChatResizeStart}
+                onDoubleClick={handleStageChatResizeReset}
+                className="hidden sm:flex absolute top-0 -left-1.5 w-3 h-full cursor-col-resize z-30 items-center justify-center select-none group"
+              >
+                <div
+                  className={cn(
+                    'w-1 h-8 rounded-full transition-all',
+                    isResizingStageChat
+                      ? 'bg-primary h-14'
+                      : 'bg-border/60 group-hover:bg-primary/80 group-hover:h-12'
+                  )}
+                />
+              </div>
+
               <div className="h-12 border-b border-border/40 px-3 flex items-center justify-between shrink-0 font-bold text-xs text-foreground">
                 <span className="flex items-center gap-1.5">
                   <MessageSquare className="w-3.5 h-3.5 text-primary" />
@@ -521,15 +615,21 @@ export function ChatChannelView({
                 <button
                   type="button"
                   onClick={() => setIsActivityChatSplitOpen(false)}
-                  className="p-1 rounded-md text-muted-foreground hover:text-foreground cursor-pointer"
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+                  title={t('Tutup Chat Stage')}
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="flex-1 min-h-0 flex flex-col">
-                {renderChatFeedAndInput(true)}
+                {renderChatFeedAndInput(true, true)}
               </div>
             </div>
+          )}
+
+          {/* Fullscreen drag overlay while resizing to prevent losing pointer events */}
+          {isResizingStageChat && (
+            <div className="fixed inset-0 z-50 cursor-col-resize select-none" />
           )}
         </div>
       ) : isCallOrActivityActive ? (
