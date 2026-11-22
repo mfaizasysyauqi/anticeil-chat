@@ -24,6 +24,8 @@ import type {
 } from '../anticeil-media-data';
 import { DIRECTORY_APPS } from '@/features/colony-settings/components/tabs/directory-apps-data';
 import { notificationsApi } from '@/features/notifications/api/notifications-api';
+import { giftsApi } from '@/features/billing/api/gifts-api';
+import { loadMidtransSnap } from '@/features/billing/api/subscriptions-api';
 
 function getBotSlashResponse(commandText: string, botName: string): string {
   const lower = commandText.toLowerCase();
@@ -591,7 +593,7 @@ export function useMessageActions({
     }
   };
 
-  // Fullstack Discord Nitro Gift sender (interactive gift card in chat)
+  // Fullstack Discord Nitro Gift sender via Midtrans Sandbox payment
   const handleSendGift = async (tier: 'nectar' | 'pollen' | 'royal' | 'nitro' | 'nitro_basic') => {
     if (!activeChannel) return;
     setIsGiftModalOpen(false);
@@ -616,43 +618,83 @@ export function useMessageActions({
       : 'Anticeil Pollen (1 Bulan)';
     const giftPrice = isRoyal ? 'IDR 499,000' : isNectar ? 'IDR 142,714' : 'IDR 42,714';
 
-    const payload: Partial<ColonyMessage> = {
-      channelId: activeChannel.id,
-      senderId: currentUserId,
-      senderName: currentUserName,
-      senderEmail: currentUser?.email || 'user@anticeil.com',
-      senderAvatar: currentUser?.imageUrl ?? null,
-      senderRole: myRole,
-      content: `🎁 Hadiah Anticeil ${giftTitle} untuk kamu!`,
-      attachments: [
-        {
-          type: 'gift',
-          url: isRoyal
-            ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/crown.svg'
-            : isNectar
-            ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/sparkles.svg'
-            : '',
-          name: giftName,
-          giftData: {
-            tier,
-            price: giftPrice,
-            claimed: false,
-          },
-        },
-      ],
-    };
+    toast.loading(t('Menghubungkan ke Midtrans Sandbox...'), { id: 'midtrans-gift-init' });
 
     try {
-      const saved = await colonyApi.sendMessage(activeChannel.id, payload);
-      setMessagesMap((prev) => {
-        const list = prev[activeChannel.id] || [];
-        if (list.some((m) => m.id === saved.id)) return prev;
-        return { ...prev, [activeChannel.id]: [...list, saved] };
-      });
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.7 } });
-      toast.success(t(`Berhasil mengirimkan Hadiah ${giftTitle}! 🎉`));
-    } catch (err) {
-      console.error('Failed to send gift', err);
+      const tokenRes = await giftsApi.createGiftToken(tier as any);
+      toast.dismiss('midtrans-gift-init');
+
+      if (!tokenRes.snapToken) {
+        toast.error(t('Gagal mendapatkan token pembayaran Midtrans Sandbox'));
+        return;
+      }
+
+      await loadMidtransSnap(tokenRes.clientKey);
+
+      const proceedPostMessage = async (voucherCode?: string) => {
+        const payload: Partial<ColonyMessage> = {
+          channelId: activeChannel.id,
+          senderId: currentUserId,
+          senderName: currentUserName,
+          senderEmail: currentUser?.email || 'user@anticeil.com',
+          senderAvatar: currentUser?.imageUrl ?? null,
+          senderRole: myRole,
+          content: `🎁 Hadiah Anticeil ${giftTitle} untuk kamu! ${voucherCode ? `(Kode Voucher: **${voucherCode}**)` : ''}`,
+          attachments: [
+            {
+              type: 'gift',
+              url: isRoyal
+                ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/crown.svg'
+                : isNectar
+                ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/sparkles.svg'
+                : '',
+              name: giftName,
+              giftData: {
+                tier,
+                price: giftPrice,
+                claimed: false,
+                code: voucherCode,
+              },
+            },
+          ],
+        };
+
+        const saved = await colonyApi.sendMessage(activeChannel.id, payload);
+        setMessagesMap((prev) => {
+          const list = prev[activeChannel.id] || [];
+          if (list.some((m) => m.id === saved.id)) return prev;
+          return { ...prev, [activeChannel.id]: [...list, saved] };
+        });
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.7 } });
+        toast.success(t(`Hadiah ${giftTitle} berhasil dibayar via Midtrans Sandbox dan terkirim! 🎉`));
+      };
+
+      if ((window as any).snap) {
+        (window as any).snap.pay(tokenRes.snapToken, {
+          onSuccess: async () => {
+            toast.loading(t('Memverifikasi pembayaran Midtrans Sandbox...'), { id: 'midtrans-gift-verify' });
+            const verifyRes = await giftsApi.verifyGiftPayment(tokenRes.orderId);
+            toast.dismiss('midtrans-gift-verify');
+            await proceedPostMessage(verifyRes?.code);
+          },
+          onPending: async () => {
+            toast.info(t('Menunggu pembayaran Midtrans Sandbox diselesaikan...'));
+          },
+          onError: (err: any) => {
+            toast.error(t('Pembayaran Midtrans Sandbox gagal atau dibatalkan.'));
+            console.error('Midtrans gift error:', err);
+          },
+          onClose: () => {
+            toast.info(t('Jendela pembayaran Midtrans Sandbox ditutup.'));
+          },
+        });
+      } else {
+        await proceedPostMessage();
+      }
+    } catch (err: any) {
+      toast.dismiss('midtrans-gift-init');
+      toast.error(err?.message || t('Gagal memproses pembayaran Midtrans'));
+      console.error('Failed to send gift via Midtrans', err);
     }
   };
 

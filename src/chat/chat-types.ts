@@ -126,6 +126,7 @@ export type ColonyAttachment = {
     tier: 'nectar' | 'pollen' | 'royal' | 'nitro' | 'nitro_basic';
     price: string;
     claimed?: boolean;
+    code?: string;
   };
   activityData?: {
     appId: string;

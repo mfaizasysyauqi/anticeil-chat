@@ -77,6 +77,8 @@ import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { uploadMediaToR2 } from '@/lib/upload';
 import { shopApi, type ShopItem, type ShopCollection, type ShopBalance, FALLBACK_SHOP_ITEMS } from '../api/shop-api';
+import { api } from '@/lib/api';
+import { loadMidtransSnap } from '@/features/billing/api/subscriptions-api';
 
 // Discord-style 1:1 Filter Definitions
 export const ITEM_TYPE_OPTIONS = [
@@ -584,10 +586,45 @@ export function ShopView({
     }
   };
 
-  // Purchase item action
+  // Purchase item action (Supports Dew F2P or Midtrans Sandbox IDR)
   const handlePurchase = async (item: ShopItem, currency: 'dew' | 'idr') => {
     setIsPurchasing(true);
     try {
+      if (currency === 'idr') {
+        toast.loading(t('Menghubungkan ke Midtrans Sandbox...'), { id: 'midtrans-shop-init' });
+        const tokenRes = await api.post<{ snapToken: string; orderId: string; clientKey?: string }>(
+          '/v1/billing/midtrans-token',
+          { isShop: true, itemId: item.id, itemName: item.name, price: item.priceIdr },
+        );
+        toast.dismiss('midtrans-shop-init');
+
+        if (tokenRes?.snapToken) {
+          await loadMidtransSnap(tokenRes.clientKey);
+          if ((window as any).snap) {
+            (window as any).snap.pay(tokenRes.snapToken, {
+              onSuccess: async () => {
+                toast.loading(t('Memverifikasi transaksi Midtrans Sandbox...'), { id: 'midtrans-shop-verify' });
+                await api.post('/v1/billing/midtrans-verify', { orderId: tokenRes.orderId });
+                toast.dismiss('midtrans-shop-verify');
+                const res = await shopApi.purchaseItem(item.id, 'idr');
+                if (res.success) {
+                  toast.success(res.message || t('Pembelian IDR via Midtrans Sandbox berhasil! 🎉'));
+                  if (res.item) {
+                    setInventory((prev) => [...prev.filter((i) => i.id !== res.item!.id), res.item!]);
+                  }
+                  setActiveModalItem(null);
+                }
+              },
+              onError: (err: any) => {
+                toast.error(t('Pembayaran Midtrans dibatalkan atau terjadi kesalahan'));
+                console.error(err);
+              },
+            });
+            return;
+          }
+        }
+      }
+
       const res = await shopApi.purchaseItem(item.id, currency);
       if (res.success) {
         toast.success(res.message || t('Pembelian berhasil! 🎉'));
