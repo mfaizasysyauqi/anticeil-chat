@@ -475,7 +475,7 @@ export function QuestsView({
         className="rounded-xl border border-border bg-card flex flex-col justify-between overflow-hidden shadow-xs hover:border-primary/50 transition-all group relative"
       >
         {/* Quest Artwork Banner */}
-        <div className="relative h-28 sm:h-36 bg-[#111214] overflow-hidden">
+        <div className="relative h-28 sm:h-36 bg-card overflow-hidden">
           <img
             src={quest.coverUrl}
             alt={quest.title}

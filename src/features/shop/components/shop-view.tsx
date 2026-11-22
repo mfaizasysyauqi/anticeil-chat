@@ -867,7 +867,7 @@ export function ShopView({
                   key={col.id}
                   type="button"
                   onClick={() => toggleColor(col.id)}
-                  title={col.label}
+                  title={t(col.label)}
                   className={cn(
                     'size-7 rounded-full flex items-center justify-center transition-all cursor-pointer relative',
                     isSelected
@@ -925,7 +925,7 @@ export function ShopView({
                   )}
                 >
                   <span className="text-xs shrink-0">{th.icon}</span>
-                  <span className="truncate">{th.label}</span>
+                  <span className="truncate">{t(th.label)}</span>
                 </button>
               );
             })}
@@ -941,12 +941,12 @@ export function ShopView({
 
     if (item.category === 'avatar_decoration') {
       return (
-        <div className="h-32 sm:h-36 p-3 relative flex items-center justify-center bg-[#111214] border-b border-border/40 overflow-hidden">
+        <div className="h-32 sm:h-36 p-3 relative flex items-center justify-center bg-muted/40 border-b border-border/40 overflow-hidden">
           <div className="absolute inset-0 bg-radial from-primary/10 via-transparent to-transparent pointer-events-none" />
 
           {/* Avatar Base Silhouette */}
-          <div className="relative size-16 sm:size-18 rounded-full bg-[#1e1f22] border-2 border-[#2b2d31] flex items-center justify-center shadow-lg">
-            <div className="size-full rounded-full bg-gradient-to-b from-[#2b2d31] to-[#1e1f22] flex items-center justify-center text-muted-foreground/50 font-black text-xl select-none">
+          <div className="relative size-16 sm:size-18 rounded-full bg-card border-2 border-border/70 flex items-center justify-center shadow-lg">
+            <div className="size-full rounded-full bg-secondary flex items-center justify-center text-muted-foreground/50 font-black text-xl select-none">
               ❄
             </div>
 
@@ -970,11 +970,11 @@ export function ShopView({
 
     if (item.category === 'nameplate') {
       return (
-        <div className="h-32 sm:h-36 p-3 relative flex items-center justify-center bg-[#111214] border-b border-border/40 overflow-hidden">
+        <div className="h-32 sm:h-36 p-3 relative flex items-center justify-center bg-muted/40 border-b border-border/40 overflow-hidden">
           <div className="absolute inset-0 bg-radial from-cyan-500/10 via-transparent to-transparent pointer-events-none" />
 
           {/* Discord/Anticeil Chat Row Preview */}
-          <div className="w-[92%] h-13 rounded-lg bg-[#1e1f22] border border-border/60 p-2 flex items-center gap-2.5 relative overflow-hidden shadow-lg group-hover:border-primary/50 transition-colors">
+          <div className="w-[92%] h-13 rounded-lg bg-card border border-border/60 p-2 flex items-center gap-2.5 relative overflow-hidden shadow-lg group-hover:border-primary/50 transition-colors">
             {gifUrl && (
               <img
                 src={gifUrl}
@@ -984,16 +984,16 @@ export function ShopView({
               />
             )}
 
-            <div className="size-7 rounded-full bg-[#2b2d31] border border-white/10 flex items-center justify-center text-xs text-muted-foreground font-black shrink-0 z-10 shadow-xs">
+            <div className="size-7 rounded-full bg-secondary border border-border flex items-center justify-center text-xs text-muted-foreground font-black shrink-0 z-10 shadow-xs">
               ❄
             </div>
 
             <div className="min-w-0 z-10 space-y-0.5">
-              <div className="text-[11px] font-bold text-white drop-shadow-sm flex items-center gap-1.5 leading-none">
+              <div className="text-[11px] font-bold text-foreground drop-shadow-sm flex items-center gap-1.5 leading-none">
                 <span className="truncate">Username</span>
                 <span className="text-[8px] px-1 py-0.5 rounded bg-primary/40 text-primary-foreground font-bold">NAMECARD</span>
               </div>
-              <div className="w-20 h-1.5 rounded-full bg-white/20" />
+              <div className="w-20 h-1.5 rounded-full bg-muted-foreground/30" />
             </div>
           </div>
 
@@ -1006,7 +1006,7 @@ export function ShopView({
 
     if (item.category === 'profile_effect') {
       return (
-        <div className="h-32 sm:h-36 relative overflow-hidden bg-[#111214] border-b border-border/40">
+        <div className="h-32 sm:h-36 relative overflow-hidden bg-muted/40 border-b border-border/40">
           {gifUrl && (
             <img
               src={gifUrl}
@@ -1016,17 +1016,17 @@ export function ShopView({
             />
           )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-[#111214] via-[#111214]/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent pointer-events-none" />
 
           <div className="absolute bottom-2.5 left-3 right-3 flex items-center gap-2 z-10 opacity-75">
-            <div className="size-7 rounded-full bg-white/20 border border-white/30 backdrop-blur-xs shrink-0" />
+            <div className="size-7 rounded-full bg-muted border border-border backdrop-blur-xs shrink-0" />
             <div className="space-y-1 min-w-0">
-              <div className="w-16 h-2 rounded bg-white/40" />
-              <div className="w-10 h-1.5 rounded bg-white/20" />
+              <div className="w-16 h-2 rounded bg-muted-foreground/40" />
+              <div className="w-10 h-1.5 rounded bg-muted-foreground/20" />
             </div>
           </div>
 
-          <span className="absolute bottom-2.5 left-3 text-[8px] font-bold text-white/70 bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-xs tracking-wider z-10">
+          <span className="absolute bottom-2.5 left-3 text-[8px] font-bold text-foreground/80 bg-background/70 px-1.5 py-0.5 rounded backdrop-blur-xs tracking-wider z-10 border border-border/40">
             OVERLAY .GIF
           </span>
         </div>
@@ -1035,7 +1035,7 @@ export function ShopView({
 
     // Bundle
     return (
-      <div className="h-32 sm:h-36 relative overflow-hidden bg-[#111214] border-b border-border/40 flex items-center justify-center p-3">
+      <div className="h-32 sm:h-36 relative overflow-hidden bg-muted/40 border-b border-border/40 flex items-center justify-center p-3">
         {gifUrl && (
           <img
             src={gifUrl}
@@ -1044,9 +1044,9 @@ export function ShopView({
             loading="lazy"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111214] via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent pointer-events-none" />
 
-        <div className="relative size-14 rounded-full bg-[#1e1f22] border border-white/10 flex items-center justify-center z-10 shadow-lg">
+        <div className="relative size-14 rounded-full bg-card border border-border/60 flex items-center justify-center z-10 shadow-lg">
           <span className="text-muted-foreground/50 text-sm font-bold">❄</span>
           {gifUrl && (
             <img

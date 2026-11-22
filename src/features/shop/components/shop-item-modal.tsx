@@ -59,13 +59,13 @@ export function ShopItemModal({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className={DIALOG_STYLES.MODAL_PREVIEW}>
         {/* Header Preview Banner with Real Animated Cosmetic in Action */}
-        <div className="relative h-44 bg-[#111214] flex items-center justify-center p-6 border-b border-border overflow-hidden">
+        <div className="relative h-44 bg-muted/40 flex items-center justify-center p-6 border-b border-border overflow-hidden">
           {item.category === 'avatar_decoration' ? (
-            <div className="relative size-22 rounded-full bg-[#1e1f22] border-2 border-[#2b2d31] flex items-center justify-center shadow-2xl z-10">
+            <div className="relative size-22 rounded-full bg-card border-2 border-border/70 flex items-center justify-center shadow-2xl z-10">
               {currentUser?.avatar ? (
                 <img src={currentUser.avatar} alt="User Avatar" className="size-full rounded-full object-cover" />
               ) : (
-                <div className="size-full rounded-full bg-[#2b2d31] flex items-center justify-center text-muted-foreground/60 font-black text-2xl select-none">
+                <div className="size-full rounded-full bg-secondary flex items-center justify-center text-muted-foreground/60 font-black text-2xl select-none">
                   ❄
                 </div>
               )}
@@ -78,7 +78,7 @@ export function ShopItemModal({
               )}
             </div>
           ) : item.category === 'nameplate' ? (
-            <div className="w-[90%] h-14 rounded-xl bg-[#1e1f22] border border-border/80 p-2.5 flex items-center gap-3 relative overflow-hidden shadow-2xl z-10">
+            <div className="w-[90%] h-14 rounded-xl bg-card border border-border/80 p-2.5 flex items-center gap-3 relative overflow-hidden shadow-2xl z-10">
               {(item.gifUrl || item.previewIcon) && (
                 <img
                   src={item.gifUrl || item.previewIcon}
@@ -86,7 +86,7 @@ export function ShopItemModal({
                   className="absolute inset-0 size-full object-cover opacity-85 mix-blend-screen pointer-events-none select-none"
                 />
               )}
-              <div className="size-8 rounded-full bg-[#2b2d31] border border-white/20 flex items-center justify-center text-xs font-black text-muted-foreground z-10 shrink-0">
+              <div className="size-8 rounded-full bg-secondary border border-border flex items-center justify-center text-xs font-black text-muted-foreground z-10 shrink-0">
                 ❄
               </div>
               <div className="min-w-0 z-10 space-y-0.5">
