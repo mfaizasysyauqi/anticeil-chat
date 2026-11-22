@@ -109,6 +109,7 @@ export interface ChatDialogsPortalProps {
   onGuestLogin?: (nickname: string) => void;
   onDevMockLogin?: (userIndex: number) => void;
   onSsoLogin?: (email: string) => void;
+  onOktaSignIn?: () => void;
   onNavigateToApps?: () => void;
 
   t: (key: string, params?: Record<string, any>) => string;
@@ -182,6 +183,7 @@ export function ChatDialogsPortal({
   onGuestLogin,
   onDevMockLogin,
   onSsoLogin,
+  onOktaSignIn,
   onNavigateToApps,
   t,
 }: CommunityDialogsPortalProps) {
@@ -543,6 +545,7 @@ export function ChatDialogsPortal({
         onClose={() => setIsAuthRequiredOpen(false)}
         onGoogleSignIn={handleGoogleSignIn}
         onMicrosoftSignIn={handleMicrosoftSignIn}
+        onOktaSignIn={onOktaSignIn}
         onGuestLogin={onGuestLogin}
         onDevMockLogin={onDevMockLogin}
         onSsoLogin={onSsoLogin}

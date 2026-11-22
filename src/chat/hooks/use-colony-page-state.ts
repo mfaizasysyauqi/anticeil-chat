@@ -667,6 +667,7 @@ export function useColonyPageState(): ChatPageContentProps {
     handleLogout: authSession.handleLogout,
     handleGoogleSignIn: authSession.handleGoogleSignIn,
     handleMicrosoftSignIn: authSession.handleMicrosoftSignIn,
+    handleOktaSignIn: authSession.handleOktaSignIn,
     members,
     isDmMode,
     activeDmUserId,

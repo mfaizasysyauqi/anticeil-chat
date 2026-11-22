@@ -373,6 +373,50 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     }
   };
 
+  const handleOktaSignIn = async () => {
+    try {
+      toast.loading(t('Menghubungkan ke Okta / Auth0...'), { id: 'okta-oauth' });
+      let loginUrlStr = '';
+      try {
+        const res: any = await api.get('/v1/authn/federated/login?providerName=okta');
+        if (res && res.loginUrl) {
+          loginUrlStr = res.loginUrl;
+        }
+      } catch (e) {
+        console.warn('Backend federated login check returned error, using direct Okta OAuth fallback:', e);
+      }
+
+      if (!loginUrlStr) {
+        const oktaClientId = (import.meta.env.VITE_OKTA_CLIENT_ID as string) || '63rIvt3mhC9iym9CAGZsHQG4p9P03B5u';
+        const oktaDomain = (import.meta.env.VITE_OKTA_DOMAIN as string) || 'dev-g1k4gi85svoq1dhj.us.auth0.com';
+        const cleanDomain = oktaDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+        const redirectUri = `${window.location.origin}/redirect`;
+        const oktaUrl = new URL(`https://${cleanDomain}/authorize`);
+        oktaUrl.searchParams.set('client_id', oktaClientId);
+        oktaUrl.searchParams.set('redirect_uri', redirectUri);
+        oktaUrl.searchParams.set('response_type', 'code');
+        oktaUrl.searchParams.set('scope', 'openid email profile');
+        oktaUrl.searchParams.set('prompt', 'login');
+        loginUrlStr = oktaUrl.toString();
+      }
+
+      toast.success(t('Membuka Okta Sign-In...'), { id: 'okta-oauth' });
+      const state = {
+        providerName: 'okta',
+        from: window.location.href,
+        activepiecesLogin: 'true',
+        login: 'true',
+      };
+      const finalUrl = new URL(loginUrlStr);
+      finalUrl.searchParams.set('state', JSON.stringify(state));
+      window.location.href = finalUrl.toString();
+      return;
+    } catch (err: any) {
+      console.error('Okta OAuth initiation failed:', err);
+      toast.error(t('Okta OAuth belum aktif di server atau gagal terhubung.'), { id: 'okta-oauth' });
+    }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
@@ -545,6 +589,7 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     handleLogout,
     handleGoogleSignIn,
     handleMicrosoftSignIn,
+    handleOktaSignIn,
     handleDevMockLogin,
     handleGuestLogin,
     handleSsoLogin,

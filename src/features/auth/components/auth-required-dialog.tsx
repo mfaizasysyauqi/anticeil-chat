@@ -29,6 +29,7 @@ export interface AuthRequiredDialogProps {
   onClose: () => void;
   onGoogleSignIn: () => void;
   onMicrosoftSignIn?: () => void;
+  onOktaSignIn?: () => void;
   onGuestLogin?: (nickname: string) => void;
   onDevMockLogin?: (userIndex: number) => void;
   onSsoLogin?: (email: string, provider?: string) => void;
@@ -85,6 +86,7 @@ export function AuthRequiredDialog({
   onClose,
   onGoogleSignIn,
   onMicrosoftSignIn,
+  onOktaSignIn,
   onGuestLogin,
   onDevMockLogin,
   onSsoLogin,
@@ -123,6 +125,18 @@ export function AuthRequiredDialog({
     }
   };
 
+  const handleOktaClick = () => {
+    onClose();
+    if (onOktaSignIn) {
+      onOktaSignIn();
+    } else if (onSsoLogin) {
+      const email = window.prompt(t('Masukkan email Okta / SSO Anda:'));
+      if (email && email.includes('@')) {
+        onSsoLogin(email.trim(), 'Okta SSO');
+      }
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent size="md" className="max-h-[92vh] overflow-y-auto custom-scrollbar p-0 bg-background border border-border shadow-2xl rounded-2xl select-none">
@@ -145,9 +159,9 @@ export function AuthRequiredDialog({
             </DialogDescription>
           </DialogHeader>
 
-          {/* ── 1. Direct Dual OAuth: Google & Microsoft 365 (Entra ID) ── */}
+          {/* ── 1. Direct Dual OAuth: Google, Microsoft 365, & Okta ── */}
           <div className="w-full space-y-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
               {/* Google Button */}
               <Button
                 type="button"
@@ -156,11 +170,11 @@ export function AuthRequiredDialog({
                   onClose();
                   onGoogleSignIn();
                 }}
-                className="h-11 px-3 text-xs font-semibold flex items-center justify-center gap-2 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+                className="h-11 px-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
                 title={t('Lanjutkan dengan Akun Google')}
               >
                 <GoogleIcon className="size-4 shrink-0" />
-                <span className="truncate">{t('Lanjutkan Google')}</span>
+                <span className="truncate">{t('Google')}</span>
               </Button>
 
               {/* Microsoft 365 (Entra ID) Button */}
@@ -168,11 +182,23 @@ export function AuthRequiredDialog({
                 type="button"
                 variant="outline"
                 onClick={handleMicrosoftClick}
-                className="h-11 px-3 text-xs font-semibold flex items-center justify-center gap-2 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+                className="h-11 px-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
                 title={t('Lanjutkan dengan Microsoft 365 / Entra ID')}
               >
                 <MicrosoftIcon className="size-4 shrink-0" />
-                <span className="truncate">{t('Lanjutkan Microsoft')}</span>
+                <span className="truncate">{t('Microsoft')}</span>
+              </Button>
+
+              {/* Okta (Auth0) Button */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleOktaClick}
+                className="h-11 px-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+                title={t('Lanjutkan dengan Okta / Auth0')}
+              >
+                <OktaIcon className="size-4 shrink-0 text-blue-400" />
+                <span className="truncate">{t('Okta')}</span>
               </Button>
             </div>
           </div>
