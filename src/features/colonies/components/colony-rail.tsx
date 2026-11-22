@@ -216,15 +216,30 @@ export function ColonyRail({
         return false;
       });
 
+      const resolvedName = (otherMember?.name || dm.name || '').trim();
+      const lowerName = resolvedName.toLowerCase();
+      const lowerUsername = (otherMember?.username || (dm as any)?.username || '').toLowerCase();
+      if (
+        !resolvedName ||
+        lowerName === 'pengguna' ||
+        lowerName === 'pengguna anticeil' ||
+        lowerName === 'user' ||
+        lowerName === 'direct message' ||
+        lowerName.includes('probe x') ||
+        lowerUsername.includes('apcheck')
+      ) {
+        continue;
+      }
+
       const friendId = otherMember?.id || otherId || dm.id.replace('dm-', '');
-      if (isSelfUser(friendId, otherMember?.name || dm.name)) continue;
+      if (isSelfUser(friendId, resolvedName)) continue;
       if (seen.has(friendId)) continue;
       seen.add(friendId);
 
       list.push({
         id: friendId,
         dmChannelId: dm.id,
-        name: otherMember?.name || dm.name || 'Pengguna',
+        name: resolvedName,
         username: otherMember?.username || null,
         imageUrl: otherMember?.avatar || (otherMember as any)?.imageUrl || (dm as any).avatar || (dm as any).imageUrl || null,
         status: otherMember?.status || (dm as any).status || 'online',
@@ -244,7 +259,9 @@ export function ColonyRail({
           seen.has(m.id) ||
           lowerName === 'pengguna' ||
           lowerName === 'pengguna anticeil' ||
-          lowerName === 'user'
+          lowerName === 'user' ||
+          lowerName.includes('probe x') ||
+          (m.username || '').toLowerCase().includes('apcheck')
         ) {
           continue;
         }

@@ -8,7 +8,14 @@ export const membersApi = {
       const commRes = await api.get<any>('/v1/colony/members');
       const commList = Array.isArray(commRes) ? commRes : commRes?.data || commRes?.members;
       if (Array.isArray(commList) && commList.length > 0) {
-        return commList.map((u: any) => {
+        return commList
+          .filter((u: any) => {
+            const email = (u?.email || '').toLowerCase();
+            const username = (u?.username || '').toLowerCase();
+            const name = (u?.name || `${u?.firstName || ''} ${u?.lastName || ''}`).trim().toLowerCase();
+            return !username.includes('apcheck') && !email.includes('apcheck') && !name.includes('probe x');
+          })
+          .map((u: any) => {
           const firstName = u.firstName || '';
           const lastName = u.lastName || '';
           const fullName =
@@ -47,7 +54,14 @@ export const membersApi = {
       });
       const usersList = Array.isArray(res) ? res : res?.data;
       if (Array.isArray(usersList) && usersList.length > 0) {
-        return usersList.map((u: any) => {
+        return usersList
+          .filter((u: any) => {
+            const email = (u?.email || '').toLowerCase();
+            const username = (u?.username || '').toLowerCase();
+            const name = (u?.name || `${u?.firstName || ''} ${u?.lastName || ''}`).trim().toLowerCase();
+            return !username.includes('apcheck') && !email.includes('apcheck') && !name.includes('probe x');
+          })
+          .map((u: any) => {
           const firstName = u.firstName || '';
           const lastName = u.lastName || '';
           const fullName = `${firstName} ${lastName}`.trim() || u.email?.split('@')[0] || 'Pengguna Anticeil';

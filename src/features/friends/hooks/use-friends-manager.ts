@@ -60,14 +60,16 @@ export function useFriendsManager({
         // Exclude test mock seed
         if (id === 'u1') return false;
 
-        // Exclude generic placeholder labels
+        // Exclude generic placeholder labels & internal check probe accounts
         const isGeneric =
           !name ||
           name === 'pengguna' ||
           name === 'pengguna anticeil' ||
           name === 'user' ||
           name === 'direct message' ||
-          name === 'teman';
+          name === 'teman' ||
+          name.includes('probe x') ||
+          username.includes('apcheck');
         if (isGeneric) return false;
 
         const isSelf =
@@ -116,7 +118,9 @@ export function useFriendsManager({
           lowerName === 'pengguna anticeil' ||
           lowerName === 'user' ||
           lowerName === 'direct message' ||
-          lowerName === 'general voice'
+          lowerName === 'general voice' ||
+          lowerName.includes('probe x') ||
+          (dm as any)?.username?.toLowerCase()?.includes('apcheck')
         ) {
           return;
         }
