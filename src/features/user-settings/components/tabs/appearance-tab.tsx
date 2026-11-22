@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Palette, Sun, Moon, Sparkles, Check, ChevronDown, Radio, Info, Eye, Zap, SlidersHorizontal, ChevronRight
 } from 'lucide-react';
@@ -9,11 +9,25 @@ import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { StreamerModeSection } from './appearance/streamer-mode-section';
 import { ChatBoxAppearanceSection } from './appearance/chat-box-appearance-section';
+import { userSettingsApi, AppearanceSettings, DEFAULT_USER_SETTINGS } from '../../api/user-settings-api';
 
 export interface AppearanceTabProps {
   theme: any;
   setTheme: (theme: any) => void;
   onNavigateSection?: (section: string) => void;
+}
+
+function loadInitialAppearance(): AppearanceSettings {
+  try {
+    const raw = localStorage.getItem('anticeil_user_settings');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.appearance) {
+        return { ...DEFAULT_USER_SETTINGS.appearance, ...parsed.appearance };
+      }
+    }
+  } catch {}
+  return DEFAULT_USER_SETTINGS.appearance;
 }
 
 export function AppearanceTab({
@@ -22,44 +36,87 @@ export function AppearanceTab({
   onNavigateSection,
 }: AppearanceTabProps) {
   const { t } = useTranslation();
+  const [initial] = useState<AppearanceSettings>(loadInitialAppearance);
+
   // ==========================================
   // APPEARANCE STATES (Discord Parity)
   // ==========================================
-  const [sameAsDeviceTheme, setSameAsDeviceTheme] = useState(false);
-  const [selectedDefaultTheme, setSelectedDefaultTheme] = useState<string>('navy');
-  const [selectedColorTheme, setSelectedColorTheme] = useState<string>('custom');
-  const [syncThemeDevices, setSyncThemeDevices] = useState(true);
-  const [applyThemeToProfiles, setApplyThemeToProfiles] = useState(false);
-  const [selectedAppIcon, setSelectedAppIcon] = useState('blurple');
+  const [sameAsDeviceTheme, setSameAsDeviceTheme] = useState(initial.sameAsDeviceTheme ?? false);
+  const [selectedDefaultTheme, setSelectedDefaultTheme] = useState<string>(initial.selectedDefaultTheme || 'navy');
+  const [selectedColorTheme, setSelectedColorTheme] = useState<string>(initial.selectedColorTheme || 'custom');
+  const [syncThemeDevices, setSyncThemeDevices] = useState(initial.syncThemeDevices ?? true);
+  const [applyThemeToProfiles, setApplyThemeToProfiles] = useState(initial.applyThemeToProfiles ?? false);
+  const [selectedAppIcon, setSelectedAppIcon] = useState(initial.selectedAppIcon || 'blurple');
 
   // Messages appearance states
-  const [showMediaFromLinks, setShowMediaFromLinks] = useState(true);
-  const [showMediaUploaded, setShowMediaUploaded] = useState(true);
-  const [showEmbedsPreviews, setShowEmbedsPreviews] = useState(true);
-  const [showEmojiReactions, setShowEmojiReactions] = useState(true);
-  const [spoilerDisplay, setSpoilerDisplay] = useState<'click' | 'mod' | 'always'>('click');
-  const [openThreadsSplitView, setOpenThreadsSplitView] = useState(true);
-  const [showUserAvatars, setShowUserAvatars] = useState(true);
-  const [showFavoritesServer, setShowFavoritesServer] = useState(false);
+  const [showMediaFromLinks, setShowMediaFromLinks] = useState(initial.showMediaFromLinks ?? true);
+  const [showMediaUploaded, setShowMediaUploaded] = useState(initial.showMediaUploaded ?? true);
+  const [showEmbedsPreviews, setShowEmbedsPreviews] = useState(initial.showEmbedsPreviews ?? true);
+  const [showEmojiReactions, setShowEmojiReactions] = useState(initial.showEmojiReactions ?? true);
+  const [spoilerDisplay, setSpoilerDisplay] = useState<'click' | 'mod' | 'always'>(initial.spoilerDisplay || 'click');
+  const [openThreadsSplitView, setOpenThreadsSplitView] = useState(initial.openThreadsSplitView ?? true);
+  const [showUserAvatars, setShowUserAvatars] = useState(initial.showUserAvatars ?? true);
+  const [showFavoritesServer, setShowFavoritesServer] = useState(initial.showFavoritesServer ?? false);
 
   // Chat Box states
-  const [previewMarkdownAsType, setPreviewMarkdownAsType] = useState(true);
-  const [convertEmoticonsToEmoji, setConvertEmoticonsToEmoji] = useState(true);
-  const [showStickersAutocomplete, setShowStickersAutocomplete] = useState(false);
-  const [showGamesAutocomplete, setShowGamesAutocomplete] = useState(true);
-  const [showSendMessageButton, setShowSendMessageButton] = useState(false);
+  const [previewMarkdownAsType, setPreviewMarkdownAsType] = useState(initial.previewMarkdownAsType ?? true);
+  const [convertEmoticonsToEmoji, setConvertEmoticonsToEmoji] = useState(initial.convertEmoticonsToEmoji ?? true);
+  const [showStickersAutocomplete, setShowStickersAutocomplete] = useState(initial.showStickersAutocomplete ?? false);
+  const [showGamesAutocomplete, setShowGamesAutocomplete] = useState(initial.showGamesAutocomplete ?? true);
+  const [showSendMessageButton, setShowSendMessageButton] = useState(initial.showSendMessageButton ?? false);
 
   // Search scope state
-  const [dmSearchScope, setDmSearchScope] = useState<'single' | 'all'>('single');
+  const [dmSearchScope, setDmSearchScope] = useState<'single' | 'all'>(initial.dmSearchScope || 'single');
 
   // Streamer Mode states
-  const [streamerModeEnabled, setStreamerModeEnabled] = useState(false);
-  const [autoStreamerModeObs, setAutoStreamerModeObs] = useState(true);
-  const [streamerHidePersonalInfo, setStreamerHidePersonalInfo] = useState(true);
-  const [streamerHideInviteLinks, setStreamerHideInviteLinks] = useState(true);
-  const [streamerDisableSounds, setStreamerDisableSounds] = useState(true);
-  const [streamerDisableNotifications, setStreamerDisableNotifications] = useState(true);
-  const [streamerHideWindowCapture, setStreamerHideWindowCapture] = useState(false);
+  const [streamerModeEnabled, setStreamerModeEnabled] = useState(initial.streamerModeEnabled ?? false);
+  const [autoStreamerModeObs, setAutoStreamerModeObs] = useState(initial.autoStreamerModeObs ?? true);
+  const [streamerHidePersonalInfo, setStreamerHidePersonalInfo] = useState(initial.streamerHidePersonalInfo ?? true);
+  const [streamerHideInviteLinks, setStreamerHideInviteLinks] = useState(initial.streamerHideInviteLinks ?? true);
+  const [streamerDisableSounds, setStreamerDisableSounds] = useState(initial.streamerDisableSounds ?? true);
+  const [streamerDisableNotifications, setStreamerDisableNotifications] = useState(initial.streamerDisableNotifications ?? true);
+  const [streamerHideWindowCapture, setStreamerHideWindowCapture] = useState(initial.streamerHideWindowCapture ?? false);
+
+  useEffect(() => {
+    userSettingsApi.getSettings().then((s) => {
+      if (s?.appearance) {
+        const app = s.appearance;
+        if (app.sameAsDeviceTheme !== undefined) setSameAsDeviceTheme(app.sameAsDeviceTheme);
+        if (app.selectedDefaultTheme) setSelectedDefaultTheme(app.selectedDefaultTheme);
+        if (app.selectedColorTheme) setSelectedColorTheme(app.selectedColorTheme);
+        if (app.syncThemeDevices !== undefined) setSyncThemeDevices(app.syncThemeDevices);
+        if (app.applyThemeToProfiles !== undefined) setApplyThemeToProfiles(app.applyThemeToProfiles);
+        if (app.selectedAppIcon) setSelectedAppIcon(app.selectedAppIcon);
+        if (app.showMediaFromLinks !== undefined) setShowMediaFromLinks(app.showMediaFromLinks);
+        if (app.showMediaUploaded !== undefined) setShowMediaUploaded(app.showMediaUploaded);
+        if (app.showEmbedsPreviews !== undefined) setShowEmbedsPreviews(app.showEmbedsPreviews);
+        if (app.showEmojiReactions !== undefined) setShowEmojiReactions(app.showEmojiReactions);
+        if (app.spoilerDisplay) setSpoilerDisplay(app.spoilerDisplay);
+        if (app.openThreadsSplitView !== undefined) setOpenThreadsSplitView(app.openThreadsSplitView);
+        if (app.showUserAvatars !== undefined) setShowUserAvatars(app.showUserAvatars);
+        if (app.showFavoritesServer !== undefined) setShowFavoritesServer(app.showFavoritesServer);
+        if (app.previewMarkdownAsType !== undefined) setPreviewMarkdownAsType(app.previewMarkdownAsType);
+        if (app.convertEmoticonsToEmoji !== undefined) setConvertEmoticonsToEmoji(app.convertEmoticonsToEmoji);
+        if (app.showStickersAutocomplete !== undefined) setShowStickersAutocomplete(app.showStickersAutocomplete);
+        if (app.showGamesAutocomplete !== undefined) setShowGamesAutocomplete(app.showGamesAutocomplete);
+        if (app.showSendMessageButton !== undefined) setShowSendMessageButton(app.showSendMessageButton);
+        if (app.dmSearchScope) setDmSearchScope(app.dmSearchScope);
+        if (app.streamerModeEnabled !== undefined) setStreamerModeEnabled(app.streamerModeEnabled);
+        if (app.autoStreamerModeObs !== undefined) setAutoStreamerModeObs(app.autoStreamerModeObs);
+        if (app.streamerHidePersonalInfo !== undefined) setStreamerHidePersonalInfo(app.streamerHidePersonalInfo);
+        if (app.streamerHideInviteLinks !== undefined) setStreamerHideInviteLinks(app.streamerHideInviteLinks);
+        if (app.streamerDisableSounds !== undefined) setStreamerDisableSounds(app.streamerDisableSounds);
+        if (app.streamerDisableNotifications !== undefined) setStreamerDisableNotifications(app.streamerDisableNotifications);
+        if (app.streamerHideWindowCapture !== undefined) setStreamerHideWindowCapture(app.streamerHideWindowCapture);
+      }
+    });
+  }, []);
+
+  const persistAppearance = (partial: Partial<AppearanceSettings>) => {
+    userSettingsApi.updateSettings({
+      appearance: partial as any,
+    });
+  };
 
 
 
@@ -83,9 +140,11 @@ export function AppearanceTab({
                   checked={sameAsDeviceTheme}
                   onCheckedChange={(val) => {
                     setSameAsDeviceTheme(val);
+                    persistAppearance({ sameAsDeviceTheme: val });
                     if (val) {
                       setTheme('system');
                       setSelectedDefaultTheme('system');
+                      persistAppearance({ sameAsDeviceTheme: val, theme: 'system', selectedDefaultTheme: 'system' });
                       toast.success(t('Tema disinkronkan dengan tema perangkat'));
                     }
                   }}
@@ -113,6 +172,7 @@ export function AppearanceTab({
                         onClick={() => {
                           setSelectedDefaultTheme(item.id);
                           setTheme(item.themeVal);
+                          persistAppearance({ selectedDefaultTheme: item.id, theme: item.themeVal as any });
                           toast.success(t(`Tema diubah ke ${item.label}`));
                         }}
                         className={cn(
@@ -416,11 +476,23 @@ export function AppearanceTab({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between py-1.5 border-b border-border/50">
                     <div className="text-xs font-semibold text-foreground">{t('When posted as links to chat')}</div>
-                    <Switch checked={showMediaFromLinks} onCheckedChange={setShowMediaFromLinks} />
+                    <Switch
+                      checked={showMediaFromLinks}
+                      onCheckedChange={(val) => {
+                        setShowMediaFromLinks(val);
+                        persistAppearance({ showMediaFromLinks: val });
+                      }}
+                    />
                   </div>
                   <div className="flex items-center justify-between py-1.5 border-b border-border/50">
                     <div className="text-xs font-semibold text-foreground">{t('When uploaded directly to Anticeil')}</div>
-                    <Switch checked={showMediaUploaded} onCheckedChange={setShowMediaUploaded} />
+                    <Switch
+                      checked={showMediaUploaded}
+                      onCheckedChange={(val) => {
+                        setShowMediaUploaded(val);
+                        persistAppearance({ showMediaUploaded: val });
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -429,11 +501,23 @@ export function AppearanceTab({
               <div className="space-y-2 pt-1">
                 <div className="flex items-center justify-between py-2 border-b border-border/50">
                   <div className="text-xs font-semibold text-foreground">{t('Show embeds and link previews')}</div>
-                  <Switch checked={showEmbedsPreviews} onCheckedChange={setShowEmbedsPreviews} />
+                  <Switch
+                    checked={showEmbedsPreviews}
+                    onCheckedChange={(val) => {
+                      setShowEmbedsPreviews(val);
+                      persistAppearance({ showEmbedsPreviews: val });
+                    }}
+                  />
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-border/50">
                   <div className="text-xs font-semibold text-foreground">{t('Show emoji reactions')}</div>
-                  <Switch checked={showEmojiReactions} onCheckedChange={setShowEmojiReactions} />
+                  <Switch
+                    checked={showEmojiReactions}
+                    onCheckedChange={(val) => {
+                      setShowEmojiReactions(val);
+                      persistAppearance({ showEmojiReactions: val });
+                    }}
+                  />
                 </div>
               </div>
 

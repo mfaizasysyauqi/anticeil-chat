@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Laptop, Key, AlertCircle, RefreshCw, Check, Trash2, Plus, Pencil, ExternalLink, Info, ChevronDown
 } from 'lucide-react';
@@ -8,19 +8,39 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
+import { userSettingsApi, SystemSettings, DEFAULT_SYSTEM_SETTINGS } from '../../api/user-settings-api';
 
 export interface SystemTabProps {
   activeSection?: string;
 }
 
+function loadInitialSystem(): SystemSettings {
+  try {
+    const raw = localStorage.getItem('anticeil_user_settings');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.system) {
+        return {
+          ...DEFAULT_SYSTEM_SETTINGS,
+          ...parsed.system,
+          customKeybinds: parsed.system.customKeybinds || DEFAULT_SYSTEM_SETTINGS.customKeybinds,
+        };
+      }
+    }
+  } catch {}
+  return DEFAULT_SYSTEM_SETTINGS;
+}
+
 export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
   const { t } = useTranslation();
+  const [initial] = useState<SystemSettings>(loadInitialSystem);
+
   // SYSTEM STATES (Discord Parity)
   // ==========================================
-  const [autoStartApp, setAutoStartApp] = useState(false);
-  const [startMinimized, setStartMinimized] = useState(false);
-  const [minimizeToTray, setMinimizeToTray] = useState(true);
-  const [enableHardwareAcceleration, setEnableHardwareAcceleration] = useState(true);
+  const [autoStartApp, setAutoStartApp] = useState(initial.autoStartApp);
+  const [startMinimized, setStartMinimized] = useState(initial.startMinimized);
+  const [minimizeToTray, setMinimizeToTray] = useState(initial.minimizeToTray);
+  const [enableHardwareAcceleration, setEnableHardwareAcceleration] = useState(initial.enableHardwareAcceleration);
 
   // Custom Keybinds
   const [customKeybinds, setCustomKeybinds] = useState<Array<{
@@ -28,14 +48,26 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
     action: string;
     keybind: string;
     enabled: boolean;
-  }>>([
-    {
-      id: 'kb-1',
-      action: 'Activate Overlay Chat',
-      keybind: 'No Keybind Set',
-      enabled: true,
-    },
-  ]);
+  }>>(initial.customKeybinds || DEFAULT_SYSTEM_SETTINGS.customKeybinds);
+
+  useEffect(() => {
+    userSettingsApi.getSettings().then((s) => {
+      if (s?.system) {
+        const sys = s.system;
+        if (sys.autoStartApp !== undefined) setAutoStartApp(sys.autoStartApp);
+        if (sys.startMinimized !== undefined) setStartMinimized(sys.startMinimized);
+        if (sys.minimizeToTray !== undefined) setMinimizeToTray(sys.minimizeToTray);
+        if (sys.enableHardwareAcceleration !== undefined) setEnableHardwareAcceleration(sys.enableHardwareAcceleration);
+        if (sys.customKeybinds) setCustomKeybinds(sys.customKeybinds);
+      }
+    });
+  }, []);
+
+  const persistSystem = (partial: Partial<SystemSettings>) => {
+    userSettingsApi.updateSettings({
+      system: partial as any,
+    });
+  };
   const [recordingKeybindId, setRecordingKeybindId] = useState<string | null>(null);
 
   // System Helper & Trace
@@ -76,7 +108,13 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                   <div className="text-xs font-semibold text-foreground">
                     {t('Automatically open Anticeil when your computer starts up')}
                   </div>
-                  <Switch checked={autoStartApp} onCheckedChange={setAutoStartApp} />
+                  <Switch
+                    checked={autoStartApp}
+                    onCheckedChange={(val) => {
+                      setAutoStartApp(val);
+                      persistSystem({ autoStartApp: val });
+                    }}
+                  />
                 </div>
 
                 {/* Start minimized */}
@@ -94,7 +132,10 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                   </div>
                   <Switch
                     checked={startMinimized}
-                    onCheckedChange={setStartMinimized}
+                    onCheckedChange={(val) => {
+                      setStartMinimized(val);
+                      persistSystem({ startMinimized: val });
+                    }}
                     disabled={!autoStartApp}
                   />
                 </div>
@@ -107,7 +148,13 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                       {t('Clicking X minimizes Anticeil instead of closing it completely.')}
                     </div>
                   </div>
-                  <Switch checked={minimizeToTray} onCheckedChange={setMinimizeToTray} />
+                  <Switch
+                    checked={minimizeToTray}
+                    onCheckedChange={(val) => {
+                      setMinimizeToTray(val);
+                      persistSystem({ minimizeToTray: val });
+                    }}
+                  />
                 </div>
 
                 {/* Hardware acceleration */}
@@ -124,6 +171,7 @@ export function SystemTab({ activeSection = 'system' }: SystemTabProps) {
                     checked={enableHardwareAcceleration}
                     onCheckedChange={(val) => {
                       setEnableHardwareAcceleration(val);
+                      persistSystem({ enableHardwareAcceleration: val });
                       toast.info(t('Perubahan Hardware Acceleration akan aktif setelah restart aplikasi.'));
                     }}
                   />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SlidersHorizontal, Check, Info, ChevronDown, ChevronRight, Palette, Play
 } from 'lucide-react';
@@ -10,12 +10,26 @@ import { toast } from 'sonner';
 import { playPreviewSound } from '../../utils/sound-preview';
 import { AccessibilityPreview } from './accessibility/accessibility-preview';
 import { AccessibilityReducedMotion } from './accessibility/accessibility-reduced-motion';
+import { userSettingsApi, AccessibilitySettings, DEFAULT_ACCESSIBILITY_SETTINGS } from '../../api/user-settings-api';
 
 export interface AccessibilityTabProps {
   theme?: any;
   onNavigateSection?: (section: string) => void;
   currentUser?: any;
   currentUserName?: string;
+}
+
+function loadInitialAccessibility(): AccessibilitySettings {
+  try {
+    const raw = localStorage.getItem('anticeil_user_settings');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.accessibility) {
+        return { ...DEFAULT_ACCESSIBILITY_SETTINGS, ...parsed.accessibility };
+      }
+    }
+  } catch {}
+  return DEFAULT_ACCESSIBILITY_SETTINGS;
 }
 
 export function AccessibilityTab({
@@ -25,37 +39,74 @@ export function AccessibilityTab({
   currentUserName,
 }: AccessibilityTabProps) {
   const { t } = useTranslation();
-  const [showUserAvatars, setShowUserAvatars] = useState(true);
+  const [initial] = useState<AccessibilitySettings>(loadInitialAccessibility);
+
+  const [showUserAvatars, setShowUserAvatars] = useState(initial.showUserAvatars);
   // ==========================================
   // ACCESSIBILITY STATES (Discord Parity)
   // ==========================================
   // Text Readability
-  const [chatFontSize, setChatFontSize] = useState<number>(16);
-  const [alwaysUnderlineLinks, setAlwaysUnderlineLinks] = useState(false);
-  const [displayNameStyles, setDisplayNameStyles] = useState(true);
+  const [chatFontSize, setChatFontSize] = useState<number>(initial.chatFontSize);
+  const [alwaysUnderlineLinks, setAlwaysUnderlineLinks] = useState(initial.alwaysUnderlineLinks);
+  const [displayNameStyles, setDisplayNameStyles] = useState(initial.displayNameStyles);
 
   // Visual Density
-  const [uiDensity, setUiDensity] = useState<'compact' | 'default' | 'spacious'>('default');
-  const [chatMessageDisplay, setChatMessageDisplay] = useState<'default' | 'compact'>('default');
-  const [spaceMessageGroups, setSpaceMessageGroups] = useState<number>(16);
-  const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [uiDensity, setUiDensity] = useState<'compact' | 'default' | 'spacious'>(initial.uiDensity);
+  const [chatMessageDisplay, setChatMessageDisplay] = useState<'default' | 'compact'>(initial.chatMessageDisplay);
+  const [spaceMessageGroups, setSpaceMessageGroups] = useState<number>(initial.spaceMessageGroups);
+  const [zoomLevel, setZoomLevel] = useState<number>(initial.zoomLevel);
 
   // Color & Contrast
-  const [saturationLevel, setSaturationLevel] = useState<number>(100);
-  const [applySaturationCustomColors, setApplySaturationCustomColors] = useState(false);
-  const [enableHighContrast, setEnableHighContrast] = useState(false);
-  const [syncContrastSettings, setSyncContrastSettings] = useState(true);
-  const [roleColorsDisplay, setRoleColorsDisplay] = useState<'names' | 'dot' | 'none'>('names');
-  const [officialMessagesStyle, setOfficialMessagesStyle] = useState<'default' | 'contrast' | 'plain'>('default');
-  const [showOnOffIndicators, setShowOnOffIndicators] = useState(false);
+  const [saturationLevel, setSaturationLevel] = useState<number>(initial.saturationLevel);
+  const [applySaturationCustomColors, setApplySaturationCustomColors] = useState(initial.applySaturationCustomColors);
+  const [enableHighContrast, setEnableHighContrast] = useState(initial.enableHighContrast);
+  const [syncContrastSettings, setSyncContrastSettings] = useState(initial.syncContrastSettings);
+  const [roleColorsDisplay, setRoleColorsDisplay] = useState<'names' | 'dot' | 'none'>(initial.roleColorsDisplay);
+  const [officialMessagesStyle, setOfficialMessagesStyle] = useState<'default' | 'contrast' | 'plain'>(initial.officialMessagesStyle);
+  const [showOnOffIndicators, setShowOnOffIndicators] = useState(initial.showOnOffIndicators);
 
   // Reduced Motion
-  const [enableReducedMotion, setEnableReducedMotion] = useState(false);
-  const [syncReducedMotionComputer, setSyncReducedMotionComputer] = useState(true);
-  const [notificationDuration, setNotificationDuration] = useState<number>(3);
-  const [playGifsFocused, setPlayGifsFocused] = useState(true);
-  const [playAnimatedEmoji, setPlayAnimatedEmoji] = useState(true);
-  const [stickerAnimationMode, setStickerAnimationMode] = useState<'always' | 'interaction' | 'never'>('always');
+  const [enableReducedMotion, setEnableReducedMotion] = useState(initial.enableReducedMotion);
+  const [syncReducedMotionComputer, setSyncReducedMotionComputer] = useState(initial.syncReducedMotionComputer);
+  const [notificationDuration, setNotificationDuration] = useState<number>(initial.notificationDuration);
+  const [playGifsFocused, setPlayGifsFocused] = useState(initial.playGifsFocused);
+  const [playAnimatedEmoji, setPlayAnimatedEmoji] = useState(initial.playAnimatedEmoji);
+  const [stickerAnimationMode, setStickerAnimationMode] = useState<'always' | 'interaction' | 'never'>(initial.stickerAnimationMode);
+
+  useEffect(() => {
+    userSettingsApi.getSettings().then((s) => {
+      if (s?.accessibility) {
+        const a = s.accessibility;
+        if (a.showUserAvatars !== undefined) setShowUserAvatars(a.showUserAvatars);
+        if (a.chatFontSize !== undefined) setChatFontSize(a.chatFontSize);
+        if (a.alwaysUnderlineLinks !== undefined) setAlwaysUnderlineLinks(a.alwaysUnderlineLinks);
+        if (a.displayNameStyles !== undefined) setDisplayNameStyles(a.displayNameStyles);
+        if (a.uiDensity) setUiDensity(a.uiDensity);
+        if (a.chatMessageDisplay) setChatMessageDisplay(a.chatMessageDisplay);
+        if (a.spaceMessageGroups !== undefined) setSpaceMessageGroups(a.spaceMessageGroups);
+        if (a.zoomLevel !== undefined) setZoomLevel(a.zoomLevel);
+        if (a.saturationLevel !== undefined) setSaturationLevel(a.saturationLevel);
+        if (a.applySaturationCustomColors !== undefined) setApplySaturationCustomColors(a.applySaturationCustomColors);
+        if (a.enableHighContrast !== undefined) setEnableHighContrast(a.enableHighContrast);
+        if (a.syncContrastSettings !== undefined) setSyncContrastSettings(a.syncContrastSettings);
+        if (a.roleColorsDisplay) setRoleColorsDisplay(a.roleColorsDisplay);
+        if (a.officialMessagesStyle) setOfficialMessagesStyle(a.officialMessagesStyle);
+        if (a.showOnOffIndicators !== undefined) setShowOnOffIndicators(a.showOnOffIndicators);
+        if (a.enableReducedMotion !== undefined) setEnableReducedMotion(a.enableReducedMotion);
+        if (a.syncReducedMotionComputer !== undefined) setSyncReducedMotionComputer(a.syncReducedMotionComputer);
+        if (a.notificationDuration !== undefined) setNotificationDuration(a.notificationDuration);
+        if (a.playGifsFocused !== undefined) setPlayGifsFocused(a.playGifsFocused);
+        if (a.playAnimatedEmoji !== undefined) setPlayAnimatedEmoji(a.playAnimatedEmoji);
+        if (a.stickerAnimationMode) setStickerAnimationMode(a.stickerAnimationMode);
+      }
+    });
+  }, []);
+
+  const persistAccessibility = (partial: Partial<AccessibilitySettings>) => {
+    userSettingsApi.updateSettings({
+      accessibility: partial as any,
+    });
+  };
 
   // Audio & Screen Reader
   const [ttsRate, setTtsRate] = useState<number>(1.0);
@@ -142,7 +193,13 @@ export function AccessibilityTab({
                     {t('Make links stand out more.')}
                   </div>
                 </div>
-                <Switch checked={alwaysUnderlineLinks} onCheckedChange={setAlwaysUnderlineLinks} />
+                <Switch
+                  checked={alwaysUnderlineLinks}
+                  onCheckedChange={(val) => {
+                    setAlwaysUnderlineLinks(val);
+                    persistAccessibility({ alwaysUnderlineLinks: val });
+                  }}
+                />
               </div>
 
               {/* Display Name Styles */}
@@ -153,7 +210,13 @@ export function AccessibilityTab({
                     {t('Enable display name styles — including font, effect, and color — across Anticeil.')}
                   </div>
                 </div>
-                <Switch checked={displayNameStyles} onCheckedChange={setDisplayNameStyles} />
+                <Switch
+                  checked={displayNameStyles}
+                  onCheckedChange={(val) => {
+                    setDisplayNameStyles(val);
+                    persistAccessibility({ displayNameStyles: val });
+                  }}
+                />
               </div>
             </div>
 
@@ -181,7 +244,10 @@ export function AccessibilityTab({
                     return (
                       <div
                         key={d.id}
-                        onClick={() => setUiDensity(d.id as any)}
+                        onClick={() => {
+                          setUiDensity(d.id as any);
+                          persistAccessibility({ uiDensity: d.id as any });
+                        }}
                         className={cn(
                           'flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer',
                           isSelected
@@ -221,7 +287,10 @@ export function AccessibilityTab({
                     return (
                       <div
                         key={m.id}
-                        onClick={() => setChatMessageDisplay(m.id as any)}
+                        onClick={() => {
+                          setChatMessageDisplay(m.id as any);
+                          persistAccessibility({ chatMessageDisplay: m.id as any });
+                        }}
                         className={cn(
                           'flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer',
                           isSelected
@@ -359,7 +428,13 @@ export function AccessibilityTab({
                       {t('Apply the above setting to custom color choices, like role colors.')}
                     </div>
                   </div>
-                  <Switch checked={applySaturationCustomColors} onCheckedChange={setApplySaturationCustomColors} />
+                  <Switch
+                    checked={applySaturationCustomColors}
+                    onCheckedChange={(val) => {
+                      setApplySaturationCustomColors(val);
+                      persistAccessibility({ applySaturationCustomColors: val });
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between py-2 border-b border-border/50">
@@ -369,7 +444,13 @@ export function AccessibilityTab({
                       {t('Enhance visibility with bold colors and sharp contrast.')}
                     </div>
                   </div>
-                  <Switch checked={enableHighContrast} onCheckedChange={setEnableHighContrast} />
+                  <Switch
+                    checked={enableHighContrast}
+                    onCheckedChange={(val) => {
+                      setEnableHighContrast(val);
+                      persistAccessibility({ enableHighContrast: val });
+                    }}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between py-2 border-b border-border/50">
@@ -379,7 +460,13 @@ export function AccessibilityTab({
                       {t("This allows Anticeil to use your computer's contrast theme. Learn more about contrast settings.")}
                     </div>
                   </div>
-                  <Switch checked={syncContrastSettings} onCheckedChange={setSyncContrastSettings} />
+                  <Switch
+                    checked={syncContrastSettings}
+                    onCheckedChange={(val) => {
+                      setSyncContrastSettings(val);
+                      persistAccessibility({ syncContrastSettings: val });
+                    }}
+                  />
                 </div>
               </div>
 
@@ -394,7 +481,11 @@ export function AccessibilityTab({
                 <div className="relative">
                   <select
                     value={roleColorsDisplay}
-                    onChange={(e) => setRoleColorsDisplay(e.target.value as any)}
+                    onChange={(e) => {
+                      const val = e.target.value as any;
+                      setRoleColorsDisplay(val);
+                      persistAccessibility({ roleColorsDisplay: val });
+                    }}
                     className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
                   >
                     <option value="names" className="bg-[#2b2d31]">In names</option>
@@ -416,7 +507,11 @@ export function AccessibilityTab({
                 <div className="relative">
                   <select
                     value={officialMessagesStyle}
-                    onChange={(e) => setOfficialMessagesStyle(e.target.value as any)}
+                    onChange={(e) => {
+                      const val = e.target.value as any;
+                      setOfficialMessagesStyle(val);
+                      persistAccessibility({ officialMessagesStyle: val });
+                    }}
                     className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#1e1f22] border border-border/80 text-foreground appearance-none outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-8"
                   >
                     <option value="default" className="bg-[#2b2d31]">Default</option>
@@ -435,7 +530,13 @@ export function AccessibilityTab({
                     {t('On forms, menus and settings, on/off toggles will have icons.')}
                   </div>
                 </div>
-                <Switch checked={showOnOffIndicators} onCheckedChange={setShowOnOffIndicators} />
+                <Switch
+                  checked={showOnOffIndicators}
+                  onCheckedChange={(val) => {
+                    setShowOnOffIndicators(val);
+                    persistAccessibility({ showOnOffIndicators: val });
+                  }}
+                />
               </div>
 
               {/* Related Settings card */}
@@ -473,17 +574,35 @@ export function AccessibilityTab({
             {/* SUB-SECTION 4: REDUCED MOTION */}
             <AccessibilityReducedMotion
               enableReducedMotion={enableReducedMotion}
-              setEnableReducedMotion={setEnableReducedMotion}
+              setEnableReducedMotion={(val) => {
+                setEnableReducedMotion(val);
+                persistAccessibility({ enableReducedMotion: val });
+              }}
               syncReducedMotionComputer={syncReducedMotionComputer}
-              setSyncReducedMotionComputer={setSyncReducedMotionComputer}
+              setSyncReducedMotionComputer={(val) => {
+                setSyncReducedMotionComputer(val);
+                persistAccessibility({ syncReducedMotionComputer: val });
+              }}
               notificationDuration={notificationDuration}
-              setNotificationDuration={setNotificationDuration}
+              setNotificationDuration={(val) => {
+                setNotificationDuration(val);
+                persistAccessibility({ notificationDuration: val });
+              }}
               playGifsFocused={playGifsFocused}
-              setPlayGifsFocused={setPlayGifsFocused}
+              setPlayGifsFocused={(val) => {
+                setPlayGifsFocused(val);
+                persistAccessibility({ playGifsFocused: val });
+              }}
               playAnimatedEmoji={playAnimatedEmoji}
-              setPlayAnimatedEmoji={setPlayAnimatedEmoji}
+              setPlayAnimatedEmoji={(val) => {
+                setPlayAnimatedEmoji(val);
+                persistAccessibility({ playAnimatedEmoji: val });
+              }}
               stickerAnimationMode={stickerAnimationMode}
-              setStickerAnimationMode={setStickerAnimationMode}
+              setStickerAnimationMode={(val) => {
+                setStickerAnimationMode(val);
+                persistAccessibility({ stickerAnimationMode: val });
+              }}
             />
 
             {/* SUB-SECTION 5: AUDIO & SCREEN READER */}
