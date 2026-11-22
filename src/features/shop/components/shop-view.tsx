@@ -22,6 +22,10 @@ import {
   RotateCcw,
   UploadCloud,
   Image as ImageIcon,
+  Video,
+  Crown,
+  Gamepad2,
+  Palette,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -108,12 +112,12 @@ export const THEME_OPTIONS = [
 
 // Discord-style App Shops dropdown items (Anticeil Native Ecosystem)
 export const APP_SHOPS_ITEMS = [
-  { id: 'app_watch_together', name: 'YouTube Watch Together', icon: '🎬', tag: 'Video', query: 'watch together' },
-  { id: 'app_jamspace', name: 'Jamspace Whiteboard', icon: '🎨', tag: 'Board', query: 'whiteboard' },
-  { id: 'app_chess', name: 'Anticeil Chess', icon: '♟️', tag: 'Game', query: 'chess' },
-  { id: 'app_wordle', name: 'Wordle Daily Party', icon: '🔤', tag: 'Game', query: 'wordle' },
-  { id: 'app_trivia', name: 'Cyber Trivia Battle', icon: '🧠', tag: 'Game', query: 'trivia' },
-  { id: 'app_cyber_core', name: 'Anticeil Cyber Core', icon: '🪐', tag: 'Official', query: 'cyber' },
+  { id: 'app_watch_together', name: 'YouTube Watch Together', icon: Video, tag: 'Video', query: 'watch together' },
+  { id: 'app_jamspace', name: 'Jamspace Whiteboard', icon: Palette, tag: 'Board', query: 'whiteboard' },
+  { id: 'app_chess', name: 'Anticeil Chess', icon: Crown, tag: 'Game', query: 'chess' },
+  { id: 'app_wordle', name: 'Wordle Daily Party', icon: Gamepad2, tag: 'Game', query: 'wordle' },
+  { id: 'app_trivia', name: 'Cyber Trivia Battle', icon: Gamepad2, tag: 'Game', query: 'trivia' },
+  { id: 'app_cyber_core', name: 'Anticeil Cyber Core', icon: Sparkles, tag: 'Official', query: 'cyber' },
 ];
 
 export interface ShopViewProps {
@@ -1212,7 +1216,7 @@ export function ShopView({
                     className="flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md cursor-pointer hover:bg-muted font-medium transition-colors"
                   >
                     <div className="size-6 rounded-md bg-muted/60 border border-border/80 flex items-center justify-center text-xs shrink-0 shadow-xs">
-                      {app.icon}
+                      <app.icon className="w-3.5 h-3.5 text-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="truncate text-xs font-semibold text-foreground">{app.name}</div>
@@ -1419,7 +1423,7 @@ export function ShopView({
                             className="flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md cursor-pointer hover:bg-muted font-medium transition-colors"
                           >
                             <div className="size-6 rounded-md bg-muted/60 border border-border/80 flex items-center justify-center text-xs shrink-0 shadow-xs">
-                              {app.icon}
+                              <app.icon className="w-3.5 h-3.5 text-foreground" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="truncate text-xs font-semibold text-foreground">{app.name}</div>

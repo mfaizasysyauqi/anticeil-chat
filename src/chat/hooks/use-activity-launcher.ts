@@ -152,7 +152,7 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
         title: appId === 'watch-together' || appId === 'youtube' ? 'Watch Together' : appId,
         developer: appId === 'watch-together' || appId === 'youtube' ? 'YouTube' : 'Community App',
         description: 'Tonton video YouTube bersama rekan secara sinkron realtime tanpa delay.',
-        icon: '▶️',
+        icon: appId === 'watch-together' || appId === 'youtube' ? 'youtube' : appId,
         iconBg: 'bg-red-600',
         bannerGradient: 'bg-white',
       };
@@ -230,9 +230,21 @@ export function useActivityLauncher(options: UseActivityLauncherOptions) {
                   name: app.title,
                   developer: app.developer,
                   description: app.description,
-                  icon: typeof (app as any).icon === 'string' 
-                    ? (app as any).icon 
-                    : (appId === 'watch-together' || appId === 'youtube' ? 'youtube' : appId === 'tradingview' ? 'tradingview' : appId === 'whiteboard' ? 'whiteboard' : appId === 'chess' ? 'chess' : appId === 'screenshare' ? 'screenshare' : 'app'),
+                  icon: (appId === 'watch-together' || appId === 'youtube')
+                    ? 'youtube'
+                    : appId === 'tradingview'
+                    ? 'tradingview'
+                    : appId === 'whiteboard'
+                    ? 'whiteboard'
+                    : appId === 'chess'
+                    ? 'chess'
+                    : appId === 'screenshare'
+                    ? 'screenshare'
+                    : appId === 'anticeil-platform'
+                    ? 'platform'
+                    : typeof (app as any).icon === 'string' && !/[\u{1F300}-\u{1FAFF}]/u.test((app as any).icon)
+                    ? (app as any).icon
+                    : 'app',
                   iconBg: app.iconBg,
                   bannerGradient: app.bannerGradient,
                   startedBy: currentUserName,

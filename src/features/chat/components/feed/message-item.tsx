@@ -55,9 +55,9 @@ interface AppVisualInfo {
   type: 'youtube' | 'tradingview' | 'whiteboard' | 'chess' | 'screenshare' | 'platform' | 'wordle' | 'default';
 }
 
-function getAppVisualInfo(appId?: string): AppVisualInfo {
-  const id = appId?.toLowerCase() || '';
-  if (id === 'watch-together' || id === 'youtube' || id.includes('youtube')) {
+function getAppVisualInfo(appId?: string, fallbackIdentifier?: string): AppVisualInfo {
+  const raw = `${appId || ''} ${fallbackIdentifier || ''}`.toLowerCase();
+  if (raw.includes('watch-together') || raw.includes('youtube') || raw.includes('▶')) {
     return {
       name: 'Watch Together',
       bg: 'bg-[#ff0000]',
@@ -65,7 +65,7 @@ function getAppVisualInfo(appId?: string): AppVisualInfo {
       type: 'youtube',
     };
   }
-  if (id === 'tradingview' || id.includes('trading') || id.includes('chart')) {
+  if (raw.includes('tradingview') || raw.includes('trading') || raw.includes('chart') || raw.includes('📈')) {
     return {
       name: 'TradingView Charts',
       bg: 'bg-[#131722]',
@@ -73,7 +73,7 @@ function getAppVisualInfo(appId?: string): AppVisualInfo {
       type: 'tradingview',
     };
   }
-  if (id === 'whiteboard' || id.includes('jamspace') || id.includes('whiteboard')) {
+  if (raw.includes('whiteboard') || raw.includes('jamspace') || raw.includes('🎨')) {
     return {
       name: 'Jamspace Whiteboard',
       bg: 'bg-[#2563eb]',
@@ -81,7 +81,7 @@ function getAppVisualInfo(appId?: string): AppVisualInfo {
       type: 'whiteboard',
     };
   }
-  if (id === 'chess' || id.includes('chess')) {
+  if (raw.includes('chess') || raw.includes('catur') || raw.includes('👑') || raw.includes('♟')) {
     return {
       name: 'Anticeil Chess',
       bg: 'bg-[#b45309]',
@@ -89,7 +89,7 @@ function getAppVisualInfo(appId?: string): AppVisualInfo {
       type: 'chess',
     };
   }
-  if (id === 'screenshare' || id.includes('screen')) {
+  if (raw.includes('screenshare') || raw.includes('screen') || raw.includes('layar') || raw.includes('🖥')) {
     return {
       name: 'Share Screen',
       bg: 'bg-[#7c3aed]',
@@ -97,7 +97,7 @@ function getAppVisualInfo(appId?: string): AppVisualInfo {
       type: 'screenshare',
     };
   }
-  if (id === 'platform' || id.includes('platform') || id.includes('anticeil')) {
+  if (raw.includes('platform') || raw.includes('anticeil') || raw.includes('✨')) {
     return {
       name: 'Anticeil Platform',
       bg: 'bg-blue-600',
@@ -105,7 +105,7 @@ function getAppVisualInfo(appId?: string): AppVisualInfo {
       type: 'platform',
     };
   }
-  if (id === 'wordle') {
+  if (raw.includes('wordle')) {
     return {
       name: 'Wordle',
       bg: 'bg-[#123824]',
@@ -197,7 +197,7 @@ export function MessageItem({
 }: MessageItemProps) {
   const activityAtt = msg.attachments?.find((a) => a.type === 'activity');
   const act = activityAtt?.activityData;
-  const actInfo = useMemo(() => (act ? getAppVisualInfo(act.appId) : null), [act]);
+  const actInfo = useMemo(() => (act ? getAppVisualInfo(act.appId, act.icon || act.name) : null), [act]);
 
   // Detect Discord poll data or parse legacy poll text
   const pollData = useMemo<DiscordPollData | null>(() => {
@@ -274,7 +274,7 @@ export function MessageItem({
                       {/* Curved spine connector line */}
                       <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-border/80 pointer-events-none group-hover/cmd:border-foreground/60 transition-colors" />
                       {/* App icon badge */}
-                      <div className={cn('w-4 h-4 rounded-md flex items-center justify-center shrink-0 shadow-2xs overflow-hidden text-white', actInfo.bg)}>
+                      <div className={cn('w-4 h-4 rounded-full flex items-center justify-center shrink-0 shadow-2xs overflow-hidden text-white', actInfo.bg)}>
                         {renderAppIcon(actInfo.type, 'xs')}
                       </div>
                       <span className="bg-primary text-white text-[9px] font-bold px-1 py-0.2 rounded-[3px] flex items-center gap-0.5 leading-none shadow-2xs">
@@ -304,7 +304,7 @@ export function MessageItem({
                     {act && actInfo ? (
                       <div
                         className={cn(
-                          'w-[38px] h-[38px] rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-md text-white border border-white/10 overflow-hidden',
+                          'w-[38px] h-[38px] rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-md text-white border border-white/10 overflow-hidden',
                           actInfo.bg,
                         )}
                         title={act.name}
@@ -373,7 +373,7 @@ export function MessageItem({
                             if (att.type === 'poll') return null;
                             if (att.type === 'activity' && att.activityData) {
                               const itemAct = att.activityData;
-                              const itemActInfo = getAppVisualInfo(itemAct.appId);
+                              const itemActInfo = getAppVisualInfo(itemAct.appId, itemAct.icon || itemAct.name);
                               const gradientClass = itemActInfo.gradient;
 
                               const currentUserName =

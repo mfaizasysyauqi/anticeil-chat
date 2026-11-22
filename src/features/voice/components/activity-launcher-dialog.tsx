@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Play, Palette, Crown, ScreenShare, Check, Sparkles, X, Dices, HelpCircle, Gamepad2, Bot, Rocket } from 'lucide-react';
+import { Search, Play, Palette, Crown, ScreenShare, Check, Sparkles, X, Dices, HelpCircle, Gamepad2, Bot, Rocket, Film } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -164,50 +164,54 @@ export function ActivityLauncherDialog({
                 type="button"
                 onClick={() => setSelectedCategory('game')}
                 className={cn(
-                  'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                  'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5',
                   selectedCategory === 'game'
                     ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
-                🎮 {t('Game')}
+                <Gamepad2 className="w-3.5 h-3.5 shrink-0" />
+                <span>{t('Game')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedCategory('entertainment')}
                 className={cn(
-                  'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                  'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5',
                   selectedCategory === 'entertainment'
                     ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
-                🍿 {t('Hiburan')}
+                <Film className="w-3.5 h-3.5 shrink-0" />
+                <span>{t('Hiburan')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedCategory('productivity')}
                 className={cn(
-                  'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                  'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5',
                   selectedCategory === 'productivity'
                     ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
-                🎨 {t('Produktivitas')}
+                <Palette className="w-3.5 h-3.5 shrink-0" />
+                <span>{t('Produktivitas')}</span>
               </button>
               {installedColonyApps.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setSelectedCategory('colony')}
                   className={cn(
-                    'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0',
+                    'px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5',
                     selectedCategory === 'colony'
                       ? 'bg-primary text-primary-foreground shadow-xs'
                       : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >
-                  🤖 Colony Apps ({installedColonyApps.length})
+                  <Bot className="w-3.5 h-3.5 shrink-0" />
+                  <span>Colony Apps ({installedColonyApps.length})</span>
                 </button>
               )}
             </div>

@@ -19,6 +19,10 @@ import {
   X,
   ChevronDown,
   Check,
+  Calculator,
+  Gamepad2,
+  Palette,
+  Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyIconBadge } from '@/components/ui/empty';
@@ -496,7 +500,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                     className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
                   >
                     <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                      <span>🧮</span>
+                      <Calculator className="w-4 h-4 text-primary shrink-0" />
                       <span>Buat Kalkulator (Artifact)</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
@@ -510,7 +514,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                     className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
                   >
                     <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                      <span>🕹️</span>
+                      <Gamepad2 className="w-4 h-4 text-emerald-500 shrink-0" />
                       <span>Buat Mini Game (Artifact)</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
@@ -524,7 +528,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                     className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
                   >
                     <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                      <span>🎨</span>
+                      <Palette className="w-4 h-4 text-blue-500 shrink-0" />
                       <span>Buka Jamspace Whiteboard</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
@@ -538,7 +542,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                     className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
                   >
                     <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                      <span>🎬</span>
+                      <Video className="w-4 h-4 text-red-500 shrink-0" />
                       <span>YouTube Watch Together</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
