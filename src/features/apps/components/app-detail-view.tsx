@@ -64,7 +64,7 @@ export function AppDetailView({
       ? app.screenshots
       : [
           app.bannerImage ||
-            'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=1200&q=80',
+            'https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&w=1200&q=80',
         ];
 
   const categoryLabel =
