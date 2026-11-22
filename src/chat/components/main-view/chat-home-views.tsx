@@ -246,6 +246,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         onJumpToMessage={handleJumpToNotification}
         onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}
+        currentUserId={currentUser?.id}
       />
     );
   }

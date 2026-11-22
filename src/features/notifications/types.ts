@@ -13,6 +13,7 @@ export interface NotificationItem {
   hubName?: string;
   createdAt: string;
   isRead: boolean;
+  messageId?: string;
   targetUserId?: string;
   targetUserIds?: string[];
 }

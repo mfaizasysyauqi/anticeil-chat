@@ -60,6 +60,7 @@ export interface UseMessageActionsOptions {
   activeChannel: ColonyChannel | null;
   activeColony?: Colony | null;
   members: ColonyMember[];
+  allFriends?: any[];
   inputText: string;
   setInputText: React.Dispatch<React.SetStateAction<string>>;
   stagedAttachment: any;
@@ -85,6 +86,7 @@ export function useMessageActions({
   activeChannel,
   activeColony,
   members,
+  allFriends,
   inputText,
   setInputText,
   stagedAttachment,
@@ -218,8 +220,9 @@ export function useMessageActions({
             });
           }
 
-          // 2. Mention by member name, username, or email
-          members.forEach((m) => {
+          // 2. Mention by candidate member or friend name, username, or email
+          const candidateUsers = [...members, ...(allFriends || [])];
+          candidateUsers.forEach((m) => {
             const cleanName = m.name?.trim().replace(/\s+/g, ' ');
             const username = m.username?.trim();
             const emailPrefix = m.email?.split('@')[0];
@@ -246,8 +249,8 @@ export function useMessageActions({
             }
           });
 
-          // Self-mention fallback for local testing
-          if (recipientIds.size === 0 && currentUserName && new RegExp(`@${currentUserName}\\b`, 'i').test(textToScan)) {
+          // Only self-mention if sender explicitly typed @<their-own-name>
+          if (currentUserName && new RegExp(`@${currentUserName}\\b`, 'i').test(textToScan)) {
             recipientIds.add(currentUserId);
           }
 
@@ -260,6 +263,7 @@ export function useMessageActions({
               type: 'mention',
               title: `@${currentUserName} menyebut Anda di #${activeChannel.name}`,
               summary: trimmedContent,
+              messageId: saved.id,
               channelId: activeChannel.id,
               channelName: activeChannel.name,
               colonyId: activeColony?.id,

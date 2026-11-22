@@ -14,12 +14,30 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { EmptyState } from '@/components/ui/empty';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { NotificationItem, NotificationsTab } from '../types';
+
+function formatNotificationDate(dateStr?: string) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = d.toDateString() === yesterday.toDateString();
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (isToday) return `Hari ini, ${timeStr}`;
+    if (isYesterday) return `Kemarin, ${timeStr}`;
+    return d.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) + `, ${timeStr}`;
+  } catch {
+    return dateStr;
+  }
+}
 
 interface NotificationsViewProps {
   notifications: NotificationItem[];
@@ -29,6 +47,7 @@ interface NotificationsViewProps {
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
   verticalPadding?: string;
+  currentUserId?: string;
 }
 
 export function NotificationsView({
@@ -39,14 +58,23 @@ export function NotificationsView({
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   verticalPadding = CHANNEL_VERTICAL_PADDING,
+  currentUserId,
 }: NotificationsViewProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<NotificationsTab>('all');
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-  const mentionsCount = notifications.filter((n) => n.type === 'mention').length;
+  const visibleNotifications = notifications.filter((n) => {
+    if (currentUserId && n.actorId === currentUserId) {
+      const targets = n.targetUserIds || (n.targetUserId ? [n.targetUserId] : []);
+      if (!targets.includes(currentUserId)) return false;
+    }
+    return true;
+  });
 
-  const filteredNotifications = notifications.filter((n) => {
+  const unreadCount = visibleNotifications.filter((n) => !n.isRead).length;
+  const mentionsCount = visibleNotifications.filter((n) => n.type === 'mention').length;
+
+  const filteredNotifications = visibleNotifications.filter((n) => {
     if (activeTab === 'unread') return !n.isRead;
     if (activeTab === 'mentions') return n.type === 'mention';
     return true;
@@ -98,8 +126,8 @@ export function NotificationsView({
               )}
             >
               <span>{t('Semua')}</span>
-              {notifications.length > 0 && (
-                <span className="text-[10px] text-muted-foreground/80">({notifications.length})</span>
+              {visibleNotifications.length > 0 && (
+                <span className="text-[10px] text-muted-foreground/80">({visibleNotifications.length})</span>
               )}
             </button>
 
@@ -152,8 +180,8 @@ export function NotificationsView({
       </div>
 
       {/* Main Content Area */}
-      <ScrollArea className="flex-1 min-h-0">
-        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding)}>
+      <div className="flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar">
+        <div className={cn(horizontalPadding, verticalPadding, 'w-full')}>
         {filteredNotifications.length === 0 ? (
           <EmptyState
             icon={<BellOff className="w-8 h-8 stroke-[1.8] text-primary" />}
@@ -175,7 +203,7 @@ export function NotificationsView({
                 key={item.id}
                 onClick={() => onJumpToMessage(item)}
                 className={cn(
-                  'flex items-start gap-3.5 p-3.5 rounded-lg border transition-all cursor-pointer group',
+                  'flex items-start gap-3 sm:gap-3.5 p-3.5 rounded-lg border transition-all cursor-pointer group',
                   !item.isRead
                     ? 'bg-accent/40 border-primary/30 hover:border-primary/50'
                     : 'bg-card/40 border-border/40 hover:bg-accent/20 hover:border-border/80',
@@ -210,16 +238,26 @@ export function NotificationsView({
                       <span className="font-bold text-foreground hover:underline">
                         {item.actorName}
                       </span>
-                      <span className="text-muted-foreground">{item.title}</span>
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
-                        #{item.channelName}
+                      <span className="text-muted-foreground">
+                        {item.type === 'mention'
+                          ? t('menyebut Anda di')
+                          : item.type === 'reply'
+                            ? t('membalas pesan Anda di')
+                            : item.type === 'activity'
+                              ? t('mengundang Anda ke aktivitas')
+                              : (item.title?.replace(new RegExp(`^@?${item.actorName}\\s*`, 'i'), '').replace(new RegExp(`\\s*#${item.channelName}$`, 'i'), '') || t('mengirim notifikasi'))}
                       </span>
-                      {item.hubName && (
+                      {item.channelName && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
+                          #{item.channelName}
+                        </span>
+                      )}
+                      {item.hubName && item.hubName.toLowerCase() !== 'anticeil' && (
                         <span className="text-[10px] text-muted-foreground/60">• {item.hubName}</span>
                       )}
                     </div>
                     <span className="text-[11px] text-muted-foreground/60 shrink-0">
-                      {item.createdAt}
+                      {formatNotificationDate(item.createdAt)}
                     </span>
                   </div>
 
@@ -230,7 +268,7 @@ export function NotificationsView({
                 </div>
 
                 {/* Action buttons on hover */}
-                <div className="flex items-center gap-1 self-center shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 self-center shrink-0 opacity-80 group-hover:opacity-100 transition-opacity pl-1">
                   {!item.isRead && (
                     <button
                       type="button"
@@ -253,7 +291,7 @@ export function NotificationsView({
           </div>
         )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

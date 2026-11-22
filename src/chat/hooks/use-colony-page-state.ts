@@ -345,6 +345,7 @@ export function useColonyPageState(): ChatPageContentProps {
     activeChannel,
     activeColony,
     members,
+    allFriends: friends?.allFriends || [],
     replyingToMessage,
     setReplyingToMessage,
     inputText,
@@ -379,11 +380,40 @@ export function useColonyPageState(): ChatPageContentProps {
   };
 
   const handleJumpToNotification = (item: any) => {
+    if (!item) return;
     handleMarkNotificationRead(item.id);
-    if (item.colonyId && item.colonyId !== activeColonyId) {
-      setActiveColonyId(item.colonyId);
+    const targetColonyId = item.colonyId || 'anticeil';
+    if (targetColonyId !== activeColonyId) {
+      setActiveColonyId(targetColonyId);
     }
-    setActiveChannelId(item.channelId);
+    if (item.channelId) {
+      setActiveChannelId(item.channelId);
+    }
+    setHomeView(null as any);
+
+    // Sync URL with React Router navigate
+    if (targetColonyId && targetColonyId !== 'anticeil') {
+      navigate(`/channels/${targetColonyId}${item.channelId ? '/' + item.channelId : ''}`);
+    } else if (item.channelId) {
+      navigate(`/channels/@me/${item.channelId}`);
+    }
+
+    // Scroll & highlight target message with polling retry until rendered
+    if (item.messageId) {
+      let attempts = 0;
+      const tryJump = () => {
+        const el = document.getElementById(`msg-${item.messageId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('bg-primary/20', 'transition-colors', 'duration-500');
+          setTimeout(() => el.classList.remove('bg-primary/20'), 2500);
+        } else if (attempts < 15) {
+          attempts++;
+          setTimeout(tryJump, 150);
+        }
+      };
+      setTimeout(tryJump, 100);
+    }
   };
 
   // Activity Launcher Hook

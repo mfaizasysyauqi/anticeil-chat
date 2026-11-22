@@ -13,7 +13,14 @@ export function useNotifications(initialData: NotificationItem[] = [], userId?: 
     try {
       const data = await notificationsApi.getNotifications(userId);
       if (Array.isArray(data)) {
-        setNotifications(data);
+        const filtered = data.filter((n) => {
+          if (userId && n.actorId === userId) {
+            const targets = n.targetUserIds || (n.targetUserId ? [n.targetUserId] : []);
+            return targets.includes(userId);
+          }
+          return true;
+        });
+        setNotifications(filtered);
       }
     } catch {
       // Keep optimistic
