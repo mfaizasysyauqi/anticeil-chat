@@ -44,13 +44,6 @@ export function AnticeilPlatformStage({
         >
           <RefreshCw className="w-3.5 h-3.5" />
         </button>
-        <button
-          onClick={handleOpenNewTab}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium shadow-md shadow-primary/20 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          <span>Buka di Tab Baru</span>
-        </button>
       </div>
 
       {/* Embedded Platform / Flow IFrame Container */}
