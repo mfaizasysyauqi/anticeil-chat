@@ -4,7 +4,7 @@ import { Toaster } from 'sonner';
 import { SocketProvider } from '@/providers/socket-provider';
 import { ThemeProvider, useTheme } from '@/core/theme';
 import { I18nProvider } from '@/core/i18n';
-import { CommunityPage } from '@/chat';
+import { CommunityPage } from '@/pages';
 
 function AppContent() {
   const { theme } = useTheme();
