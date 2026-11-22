@@ -123,32 +123,29 @@ function getAppVisualInfo(appId?: string, fallbackIdentifier?: string): AppVisua
 }
 
 function renderAppIcon(type: AppVisualInfo['type'], size: 'xs' | 'sm' | 'md' | 'lg' = 'md') {
+  const iconClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
+  const ytClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-8 h-8' : 'w-6 h-6';
+
   if (type === 'youtube') {
-    const svgClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-8 h-8' : 'w-6 h-6';
-    return <YouTubeIcon className={svgClass} />;
+    return <YouTubeIcon className={ytClass} />;
   }
   if (type === 'tradingview') {
-    const svgClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
     return (
-      <svg className={cn(svgClass, 'text-white fill-current')} viewBox="0 0 24 24">
+      <svg className={cn(iconClass, 'text-white fill-current')} viewBox="0 0 24 24">
         <path d="M15.865 8.279a2.452 2.452 0 1 1-4.904 0a2.452 2.452 0 0 1 4.904 0M9.75 6H0v4.904h4.846v7.269H9.75Zm8.596 0H24l-5.106 12.173H13.24z" />
       </svg>
     );
   }
   if (type === 'whiteboard') {
-    const iconClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
     return <Palette className={cn(iconClass, 'text-white')} />;
   }
   if (type === 'chess') {
-    const iconClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
     return <Crown className={cn(iconClass, 'text-white')} />;
   }
   if (type === 'screenshare') {
-    const iconClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
     return <ScreenShare className={cn(iconClass, 'text-white')} />;
   }
   if (type === 'platform') {
-    const iconClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
     return <Sparkles className={cn(iconClass, 'text-white')} />;
   }
   if (type === 'wordle') {
@@ -171,8 +168,7 @@ function renderAppIcon(type: AppVisualInfo['type'], size: 'xs' | 'sm' | 'md' | '
       </div>
     );
   }
-  const defaultClass = size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
-  return <Gamepad2 className={cn(defaultClass, 'text-white')} />;
+  return <Gamepad2 className={cn(iconClass, 'text-white')} />;
 }
 
 export function MessageItem({
