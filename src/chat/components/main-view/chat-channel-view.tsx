@@ -138,6 +138,8 @@ export interface ChatChannelViewProps {
   messageRequests?: any[];
   handleAcceptMessageRequest?: (item: any) => void;
   handleIgnoreMessageRequest?: (item: any) => void;
+  colonies?: Colony[];
+  members?: ColonyMember[];
   t: (key: string) => string;
 }
 
@@ -178,6 +180,8 @@ export function ChatChannelView({
   setActiveCallChannelId,
   setActiveChannelId,
   colonyChannels,
+  colonies = [],
+  members = [],
   friends,
   handleCreateCallLog,
   isActivityOpen,
@@ -429,6 +433,9 @@ export function ChatChannelView({
         activeActivityAppId={selectedActivityAppId}
         activeCallChannelId={activeCallChannelId}
         messagesEndRef={messagesEndRef}
+        colonies={colonies}
+        friends={friends}
+        members={displayMembers || members}
         t={t}
       />
 
