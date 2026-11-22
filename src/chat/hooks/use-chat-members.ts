@@ -94,6 +94,7 @@ export function useChatMembers({
     const dmName =
       member.name || member.username || member.firstName || 'Direct Message';
     setClosedDmId(dmId, false);
+    const dmAvatar = member.avatar || (member as any)?.imageUrl || null;
     setChannels((prev) => {
       const existing = prev.find((c) => c.id === dmId);
       const updated = existing
@@ -104,6 +105,8 @@ export function useChatMembers({
                   dmUserId: member.id,
                   name: dmName,
                   description: `Percakapan langsung dengan ${dmName}`,
+                  avatar: dmAvatar || c.avatar,
+                  recipientAvatar: dmAvatar || c.recipientAvatar,
                 }
               : c,
           )
@@ -116,6 +119,8 @@ export function useChatMembers({
               colonyId: 'anticeil',
               isDirectMessage: true,
               dmUserId: member.id,
+              avatar: dmAvatar,
+              recipientAvatar: dmAvatar,
               type: 'text' as const,
             },
             ...prev,
@@ -223,7 +228,7 @@ export function useChatMembers({
     }
   };
 
-  // Comprehensive directory of all known members (friends + server members + current user)
+  // Comprehensive directory of all known members (friends + server members + current user + message authors)
   const allKnownMembers = useMemo(() => {
     const map = new Map<string, ColonyMember>();
     members.forEach((m) => map.set(m.id, m));
@@ -240,6 +245,40 @@ export function useChatMembers({
         status: (f.status as any) || existing?.status || 'online',
       });
     });
+
+    // Also populate with authors from locally stored messages so DM partners always have their avatars
+    try {
+      if (typeof window !== 'undefined') {
+        const rawMsgs = localStorage.getItem('anticeil_colony_messages_v3');
+        if (rawMsgs) {
+          const msgsMap = JSON.parse(rawMsgs);
+          if (msgsMap && typeof msgsMap === 'object') {
+            for (const list of Object.values(msgsMap) as any[]) {
+              if (!Array.isArray(list)) continue;
+              for (const msg of list) {
+                if (msg && msg.senderId) {
+                  const existing = map.get(msg.senderId);
+                  if (!existing) {
+                    map.set(msg.senderId, {
+                      id: msg.senderId,
+                      name: msg.senderName || 'Member',
+                      email: '',
+                      avatar: msg.senderAvatar || null,
+                      username: msg.senderUsername || null,
+                      role: 'member',
+                      status: 'online',
+                    });
+                  } else if (!existing.avatar && msg.senderAvatar) {
+                    existing.avatar = msg.senderAvatar;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch {}
+
     return Array.from(map.values());
   }, [members, displayMembers, friendsList]);
 

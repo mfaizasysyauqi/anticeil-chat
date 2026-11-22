@@ -138,6 +138,7 @@ export function useChatInitLoader({
                 const alreadyExists = storedDms.some(
                   (c) => c.id === canonicalDmId || c.dmUserId === f.id || c.id === `dm-${f.id}`,
                 );
+                const dmAvatar = f.avatar || f.imageUrl || null;
                 if (!alreadyExists) {
                   const dmName = f.name || f.username || 'Direct Message';
                   storedDms.push({
@@ -148,8 +149,18 @@ export function useChatInitLoader({
                     colonyId: 'anticeil',
                     isDirectMessage: true,
                     dmUserId: f.id,
+                    avatar: dmAvatar,
+                    recipientAvatar: dmAvatar,
                     type: 'text',
                   });
+                } else if (dmAvatar) {
+                  const existingDm = storedDms.find(
+                    (c) => c.id === canonicalDmId || c.dmUserId === f.id || c.id === `dm-${f.id}`,
+                  );
+                  if (existingDm && !existingDm.avatar) {
+                    existingDm.avatar = dmAvatar;
+                    existingDm.recipientAvatar = dmAvatar;
+                  }
                 }
               });
               saveStoredDmChannels(storedDms);

@@ -108,7 +108,35 @@ export function DmUserProfileSidebar({
   }, [dbUser, member?.username]);
 
   const email = dbUser?.email || member?.email || null;
-  const avatarUrl = dbUser?.imageUrl || member?.avatar || null;
+  const avatarUrl = useMemo(() => {
+    if (dbUser?.imageUrl || dbUser?.avatar) return dbUser.imageUrl || dbUser.avatar;
+    if (member?.avatar || (member as any)?.imageUrl) return member?.avatar || (member as any)?.imageUrl;
+    try {
+      if (typeof window !== 'undefined') {
+        const rawMsgs = localStorage.getItem('anticeil_colony_messages_v3');
+        if (rawMsgs) {
+          const msgsMap = JSON.parse(rawMsgs);
+          for (const list of Object.values(msgsMap) as any[]) {
+            if (!Array.isArray(list)) continue;
+            for (let i = list.length - 1; i >= 0; i--) {
+              const msg = list[i];
+              if (msg?.senderAvatar) {
+                if (userId && msg.senderId === userId) return msg.senderAvatar;
+                if (displayName && msg.senderName && (
+                  msg.senderName.toLowerCase() === displayName.toLowerCase() ||
+                  msg.senderName.toLowerCase().startsWith(displayName.toLowerCase()) ||
+                  displayName.toLowerCase().startsWith(msg.senderName.toLowerCase())
+                )) {
+                  return msg.senderAvatar;
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch {}
+    return null;
+  }, [dbUser, member, userId, displayName]);
   const status = member?.status || (dbUser?.status === 'ACTIVE' ? 'online' : 'online');
   const role = (dbUser?.platformRole || member?.role || 'member').toLowerCase();
   const createdAt = dbUser?.created || member?.joinedAt || null;

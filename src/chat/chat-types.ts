@@ -43,6 +43,8 @@ export type ColonyChannel = {
   isGroupDm?: boolean;
   dmUserIds?: string[];
   dmIcon?: string;
+  avatar?: string | null;
+  recipientAvatar?: string | null;
   ownerId?: string;
   unreadCount?: number;
   type?: ColonyChannelType;

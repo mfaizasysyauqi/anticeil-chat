@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Search,
   Users,
@@ -472,8 +472,16 @@ export function HomeChannelsSidebar({
                       if (isSelf) return false;
 
                       // 1. Match by DM name (primary identifier of DM partner)
-                      if (m.name && dm.name && m.name.toLowerCase() === dm.name.toLowerCase()) return true;
-                      if (m.username && dm.name && m.username.toLowerCase() === dm.name.toLowerCase()) return true;
+                      if (m.name && dm.name && (
+                        m.name.toLowerCase() === dm.name.toLowerCase() ||
+                        m.name.toLowerCase().startsWith(dm.name.toLowerCase()) ||
+                        dm.name.toLowerCase().startsWith(m.name.toLowerCase())
+                      )) return true;
+                      if (m.username && dm.name && (
+                        m.username.toLowerCase() === dm.name.toLowerCase() ||
+                        m.username.toLowerCase().startsWith(dm.name.toLowerCase()) ||
+                        dm.name.toLowerCase().startsWith(m.username.toLowerCase())
+                      )) return true;
 
                       // 2. Match by DM user ID
                       if (dm.dmUserId && m.id === dm.dmUserId) return true;
@@ -481,6 +489,58 @@ export function HomeChannelsSidebar({
                       if (m.id && dm.id.includes(m.id)) return true;
                       return false;
                     });
+
+                // Fallback avatar lookup from cached community messages if member avatar is not in active memory
+                let cachedMessageAvatar: string | undefined;
+                try {
+                  if (typeof window !== 'undefined') {
+                    const rawMsgs = localStorage.getItem('anticeil_colony_messages_v3');
+                    if (rawMsgs) {
+                      const msgsMap = JSON.parse(rawMsgs);
+                      const channelMsgs = msgsMap[dm.id];
+                      if (Array.isArray(channelMsgs)) {
+                        for (let i = channelMsgs.length - 1; i >= 0; i--) {
+                          const msg = channelMsgs[i];
+                          if (msg?.senderAvatar && (!currentUser?.id || msg.senderId !== currentUser.id)) {
+                            cachedMessageAvatar = msg.senderAvatar;
+                            break;
+                          }
+                        }
+                      }
+                      if (!cachedMessageAvatar && dm.name) {
+                        const searchName = dm.name.toLowerCase().trim();
+                        for (const list of Object.values(msgsMap) as any[]) {
+                          if (!Array.isArray(list)) continue;
+                          for (let i = list.length - 1; i >= 0; i--) {
+                            const msg = list[i];
+                            if (msg?.senderAvatar && msg.senderName && (
+                              msg.senderName.toLowerCase() === searchName ||
+                              msg.senderName.toLowerCase().startsWith(searchName) ||
+                              searchName.startsWith(msg.senderName.toLowerCase())
+                            )) {
+                              cachedMessageAvatar = msg.senderAvatar;
+                              break;
+                            }
+                          }
+                          if (cachedMessageAvatar) break;
+                        }
+                      }
+                    }
+                  }
+                } catch {}
+
+                const resolvedImageUrl =
+                  member?.avatar ||
+                  (member as any)?.imageUrl ||
+                  (dm as any).recipientAvatar ||
+                  (dm as any).avatar ||
+                  (dm as any).imageUrl ||
+                  (dm as any).dmUserAvatar ||
+                  (dm as any).icon ||
+                  cachedMessageAvatar ||
+                  (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name)
+                    ? currentUser.imageUrl || currentUser.avatar
+                    : undefined);
 
                 return (
                   <div
@@ -503,15 +563,7 @@ export function HomeChannelsSidebar({
                     ) : (
                       <CommunityAvatar
                         name={member?.name || member?.username || dm.name || 'Pengguna'}
-                        imageUrl={
-                          member?.avatar ||
-                          (member as any)?.imageUrl ||
-                          (dm as any).avatar ||
-                          (dm as any).imageUrl ||
-                          (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name)
-                            ? currentUser.imageUrl || currentUser.avatar
-                            : undefined)
-                        }
+                        imageUrl={resolvedImageUrl}
                         size={20}
                         status={member?.status || (dm as any).status || (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name) ? 'online' : undefined)}
                         showStatus={Boolean(member?.status || (dm as any).status || (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name)))}

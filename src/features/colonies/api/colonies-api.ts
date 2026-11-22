@@ -1227,6 +1227,10 @@ export const coloniesApi = {
     return { success: false };
   },
 
+  getMembers(projectId?: string, colonyId?: string): Promise<ColonyMember[]> {
+    return membersApi.getMembers(projectId, colonyId);
+  },
+
   boostHub(id: string) { return this.boostColony(id); },
   createHub(payload: any) { return this.createColony(payload); },
   deleteHub(id: string) { return this.deleteColony(id); },

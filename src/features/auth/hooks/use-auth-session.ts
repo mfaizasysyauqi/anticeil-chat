@@ -284,23 +284,43 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
   const handleGoogleSignIn = async () => {
     try {
       toast.loading(t('Menghubungkan ke Google OAuth...'), { id: 'google-oauth' });
-      const res: any = await api.get('/v1/authn/federated/login?providerName=google');
-      if (res && res.loginUrl) {
-        toast.success(t('Membuka Google Sign-In...'), { id: 'google-oauth' });
-        const state = {
-          providerName: 'google',
-          from: window.location.href,
-          activepiecesLogin: 'true',
-          login: 'true',
-        };
-        const loginUrl = new URL(res.loginUrl);
-        loginUrl.searchParams.set('state', JSON.stringify(state));
-        loginUrl.searchParams.set('prompt', 'select_account');
-
-        window.location.href = loginUrl.toString();
-        return;
+      let loginUrlStr = '';
+      try {
+        const res: any = await api.get('/v1/authn/federated/login?providerName=google');
+        if (res && res.loginUrl) {
+          loginUrlStr = res.loginUrl;
+        }
+      } catch (e) {
+        console.warn('Backend federated login check returned error, using OAuth client fallback:', e);
       }
-      throw new Error('No loginUrl returned');
+
+      // Fallback: If server is 502 or down or missing config, generate direct Google OAuth authorization URL
+      if (!loginUrlStr) {
+        const googleClientId =
+          (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) ||
+          '672254808015-pqt0dkasvp8s0tfadtbde5esuv6kalvi.apps.googleusercontent.com';
+        const redirectUri = `${window.location.origin}/redirect`;
+        const googleUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+        googleUrl.searchParams.set('client_id', googleClientId);
+        googleUrl.searchParams.set('redirect_uri', redirectUri);
+        googleUrl.searchParams.set('response_type', 'code');
+        googleUrl.searchParams.set('scope', 'openid email profile');
+        loginUrlStr = googleUrl.toString();
+      }
+
+      toast.success(t('Membuka Google Sign-In...'), { id: 'google-oauth' });
+      const state = {
+        providerName: 'google',
+        from: window.location.href,
+        activepiecesLogin: 'true',
+        login: 'true',
+      };
+      const finalUrl = new URL(loginUrlStr);
+      finalUrl.searchParams.set('state', JSON.stringify(state));
+      finalUrl.searchParams.set('prompt', 'select_account');
+
+      window.location.href = finalUrl.toString();
+      return;
     } catch (err: any) {
       console.error('Google OAuth initiation failed:', err);
       toast.error(t('Google OAuth belum aktif di server atau gagal terhubung.'), { id: 'google-oauth' });
