@@ -105,6 +105,12 @@ export function CreateChannelDialog({
       description: t('Create a space for organized discussions'),
     },
     {
+      type: 'kanban' as const,
+      icon: Columns3,
+      title: t('Kanban'),
+      description: t('Manage tasks, workflows, and project progress together'),
+    },
+    {
       type: 'announcement' as const,
       icon: Megaphone,
       title: t('Announcement'),
