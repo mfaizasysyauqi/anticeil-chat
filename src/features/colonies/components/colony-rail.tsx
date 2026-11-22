@@ -19,6 +19,7 @@ export interface RailFolder {
 }
 
 export interface ColonyRailProps {
+  currentUser?: any;
   servers?: Colony[];
   colonies?: Colony[];
   activeServerId?: string;
@@ -100,6 +101,7 @@ function sumFriendUnread(counts: Record<string, number | string> | undefined, fr
 }
 
 export function ColonyRail({
+  currentUser,
   servers,
   colonies,
   activeServerId,
@@ -162,18 +164,29 @@ export function ColonyRail({
     return <ServerIcon hub={srv} isActive={active} />;
   };
 
-  const mainServer = serverList[0];
-  const otherServers = serverList.slice(1);
+  const mainServer = serverList.find((s) => s.id === 'anticeil') || serverList[0];
+  const otherServers = serverList.filter((s) => s.id !== 'anticeil');
 
   // Derive friends: use friends prop, or if empty, extract active DM contacts from dmChannels / stored DMs / members
   const friendList = useMemo(() => {
     const list: any[] = [];
     const seen = new Set<string>();
 
+    const currentUserId = currentUser?.id;
+    const currentUserName = currentUser?.name?.toLowerCase().trim();
+
+    const isSelfUser = (id?: string | null, name?: string | null) => {
+      if (!id && !name) return false;
+      if (currentUserId && id === currentUserId) return true;
+      if (currentUserName && name && name.toLowerCase().trim() === currentUserName) return true;
+      return false;
+    };
+
     // 1. Explicit friends list (from database or props)
     if (Array.isArray(friends) && friends.length > 0) {
       for (const f of friends) {
         if (!f || !f.id || seen.has(f.id)) continue;
+        if (isSelfUser(f.id, f.name || f.username)) continue;
         seen.add(f.id);
         list.push(f);
       }
@@ -186,15 +199,28 @@ export function ColonyRail({
 
     for (const dm of allDms) {
       if (!dm?.id || dm.isGroupDm || dm.id.startsWith('gdm-') || dm.type === 'voice' || dm.type === 'forum' || dm.type === 'kanban') continue;
+      
+      let otherId = dm.dmUserId || null;
+      if (!otherId && dm.id.startsWith('dm-')) {
+        const parts = dm.id.slice(3).split('-').filter(Boolean);
+        otherId = parts.find((p: string) => p !== currentUserId) || parts[0] || null;
+      }
+
+      if (isSelfUser(otherId, dm.name)) continue;
+
       const otherMember = members?.find((m: any) => {
-        if (dm.dmUserId && m.id === dm.dmUserId) return true;
+        if (isSelfUser(m.id, m.name || m.username)) return false;
+        if (otherId && m.id === otherId) return true;
         if (m.name && dm.name && m.name.toLowerCase() === dm.name.toLowerCase()) return true;
         if (m.id && dm.id.includes(m.id)) return true;
         return false;
       });
-      const friendId = otherMember?.id || dm.dmUserId || dm.id.replace('dm-', '');
+
+      const friendId = otherMember?.id || otherId || dm.id.replace('dm-', '');
+      if (isSelfUser(friendId, otherMember?.name || dm.name)) continue;
       if (seen.has(friendId)) continue;
       seen.add(friendId);
+
       list.push({
         id: friendId,
         dmChannelId: dm.id,
@@ -214,6 +240,7 @@ export function ColonyRail({
         if (
           !m.id ||
           m.id === 'u1' ||
+          isSelfUser(m.id, name) ||
           seen.has(m.id) ||
           lowerName === 'pengguna' ||
           lowerName === 'pengguna anticeil' ||
@@ -235,7 +262,7 @@ export function ColonyRail({
     }
 
     return list;
-  }, [friends, dmChannels, members, unreadCounts]);
+  }, [friends, dmChannels, members, unreadCounts, currentUser]);
 
   // Logo Anticeil: ONLY notification count, not chat messages
   const mainUnread = formatUnreadBadge(unreadCounts?.['anticeil'] ?? 0);

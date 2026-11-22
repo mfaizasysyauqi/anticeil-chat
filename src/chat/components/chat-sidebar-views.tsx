@@ -73,6 +73,7 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
 }) => {
   return (
     <ColonyRail
+      currentUser={currentUser}
       servers={colonies}
       activeServerId={activeColonyId}
       unreadCounts={unreadCounts}
