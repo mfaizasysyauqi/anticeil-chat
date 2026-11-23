@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
+import { InboxPopover } from '@/features/inbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
@@ -119,6 +120,9 @@ export function FriendsHeader({
             {t('Mulai DM Baru')}
           </TooltipContent>
         </Tooltip>
+
+        {/* Discord-style Inbox Dialog Popover */}
+        <InboxPopover />
 
         {/* Primary Theme Action Button: Tambah Teman placed at FAR RIGHT */}
         <TopBarActionButton

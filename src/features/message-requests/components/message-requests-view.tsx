@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Mail, Check, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
+import { InboxPopover } from '@/features/inbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
@@ -106,6 +107,11 @@ export function MessageRequestsView({
               )}
             </button>
           ))}
+        </div>
+
+        {/* Discord-style Inbox Dialog Popover */}
+        <div className="shrink-0 flex items-center">
+          <InboxPopover />
         </div>
       </div>
 

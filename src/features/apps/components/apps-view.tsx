@@ -36,6 +36,7 @@ import { ActivityDestinationDialog } from './activity-destination-dialog';
 import { StandaloneAppStage } from './standalone-app-stage';
 import { AppDetailView } from './app-detail-view';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
+import { InboxPopover } from '@/features/inbox';
 import { useTranslation } from '@/core/i18n';
 
 export interface AppsViewProps {
@@ -567,7 +568,7 @@ export function AppsView({
           ))}
         </div>
 
-        {/* Search Input */}
+        {/* Search Input & Inbox Popover */}
         <div className="flex items-center gap-2 shrink-0">
           <ResponsiveSearchBar
             value={searchQuery}
@@ -575,6 +576,9 @@ export function AppsView({
             placeholder={t('Cari aktivitas...')}
             inputWidth="w-32 sm:w-44 md:w-48"
           />
+
+          {/* Discord-style Inbox Dialog Popover */}
+          <InboxPopover />
         </div>
       </div>
 

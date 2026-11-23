@@ -3,6 +3,7 @@ import { Sparkles, Menu, Trash2, Code2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { InboxPopover } from '@/features/inbox';
 import { cn } from '@/lib/utils';
 import { LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
@@ -93,6 +94,9 @@ export function AiCommandCenterHeader({
             </TooltipContent>
           </Tooltip>
         )}
+
+        {/* Discord-style Inbox Dialog Popover */}
+        <InboxPopover />
       </div>
     </div>
   );

@@ -4,10 +4,8 @@ import {
   Users,
   Compass,
   Mail,
-  Bell,
   Calendar,
   Backpack,
-  Phone,
   Store,
   Rocket,
   Plus,
@@ -74,7 +72,6 @@ export function HomeChannelsSidebar({
   onToggleCollapseSidebar,
   t,
 }: HomeChannelsSidebarProps) {
-  const notifBadge = formatSidebarBadge(unreadNotificationsCount);
   const msgReqBadge = formatSidebarBadge(messageRequestsCount);
   const friendReqBadge = formatSidebarBadge(friendRequests?.length);
   return (
@@ -162,37 +159,7 @@ export function HomeChannelsSidebar({
             <span className="flex-1 font-medium">{t('Colony')}</span>
           </button>
 
-          {/* 3. Notifikasi (Global Activity Feed) */}
-          <button
-            onClick={() => {
-              setActiveChannelId('');
-              setHomeView?.('notifications');
-              onItemClick?.();
-            }}
-            className={cn(
-              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
-              !activeChannelId && homeView === 'notifications'
-                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-            )}
-          >
-            <Bell
-              className={cn(
-                'w-4 h-4 shrink-0 transition-colors',
-                !activeChannelId && homeView === 'notifications'
-                  ? 'text-primary'
-                  : 'text-muted-foreground group-hover:text-foreground',
-              )}
-            />
-            <span className="flex-1 font-medium">{t('Notifikasi')}</span>
-            {notifBadge && (
-              <span className="min-w-[18px] h-[18px] px-1 bg-[#da373c] text-white text-[10px] font-black rounded-full flex items-center justify-center shrink-0 ml-auto leading-none shadow-xs">
-                {notifBadge}
-              </span>
-            )}
-          </button>
-
-          {/* 4. Kalender & Tugas Saya (Jadwal operasional & tugas lintas app) */}
+          {/* 3. Kalender & Tugas Saya (Jadwal operasional & tugas lintas app) */}
           <button
             onClick={() => {
               setActiveChannelId('');
@@ -304,31 +271,7 @@ export function HomeChannelsSidebar({
             )}
           </button>
 
-          <button
-            onClick={() => {
-              setActiveChannelId('');
-              setHomeView?.('calls');
-              onItemClick?.();
-            }}
-            className={cn(
-              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all text-left cursor-pointer group',
-              !activeChannelId && homeView === 'calls'
-                ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-                : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-            )}
-          >
-            <Phone
-              className={cn(
-                'w-4 h-4 shrink-0 transition-colors',
-                !activeChannelId && homeView === 'calls'
-                  ? 'text-primary'
-                  : 'text-muted-foreground group-hover:text-foreground',
-              )}
-            />
-            <span className="flex-1 font-medium">{t('Panggilan')}</span>
-          </button>
-
-          {/* 8. Shop */}
+          {/* 7. Shop */}
           <button
             onClick={() => {
               setActiveChannelId('');

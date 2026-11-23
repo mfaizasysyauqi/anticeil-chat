@@ -27,6 +27,7 @@ import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { Input } from '@/components/ui/input';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
+import { InboxPopover } from '@/features/inbox';
 import {
   CHANNEL_HORIZONTAL_PADDING,
   CHANNEL_VERTICAL_PADDING,
@@ -373,6 +374,9 @@ export function ColoniesView({
             }
             inputWidth="w-36 sm:w-44 md:w-56"
           />
+
+          {/* Discord-style Inbox Dialog Popover */}
+          <InboxPopover />
 
           {/* Primary Theme Action Button: Buat Colony placed at FAR RIGHT */}
           <TopBarActionButton

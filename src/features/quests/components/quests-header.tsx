@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
+import { InboxPopover } from '@/features/inbox';
 import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -109,6 +110,9 @@ export function QuestsHeader({
           <span className="text-xs">💧</span>
           <span>{dewBalance.toLocaleString()}</span>
         </div>
+
+        {/* Discord-style Inbox Dialog Popover */}
+        <InboxPopover />
       </div>
     </div>
   );

@@ -4,27 +4,35 @@ import type { NotificationItem, NotificationsTab } from '../types';
 import { notificationsApi } from '../api/notifications-api';
 
 export function useNotifications(initialData: NotificationItem[] = [], userId?: string) {
+  const resolvedUserId = userId || (() => {
+    try {
+      const stored = localStorage.getItem('anticeil_current_user');
+      if (stored) return JSON.parse(stored)?.id;
+    } catch {}
+    return undefined;
+  })();
+
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialData);
   const [activeTab, setActiveTab] = useState<NotificationsTab>('all');
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
-    if (!userId) {
+    if (!resolvedUserId) {
       setNotifications([]);
       return;
     }
     setIsLoading(true);
     try {
-      const data = await notificationsApi.getNotifications(userId);
+      const data = await notificationsApi.getNotifications(resolvedUserId);
       if (Array.isArray(data)) {
         const filtered = data.filter((n) => {
           // Never show a notification where current user is the sender/actor
-          if (n.actorId === userId) {
+          if (n.actorId === resolvedUserId) {
             return false;
           }
           const targets = n.targetUserIds || (n.targetUserId ? [n.targetUserId] : []);
           if (targets.length > 0) {
-            return targets.includes(userId);
+            return targets.includes(resolvedUserId);
           }
           return true;
         });
@@ -35,7 +43,7 @@ export function useNotifications(initialData: NotificationItem[] = [], userId?: 
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [resolvedUserId]);
 
   useEffect(() => {
     fetchNotifications();

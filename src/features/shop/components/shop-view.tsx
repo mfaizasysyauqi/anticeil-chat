@@ -35,6 +35,7 @@ import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { FilterToggleButton } from '@/components/ui/filter-toggle-button';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
+import { InboxPopover } from '@/features/inbox';
 import { ShopEmptyState } from './shop-empty-state';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -1564,6 +1565,9 @@ export function ShopView({
             placeholder={t('Cari di shop...')}
             inputWidth="w-28 sm:w-40 md:w-48"
           />
+
+          {/* Discord-style Inbox Dialog Popover */}
+          <InboxPopover />
 
           {/* Currency Pill with quick Top Up (Single Dew Currency) */}
           <DropdownMenu>

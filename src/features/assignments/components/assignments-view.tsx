@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
+import { InboxPopover } from '@/features/inbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
@@ -248,6 +249,9 @@ export function AssignmentsView({
             placeholder="Cari tugas..."
             inputWidth="w-32 sm:w-40 md:w-48"
           />
+
+          {/* Discord-style Inbox Dialog Popover */}
+          <InboxPopover />
         </div>
       </div>
 

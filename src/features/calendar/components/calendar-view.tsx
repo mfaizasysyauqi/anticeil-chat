@@ -24,6 +24,7 @@ import { EmptyState } from '@/components/ui/empty';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TopBarActionButton } from '@/components/ui/top-bar-action-button';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
+import { InboxPopover } from '@/features/inbox';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -396,6 +397,9 @@ export function CalendarView({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
+          {/* Discord-style Inbox Dialog Popover */}
+          <InboxPopover />
 
           {/* Primary Theme Action Button: Jadwalkan Meeting placed at FAR RIGHT */}
           <TopBarActionButton

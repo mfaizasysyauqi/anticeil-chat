@@ -28,6 +28,7 @@ import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { ThreadsPopover, type ChannelThreadItem } from '@/features/threads';
 import { ChannelNotificationDropdown, type ChannelNotificationSettings } from './channel-notification-dropdown';
 import { PinnedMessagesPopover } from './pinned-messages-popover';
+import { InboxPopover } from '@/features/inbox';
 import type { ColonyChannel, ColonyMessage } from '@/chat/chat-types';
 
 export interface ChannelTopHeaderBarProps {
@@ -344,7 +345,10 @@ export function ChannelTopHeaderBar({
           </TooltipContent>
         </Tooltip>
 
-        {/* 5. Search Box */}
+        {/* 5. Discord-style Inbox Dialog Popover */}
+        <InboxPopover />
+
+        {/* 6. Search Box */}
         <ResponsiveSearchBar
           value={searchQuery}
           onChange={setSearchQuery}
