@@ -114,7 +114,7 @@ export function NotificationsView({
         <SidebarNavToggle onClick={onOpenSidebar} />
 
         {/* Filter Pills */}
-        <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto scrollbar-none px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
             <button
               onClick={() => setActiveTab('all')}
               className={cn(

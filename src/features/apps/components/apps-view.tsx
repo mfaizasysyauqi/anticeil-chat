@@ -556,7 +556,7 @@ export function AppsView({
         <SidebarNavToggle onClick={onOpenSidebar} />
 
         {/* Category Tabs: 100% DRY TopBarTabButton */}
-        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1 touch-pan-x">
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none touch-pan-x">
           {CATEGORY_TABS.map((tab) => (
             <TopBarTabButton
               key={tab.id}

@@ -43,7 +43,7 @@ export function FriendsHeader({
       <SidebarNavToggle onClick={onOpenSidebar} />
 
       {/* Tabs: Online, Semua, Tertunda & Action: Tambah Teman Dialog */}
-      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1 touch-pan-x">
+      <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none touch-pan-x">
           <button
             onClick={() => onTabChange('online')}
             className={cn(

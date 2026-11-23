@@ -31,7 +31,7 @@ export function SidebarNavToggle({
           size="icon-xs"
           onClick={onClick}
           className={cn(
-            'sidebar-toggle-btn h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0 transition-colors',
+            'sidebar-toggle-btn h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0 transition-colors mr-1.5 lg:mr-0',
             // Only on mobile and tablet (< 1024px)
             'lg:hidden',
             className

@@ -1156,7 +1156,7 @@ export function ShopView({
         <SidebarNavToggle onClick={onOpenSidebar} />
 
         {/* Tab Filter Pills: Responsive dynamic tabs container (overflowing tabs move to 'More' like Discord) */}
-        <div ref={tabsContainerRef} className="flex-1 min-w-0 flex items-center gap-1 overflow-hidden px-1 touch-pan-x">
+        <div ref={tabsContainerRef} className="flex-1 min-w-0 flex items-center gap-1 overflow-hidden touch-pan-x">
           {/* 1. Featured Tab */}
           <TopBarTabButton
             data-tab-id="featured"

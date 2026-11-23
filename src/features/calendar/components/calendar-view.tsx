@@ -248,7 +248,7 @@ export function CalendarView({
       >
         <SidebarNavToggle onClick={onOpenSidebar} />
 
-        <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none">
 
           {/* Mode Tabs: Bulan & Agenda */}
           <div className="flex items-center gap-1 shrink-0">

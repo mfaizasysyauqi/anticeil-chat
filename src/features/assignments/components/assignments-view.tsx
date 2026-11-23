@@ -172,7 +172,7 @@ export function AssignmentsView({
         <SidebarNavToggle onClick={onOpenSidebar} />
 
         {/* Tab Pills */}
-        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1">
+        <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none">
             {[
               { id: 'assigned_to_me', label: 'Perlu Dikerjakan', count: totalActive },
               { id: 'upcoming', label: 'Mendatang' },
