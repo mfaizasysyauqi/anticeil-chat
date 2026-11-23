@@ -84,10 +84,10 @@ export function ShopAddProductModal({
               onChange={(val) => setNewProductForm({ ...newProductForm, category: val as any })}
               size="sm"
               options={[
-                { value: 'avatar_decoration', label: 'Bingkai Profil (Animated Frame)' },
-                { value: 'profile_effect', label: 'Overlay Profil (Animated Effect)' },
-                { value: 'nameplate', label: 'Namecard (Animated Nameplate)' },
-                { value: 'bundle', label: 'Bundel Animasi (3pc)' },
+                { value: 'avatar_decoration', label: 'Avatar Decorations' },
+                { value: 'nameplate', label: 'Nameplates' },
+                { value: 'profile_effect', label: 'Profile Effects' },
+                { value: 'bundle', label: 'Bundles' },
               ]}
             />
 
@@ -370,7 +370,7 @@ export function ShopAddProductModal({
                     <img
                       src={productImagePreview}
                       alt="Profile Effect Preview"
-                      className="absolute inset-0 size-full object-cover pointer-events-none select-none z-20 pointer-events-none mix-blend-screen drop-shadow-[0_0_16px_rgba(0,0,0,0.8)] animate-in fade-in duration-200"
+                      className="absolute inset-0 size-full object-cover pointer-events-none select-none z-20 mix-blend-screen drop-shadow-[0_0_16px_rgba(0,0,0,0.8)] animate-in fade-in duration-200"
                     />
                   ) : (
                     <div className="absolute inset-0 border-2 border-dashed border-primary/30 rounded-2xl pointer-events-none animate-pulse" />

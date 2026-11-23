@@ -220,7 +220,7 @@ export function ShopView({
   const [items, setItems] = useState<ShopItem[]>([]);
   const [collections, setCollections] = useState<ShopCollection[]>([]);
   const [heroCollection, setHeroCollection] = useState<ShopCollection | null>(null);
-  const [balance, setBalance] = useState<ShopBalance>({ dew: 1500, currencyCode: 'IDR' });
+  const [balance, setBalance] = useState<ShopBalance>({ dew: 0, currencyCode: 'IDR' });
   const [inventory, setInventory] = useState<ShopItem[]>([]);
   const [wishlist, setWishlist] = useState<ShopItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);

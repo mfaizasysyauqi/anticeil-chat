@@ -261,7 +261,7 @@ export const shopApi = {
         };
       }
     } catch {}
-    return { dew: 1500, orbs: 1500, currencyCode: 'IDR' };
+    return { dew: 0, orbs: 0, currencyCode: 'IDR' };
   },
 
   async topupDew(amount: number = 500): Promise<{ success: boolean; message: string; balance?: ShopBalance }> {

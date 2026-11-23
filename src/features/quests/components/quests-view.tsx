@@ -81,7 +81,7 @@ export function QuestsView({
   const [activeTab, setActiveTab] = useState<'all' | 'accepted' | 'claimed'>('all');
   const [quests, setQuests] = useState<QuestItem[]>([]);
   const [claimedQuests, setClaimedQuests] = useState<QuestItem[]>([]);
-  const [balance, setBalance] = useState<ShopBalance>({ dew: 1500, currencyCode: 'IDR' });
+  const [balance, setBalance] = useState<ShopBalance>({ dew: 0, currencyCode: 'IDR' });
   const [isLoading, setIsLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'suggested' | 'reward_desc' | 'alphabetical'>('suggested');
