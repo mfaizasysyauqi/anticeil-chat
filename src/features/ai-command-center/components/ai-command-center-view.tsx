@@ -19,10 +19,6 @@ import {
   X,
   ChevronDown,
   Check,
-  Calculator,
-  Gamepad2,
-  Palette,
-  Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyIconBadge } from '@/components/ui/empty';
@@ -63,6 +59,7 @@ import { GroqSettingsDialog } from './groq-settings-dialog';
 import { AiCommandCenterHeader } from './ai-command-center-header';
 import { AiMarkdown } from './ai-markdown';
 import { ArtifactViewer } from './artifact-viewer';
+import { AiPromptCard, AI_COMMAND_PROMPTS } from './ai-prompt-card';
 import { parseArtifactsFromMessage } from '../utils/artifact-parser';
 import { useAiCommandCenterContext } from '../context/ai-command-center-context';
 import { useResponsive } from '@/core/hooks/use-responsive';
@@ -583,63 +580,15 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                   </p>
                 </div>
 
-                {/* Quick Action Suggestion Cards */}
+                {/* Quick Action Suggestion Cards (Reusable & DRY) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left pt-2">
-                  <button
-                    type="button"
-                    onClick={() => handleSendMessage('Buatkan kalkulator modern')}
-                    className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
-                  >
-                    <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                      <Calculator className="w-4 h-4 text-primary shrink-0" />
-                      <span>Buat Kalkulator (Artifact)</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
-                      Menghasilkan aplikasi kalkulator web interaktif di panel Artifacts.
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSendMessage('Buatkan mini game retro')}
-                    className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
-                  >
-                    <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                      <Gamepad2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span>Buat Mini Game (Artifact)</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
-                      Membuat game arcade canvas yang bisa langsung dimainkan.
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSendMessage('Buka Jamspace Whiteboard')}
-                    className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
-                  >
-                    <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                      <Palette className="w-4 h-4 text-blue-500 shrink-0" />
-                      <span>Buka Jamspace Whiteboard</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
-                      Membuka canvas kolaboratif standalone untuk diagram & sketsa.
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSendMessage('Buka YouTube Watch Together')}
-                    className="p-3 rounded-xl bg-card border border-border/60 hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group shadow-xs"
-                  >
-                    <div className="flex items-center gap-2 text-foreground font-semibold text-xs group-hover:text-primary transition-colors">
-                      <Video className="w-4 h-4 text-red-500 shrink-0" />
-                      <span>YouTube Watch Together</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
-                      Nonton video bersama dengan kontrol sinkronisasi realtime.
-                    </p>
-                  </button>
+                  {AI_COMMAND_PROMPTS.map((item) => (
+                    <AiPromptCard
+                      key={item.id}
+                      item={item}
+                      onClick={() => handleSendMessage(item.prompt)}
+                    />
+                  ))}
                 </div>
               </div>
             ) : (
