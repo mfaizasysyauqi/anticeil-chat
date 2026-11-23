@@ -58,7 +58,7 @@ export function TwoPaneSettingsDialog({
   const { t } = useTranslation();
   const [mobileView, setMobileView] = useState<'menu' | 'detail'>(initialMobileView);
   const [activeSubIds, setActiveSubIds] = useState<string[]>([]);
-  const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null);
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef ?? internalScrollRef;
 
@@ -94,12 +94,10 @@ export function TwoPaneSettingsDialog({
     return activeItem.subItems.find((sub) => sub.id === activeSection) || null;
   }, [activeItem, activeSection]);
 
-  // Keep active section expanded
+  // Only the active section is expanded; previous sections collapse automatically
   useEffect(() => {
     if (activeItem?.id) {
-      setExpandedSections((prev) =>
-        prev.includes(activeItem.id) ? prev : [...prev, activeItem.id]
-      );
+      setExpandedSectionId(activeItem.id);
     }
   }, [activeItem?.id]);
 
@@ -197,6 +195,7 @@ export function TwoPaneSettingsDialog({
   );
 
   const handleSelectSubItem = (parentItem: SettingsNavItem, sub: { id: string; label: string }) => {
+    setExpandedSectionId(parentItem.id);
     if (sub.id === 'account-family' || sub.id === 'family') {
       onSectionChange(sub.id);
     } else if (activeSection !== parentItem.id && activeItem?.id !== parentItem.id) {
@@ -206,6 +205,7 @@ export function TwoPaneSettingsDialog({
   };
 
   const handleSelectSection = (item: SettingsNavItem) => {
+    setExpandedSectionId(item.id);
     if (item.onClick) {
       item.onClick();
     } else {
@@ -267,7 +267,7 @@ export function TwoPaneSettingsDialog({
                   {group.items.map((item) => {
                     const isItemActive = activeSection === item.id || activeItem?.id === item.id;
                     const hasSubItems = Boolean(item.subItems && item.subItems.length > 0);
-                    const isExpanded = isItemActive || expandedSections.includes(item.id);
+                    const isExpanded = hasSubItems && expandedSectionId === item.id;
 
                     return (
                       <div key={item.id}>
@@ -296,19 +296,15 @@ export function TwoPaneSettingsDialog({
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setExpandedSections((prev) =>
-                                  prev.includes(item.id)
-                                    ? prev.filter((id) => id !== item.id)
-                                    : [...prev, item.id]
-                                );
+                                setExpandedSectionId((prev) => (prev === item.id ? null : item.id));
                               }}
-                              className="p-2 mr-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 md:hidden shrink-0 transition-colors cursor-pointer"
+                              className="p-1.5 mr-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 shrink-0 transition-colors cursor-pointer"
                               title={isExpanded ? t('Tutup submenu') : t('Buka submenu')}
                               aria-label={isExpanded ? t('Tutup submenu') : t('Buka submenu')}
                             >
                               <ChevronRight
                                 className={cn(
-                                  'w-4 h-4 transition-transform duration-200',
+                                  'w-3.5 h-3.5 transition-transform duration-200',
                                   isExpanded ? 'rotate-90 text-foreground' : 'text-muted-foreground/60'
                                 )}
                               />
