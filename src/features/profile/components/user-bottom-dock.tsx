@@ -324,7 +324,17 @@ export function UserBottomDock({
           </Button>
           <button
             type="button"
-            onClick={() => onOpenSettings?.('account')}
+            onClick={() => {
+              if (onOpenLoginDialog) {
+                onOpenLoginDialog();
+              } else if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('anticeil_open_auth_dialog'));
+              } else if (onGoogleSignIn) {
+                onGoogleSignIn();
+              } else {
+                onOpenSettings?.('account');
+              }
+            }}
             className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-lg cursor-pointer transition-colors shrink-0"
             title={t('Pengaturan Pengguna')}
           >

@@ -250,8 +250,8 @@ export function useColonyPageState(): ChatPageContentProps {
     handleMarkAllNotificationsRead,
     unreadNotifCount,
     friends,
-    isUserSettingsOpen, setIsUserSettingsOpen, userSettingsInitialSection, handleOpenUserSettings,
-    isEditProfileOpen, setIsEditProfileOpen, handleOpenEditProfile,
+    isUserSettingsOpen, setIsUserSettingsOpen, userSettingsInitialSection,
+    isEditProfileOpen, setIsEditProfileOpen,
     isDmSearchOpen,
     setIsDmSearchOpen,
     dmSearchQuery,
@@ -259,6 +259,31 @@ export function useColonyPageState(): ChatPageContentProps {
     isCreateGroupDmOpen,
     setIsCreateGroupDmOpen,
   } = chatSubsystems;
+
+  // Wrapped settings & profile openers with strict auth guard
+  const handleOpenUserSettings = (section: string = 'account') => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => chatSubsystems.handleOpenUserSettings(section),
+        t('Pengaturan Pengguna'),
+        t('Masuk ke Anticeil untuk mengakses dan mengelola pengaturan akun Anda.'),
+      );
+      return;
+    }
+    chatSubsystems.handleOpenUserSettings(section);
+  };
+
+  const handleOpenEditProfile = () => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => chatSubsystems.handleOpenEditProfile(),
+        t('Edit Profil'),
+        t('Masuk ke Anticeil untuk mengubah profil akun Anda.'),
+      );
+      return;
+    }
+    chatSubsystems.handleOpenEditProfile();
+  };
 
   // View Modes & UI Layout State Hook
   const {

@@ -24,7 +24,10 @@ import {
   Languages,
   Layers,
   Code2,
+  Lock,
+  LogIn,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import { Input } from '@/components/ui/input';
 import { CommunityAvatar } from '@/chat/chat-avatar';
@@ -74,6 +77,16 @@ export function UserSettingsModal({
       setActiveSection(initialSection as SettingsSection);
     }
   }, [open, initialSection]);
+
+  // Strict auth guard: Automatically close settings and prompt login if user is not authenticated
+  useEffect(() => {
+    if (open && !currentUser) {
+      onOpenChange(false);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('anticeil_open_auth_dialog'));
+      }
+    }
+  }, [open, currentUser, onOpenChange]);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Full Discord settings navigation groups
@@ -307,6 +320,15 @@ export function UserSettingsModal({
       groups={filteredGroups}
       activeSection={activeSection}
       onSectionChange={(id) => {
+        if (!currentUser) {
+          onOpenChange(false);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('anticeil_open_auth_dialog'));
+          } else if (onGoogleSignIn) {
+            onGoogleSignIn();
+          }
+          return;
+        }
         const target = id === 'keybinds' ? 'system' : id;
         setActiveSection(target as SettingsSection);
       }}
@@ -394,6 +416,37 @@ export function UserSettingsModal({
       }
     >
       <div className="space-y-6 w-full">
+        {!currentUser ? (
+          <div className="flex flex-col items-center justify-center text-center py-20 px-4 space-y-4">
+            <div className="size-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs">
+              <Lock className="w-8 h-8 stroke-[1.8]" />
+            </div>
+            <div className="max-w-md space-y-1.5">
+              <h3 className="text-base font-bold text-foreground">
+                {t('Masuk Diperlukan')}
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {t('Fitur Pengaturan Pengguna hanya dapat diakses setelah Anda masuk ke Anticeil. Silakan masuk untuk mengelola profil, keamanan, dan preferensi akun Anda.')}
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={() => {
+                onOpenChange(false);
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('anticeil_open_auth_dialog'));
+                } else if (onGoogleSignIn) {
+                  onGoogleSignIn();
+                }
+              }}
+              className="h-9 px-5 text-xs font-semibold cursor-pointer gap-2"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>{t('Masuk ke Anticeil')}</span>
+            </Button>
+          </div>
+        ) : (
+          <>
         {(activeSection === 'account-family' || activeSection === 'family') && (
           <FamilyCenterTab onBack={() => setActiveSection('account')} />
         )}
@@ -479,6 +532,8 @@ export function UserSettingsModal({
         )}
 
         {activeSection === 'developer' && <DeveloperTab />}
+          </>
+        )}
       </div>
     </TwoPaneSettingsDialog>
   );

@@ -73,6 +73,11 @@ export function useChatSubsystems({
 
   useEffect(() => {
     const handleOpenSettingsEvent = (e: any) => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (!token) {
+        window.dispatchEvent(new CustomEvent('anticeil_open_auth_dialog'));
+        return;
+      }
       const section = e?.detail?.section || 'nitro';
       handleOpenUserSettings(section);
     };

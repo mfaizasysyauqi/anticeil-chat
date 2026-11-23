@@ -103,16 +103,19 @@ export function AccountTab({
   // Account name & username state
   const suggestedUsername = useMemo(() => {
     if (currentUser?.username) return currentUser.username;
-    const base = currentUser?.email?.split('@')[0] || currentUserName;
-    return (
-      base
-        ?.toLowerCase()
-        .replace(/[^a-z0-9_]/g, '_')
-        .replace(/_+/g, '_')
-        .replace(/^_|_$/g, '')
-        .slice(0, 32) || ''
-    );
-  }, [currentUser?.username, currentUser?.email, currentUserName]);
+    if (currentUser?.email) {
+      return (
+        currentUser.email
+          .split('@')[0]
+          .toLowerCase()
+          .replace(/[^a-z0-9_]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '')
+          .slice(0, 32) || ''
+      );
+    }
+    return '';
+  }, [currentUser?.username, currentUser?.email]);
 
   const [editDisplayNameInput, setEditDisplayNameInput] = useState(currentUserName);
   const [editUsernameInput, setEditUsernameInput] = useState(suggestedUsername);
@@ -232,9 +235,10 @@ export function AccountTab({
 
   // Masked helpers
   const maskedEmail = useMemo(() => {
-    const email = currentUser?.email || 'user@example.com';
+    const email = currentUser?.email;
+    if (!email) return 'Belum ditambahkan';
     const [name, domain] = email.split('@');
-    if (!domain) return '••••••••••••@gmail.com';
+    if (!domain) return email;
     const visibleChars = Math.min(2, name.length);
     const maskedName = name.slice(0, visibleChars) + '••••••••••';
     return `${maskedName}@${domain}`;
@@ -414,14 +418,16 @@ export function AccountTab({
                           {t('Email')}
                         </div>
                         <div className="text-xs font-mono text-foreground mt-0.5 flex items-center gap-2">
-                          <span>{isEmailRevealed ? currentUser?.email || 'user@example.com' : maskedEmail}</span>
-                          <button
-                            type="button"
-                            onClick={() => setIsEmailRevealed(!isEmailRevealed)}
-                            className="text-primary hover:underline text-[11px] font-semibold cursor-pointer"
-                          >
-                            {isEmailRevealed ? t('Hide') : t('Reveal')}
-                          </button>
+                          <span>{isEmailRevealed ? currentUser?.email || 'Belum ditambahkan' : maskedEmail}</span>
+                          {currentUser?.email && (
+                            <button
+                              type="button"
+                              onClick={() => setIsEmailRevealed(!isEmailRevealed)}
+                              className="text-primary hover:underline text-[11px] font-semibold cursor-pointer"
+                            >
+                              {isEmailRevealed ? t('Hide') : t('Reveal')}
+                            </button>
+                          )}
                         </div>
                       </div>
                       <Button
