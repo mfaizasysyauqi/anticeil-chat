@@ -35,6 +35,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, './src'),
+        'sonner': path.resolve(import.meta.dirname, './src/lib/toast-silencer.ts'),
       },
     },
     server: {
