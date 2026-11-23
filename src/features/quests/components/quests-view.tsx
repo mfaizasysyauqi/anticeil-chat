@@ -38,6 +38,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { AppFilterDrawer } from '@/components/ui/app-filter-drawer';
 import { FilterToggleButton } from '@/components/ui/filter-toggle-button';
@@ -1205,17 +1206,18 @@ export function QuestsView({
 
       {/* ── 3. Reusable Dialog: Create / Edit Quest (Fullstack CRUD) ── */}
       <Dialog open={isQuestModalOpen} onOpenChange={setIsQuestModalOpen}>
-        <DialogContent className={DIALOG_STYLES.MODAL_STANDARD}>
-          <DialogHeader>
+        <DialogContent className={cn(DIALOG_STYLES.MODAL_STANDARD, 'p-0 flex flex-col overflow-hidden max-h-[85vh]')}>
+          <DialogHeader className="px-5 sm:px-6 pt-5 pb-3 border-b border-border/50 shrink-0">
             <DialogTitle className={DIALOG_STYLES.HEADER_TITLE}>
               {editingQuest ? <Pencil className="w-4 h-4 text-primary" /> : <Plus className="w-4 h-4 text-primary" />}
               <span>{editingQuest ? t('Edit Quest Database') : t('Tambah Quest Baru ke Database')}</span>
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleSaveQuest} className="space-y-3 pt-2">
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">{t('Judul Quest')}</label>
+          <form onSubmit={handleSaveQuest} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-5 sm:px-6 py-4 space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-foreground block mb-1">{t('Judul Quest')}</label>
               <Input
                 value={questForm.title}
                 onChange={(e) => setQuestForm((f) => ({ ...f, title: e.target.value }))}
@@ -1403,7 +1405,9 @@ export function QuestsView({
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+            </div>
+
+            <DialogFooter className="px-5 sm:px-6 py-3 border-t border-border/60 shrink-0 flex items-center justify-end gap-2 bg-card mt-0">
               <Button
                 type="button"
                 variant="ghost"
@@ -1422,7 +1426,7 @@ export function QuestsView({
                 {isSubmittingQuest && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>{editingQuest ? t('Simpan Perubahan') : t('Tambah Quest')}</span>
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

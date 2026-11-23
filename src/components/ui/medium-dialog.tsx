@@ -60,9 +60,9 @@ export function MediumDialog({
       <DialogContent
         size="md"
         showCloseButton={showCloseButton}
-        className={cn('bg-card border-border text-foreground', className)}
+        className={cn('bg-card border-border text-foreground p-0 flex flex-col overflow-hidden max-h-[85vh]', className)}
       >
-        <DialogHeader className="space-y-1.5 text-left pb-1">
+        <DialogHeader className="px-5 sm:px-6 pt-5 pb-3 border-b border-border/50 shrink-0 space-y-1.5 text-left">
           <div className="flex items-center gap-2">
             {icon}
             <DialogTitle className="text-base font-bold text-foreground">
@@ -77,19 +77,19 @@ export function MediumDialog({
           {headerContent}
         </DialogHeader>
 
-        <div className={cn('flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 py-2', bodyClassName)}>
+        <div className={cn('flex-1 min-h-0 overflow-y-auto custom-scrollbar px-5 sm:px-6 py-4 space-y-4', bodyClassName)}>
           {children}
         </div>
 
         {footer !== undefined ? (
           footer && (
-            <DialogFooter className="pt-3 mt-2 border-t border-border/40 flex items-center justify-end gap-2 shrink-0">
+            <DialogFooter className="px-5 sm:px-6 py-3 border-t border-border/60 flex items-center justify-end gap-2 shrink-0 bg-card mt-0">
               {footer}
             </DialogFooter>
           )
         ) : (
           (onConfirm || cancelLabel) && (
-            <DialogFooter className="pt-3 mt-2 border-t border-border/40 flex items-center justify-end gap-2 shrink-0">
+            <DialogFooter className="px-5 sm:px-6 py-3 border-t border-border/60 flex items-center justify-end gap-2 shrink-0 bg-card mt-0">
               <Button
                 type="button"
                 variant="secondary"

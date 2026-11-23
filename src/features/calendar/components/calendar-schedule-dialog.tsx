@@ -80,19 +80,19 @@ export function CalendarScheduleDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent size="md">
-        <DialogHeader className="pb-1 text-left">
+      <DialogContent size="md" className="p-0 flex flex-col overflow-hidden max-h-[85vh]">
+        <DialogHeader className="px-5 sm:px-6 pt-5 pb-3 border-b border-border/50 shrink-0 text-left">
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
             <CalendarIcon className="w-5 h-5 text-primary" />
             <span>{t('Jadwalkan Acara / Meeting')}</span>
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
+          <DialogDescription className="text-xs text-muted-foreground mt-0.5">
             {t('Rencanakan panggilan suara atau pertemuan komunitas dengan rekan tim')}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <div className="py-2 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-5 sm:px-6 py-4 space-y-4">
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
                 {t('Judul Acara / Meeting *')}
@@ -198,7 +198,7 @@ export function CalendarScheduleDialog({
             </div>
           </div>
 
-          <DialogFooter className="pt-3 mt-2 border-t border-border/40 flex items-center justify-end gap-2">
+          <DialogFooter className="px-5 sm:px-6 py-3 border-t border-border/60 shrink-0 flex items-center justify-end gap-2 bg-card mt-0">
             <Button
               type="button"
               variant="ghost"

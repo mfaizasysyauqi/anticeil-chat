@@ -82,19 +82,19 @@ export const DIALOG_STYLES = {
 
   // Dialog Sedang (Standard Single-Pane Modal: Colony Komunitas, Forms, CRUD, Schedules)
   MODAL_MEDIUM:
-    'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[88vh] overflow-y-auto custom-scrollbar',
+    'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md p-0 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] flex flex-col overflow-hidden',
 
   // Dialog Kecil (Confirmation, Delete, Alerts)
   MODAL_SMALL:
-    'w-[calc(100vw-2rem)] sm:w-full sm:max-w-sm p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] overflow-y-auto custom-scrollbar',
+    'w-[calc(100vw-2rem)] sm:w-full sm:max-w-sm p-0 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] flex flex-col overflow-hidden',
 
   // Aliases for 100% backward compatibility
   MODAL_STANDARD:
-    'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[88vh] overflow-y-auto custom-scrollbar',
+    'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md p-0 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] flex flex-col overflow-hidden',
   MODAL_COMPACT:
-    'w-[calc(100vw-2rem)] sm:w-full sm:max-w-sm p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] overflow-y-auto custom-scrollbar',
+    'w-[calc(100vw-2rem)] sm:w-full sm:max-w-sm p-0 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] flex flex-col overflow-hidden',
   MODAL_WIDE:
-    'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[88vh] overflow-y-auto custom-scrollbar',
+    'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md p-0 rounded-2xl bg-card border border-border shadow-2xl z-[160] max-h-[85vh] flex flex-col overflow-hidden',
   MODAL_PREVIEW:
     'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md p-0 overflow-hidden rounded-2xl bg-card border border-border shadow-2xl z-[150]',
   MODAL_TWO_PANE:

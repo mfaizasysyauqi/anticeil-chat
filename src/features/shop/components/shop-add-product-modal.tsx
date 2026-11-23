@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,17 +75,18 @@ export function ShopAddProductModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={DIALOG_STYLES.MODAL_STANDARD}>
-        <DialogHeader>
+      <DialogContent className={cn(DIALOG_STYLES.MODAL_STANDARD, 'p-0 flex flex-col overflow-hidden max-h-[85vh]')}>
+        <DialogHeader className="px-5 sm:px-6 pt-5 pb-3 border-b border-border/50 shrink-0">
           <DialogTitle className={DIALOG_STYLES.HEADER_TITLE}>
             {editingProduct ? <Pencil className="w-4 h-4 text-primary" /> : <Plus className="w-4 h-4 text-primary" />}
             <span>{editingProduct ? t('Edit Item Katalog Shop') : t('Tambah Produk ke Database Shop')}</span>
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={onSaveProduct} className="space-y-3 pt-2">
-          <div>
-            <label className="text-xs font-semibold text-foreground block mb-1">{t('Nama Produk')}</label>
+        <form onSubmit={onSaveProduct} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-5 sm:px-6 py-4 space-y-3.5">
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-1">{t('Nama Produk')}</label>
             <Input
               value={newProductForm.name}
               onChange={(e) => setNewProductForm({ ...newProductForm, name: e.target.value })}
@@ -509,13 +511,15 @@ export function ShopAddProductModal({
             />
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2">
+          </div>
+
+          <DialogFooter className="px-5 sm:px-6 py-3 border-t border-border/60 shrink-0 flex items-center justify-end gap-2 bg-card mt-0">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => onOpenChange(false)}
-              className="h-8 text-xs"
+              className="h-8 text-xs cursor-pointer"
             >
               {t('Batal')}
             </Button>
@@ -528,7 +532,7 @@ export function ShopAddProductModal({
               {isCreatingProduct ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               <span>{t('Simpan ke Database')}</span>
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
