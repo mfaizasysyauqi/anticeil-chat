@@ -426,7 +426,13 @@ export function UserBottomDock({
           currentUserName={currentUserName}
           onOpenEditProfile={onOpenEditProfile}
           onOpenSettings={onOpenSettings}
-          colonies={colonies}
+          colonies={colonies?.filter(
+            (c) =>
+              c.id !== 'anticeil' &&
+              c.id !== '@me' &&
+              c.name?.toLowerCase().trim() !== 'pesan langsung' &&
+              c.name?.toLowerCase().trim() !== 'direct messages'
+          ) || []}
         />
       )}
     </div>

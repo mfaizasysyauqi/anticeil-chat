@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Pencil,
@@ -85,6 +85,18 @@ export function UserProfileDialog({
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+
+  // Filter out system Direct Messages hub ('anticeil' / 'Pesan Langsung') from user colonies
+  const actualColonies = useMemo(() => {
+    return (colonies || []).filter(
+      (c) =>
+        c &&
+        c.id !== 'anticeil' &&
+        c.id !== '@me' &&
+        c.name?.toLowerCase().trim() !== 'pesan langsung' &&
+        c.name?.toLowerCase().trim() !== 'direct messages'
+    );
+  }, [colonies]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -529,13 +541,13 @@ export function UserProfileDialog({
             </div>
 
             {/* 8. Mutual Colonies */}
-            {colonies.length > 0 && (
+            {actualColonies.length > 0 && (
               <div className="mt-2.5 space-y-1.5">
                 <span className={cn(TEXT_STYLES.SECTION_MUTED, 'block')}>
-                  Colony Anda ({colonies.length})
+                  Colony Anda ({actualColonies.length})
                 </span>
                 <div className="flex flex-wrap gap-1.5">
-                  {colonies.slice(0, 6).map((c) => (
+                  {actualColonies.slice(0, 6).map((c) => (
                     <div
                       key={c.id}
                       className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-card/60 border border-border/40 text-[11px] text-foreground font-medium truncate max-w-[150px]"
@@ -547,9 +559,9 @@ export function UserProfileDialog({
                       <span className="truncate">{c.name}</span>
                     </div>
                   ))}
-                  {colonies.length > 6 && (
+                  {actualColonies.length > 6 && (
                     <span className="text-[11px] text-muted-foreground self-center px-1">
-                      +{colonies.length - 6} lainnya
+                      +{actualColonies.length - 6} lainnya
                     </span>
                   )}
                 </div>

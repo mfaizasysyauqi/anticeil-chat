@@ -378,8 +378,14 @@ export function MessagesFeed({
   // Mutual colonies
   const mutualColonies = React.useMemo(() => {
     if (!colonies || colonies.length === 0) return [];
-    const nonDefault = colonies.filter((c) => c.id !== 'anticeil');
-    return nonDefault.length > 0 ? nonDefault : colonies;
+    return colonies.filter(
+      (c) =>
+        c &&
+        c.id !== 'anticeil' &&
+        c.id !== '@me' &&
+        c.name?.toLowerCase().trim() !== 'pesan langsung' &&
+        c.name?.toLowerCase().trim() !== 'direct messages'
+    );
   }, [colonies]);
 
   const handleRemoveFriend = async () => {
