@@ -42,6 +42,7 @@ import { CreatePollModal } from './create-poll-modal';
 import { CustomScheduleModal } from './custom-schedule-modal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { DecryptedMessageText } from '@/features/chat/utils/format-message';
 import { MAX_MESSAGE_CHARS, getCurrentMaxMessageChars } from '../utils/text-limit';
 import { getCurrentUserPlan, processFilesBatch, MAX_UPLOAD_FILES_LIMIT } from '../utils/attachment';
@@ -478,7 +479,13 @@ export function ChatInputBar({
   };
 
   return (
-    <div className={`sticky bottom-0 z-20 shrink-0 ${channelPaddingClass} pb-2 sm:pb-3 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-1 bg-background flex flex-col gap-1.5`}>
+    <div
+      className={cn(
+        'sticky bottom-0 z-20 shrink-0 bg-background flex flex-col gap-1.5',
+        channelPaddingClass,
+        LAYOUT_PAGE_SPACING.INPUT_DOCK_PADDING,
+      )}
+    >
       {/* Discord Reply Banner */}
       {replyingTo && (
         <div className="px-3 py-1.5 rounded-[12px] bg-[#111214] border border-white/10 shadow-lg flex items-center justify-between text-xs animate-in slide-in-from-bottom-1 select-none">

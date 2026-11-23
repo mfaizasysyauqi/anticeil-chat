@@ -67,6 +67,14 @@ export const LAYOUT_PAGE_SPACING = {
   APP_BAR_HEIGHT: 'h-12',
 
   /**
+   * Symmetrical bottom dock / input bar padding:
+   * Aligns the top edge of chat & prompt input forms (min-h-[52px]) with
+   * the border-top of the sidebar user bottom dock (h-14 = 56px):
+   * 52px + 4px (pb-1) = 56px.
+   */
+  INPUT_DOCK_PADDING: 'pb-1 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))] pt-1',
+
+  /**
    * Standard section vertical spacing inside scrollable page bodies
    * Keeps sections harmonious and prevents excessive gaps
    */

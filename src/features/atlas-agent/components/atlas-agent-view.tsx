@@ -687,7 +687,8 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
       {/* 3. Command Input Dock (Full width, Gemini-style prompt form with file upload + model selector) */}
       <div
         className={cn(
-          'sticky bottom-0 z-20 shrink-0 pb-2 sm:pb-3 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-1 bg-background flex flex-col w-full',
+          'sticky bottom-0 z-20 shrink-0 bg-background flex flex-col w-full',
+          LAYOUT_PAGE_SPACING.INPUT_DOCK_PADDING,
           horizontalPadding || LAYOUT_PAGE_SPACING.HORIZONTAL,
         )}
       >
