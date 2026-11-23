@@ -143,7 +143,7 @@ export function AppTopTitleBar({
       role="banner"
       aria-label={t('Top Window Bar')}
       className={cn(
-        'h-7 min-h-[28px] max-h-[28px] w-full shrink-0 bg-background border-b border-border flex items-center justify-between select-none z-30 transition-colors',
+        'h-7 min-h-[28px] max-h-[28px] w-full shrink-0 bg-background border-b border-sidebar-border border-t-0 border-x-0 flex items-center justify-between select-none z-30 transition-colors',
         LAYOUT_PAGE_SPACING.HORIZONTAL,
         className
       )}

@@ -100,7 +100,7 @@ export const ChatPageContent: React.FC<ChatPageContentProps> = ({
             isAiCommandCenterView={(contentProps as any).isAiCommandCenterView}
           />
 
-          <div className="flex flex-1 min-h-0 w-full overflow-hidden relative border-t border-border">
+          <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
             {/* DESKTOP & TABLET COMBINED LEFT COLUMN */}
             <ChatDesktopSidebar
               sidebarWidth={sidebarWidth}
