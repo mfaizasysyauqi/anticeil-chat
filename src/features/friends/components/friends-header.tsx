@@ -40,17 +40,7 @@ export function FriendsHeader({
     <div
       className={`sticky top-0 z-20 h-12 border-b border-sidebar-border ${horizontalPadding} flex items-center justify-between shrink-0 bg-background overflow-hidden`}
     >
-      <div className="flex items-center gap-2 shrink-0">
-        <SidebarNavToggle onClick={onOpenSidebar} />
-
-        {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
-        <div className="hidden sm:flex items-center gap-2 shrink-0">
-          <Users className="w-5 h-5 text-muted-foreground" />
-          <span className="text-sm font-bold text-foreground">{t('Teman')}</span>
-        </div>
-
-        <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
-      </div>
+      <SidebarNavToggle onClick={onOpenSidebar} />
 
       {/* Tabs: Online, Semua, Tertunda & Action: Tambah Teman Dialog */}
       <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1 touch-pan-x">
@@ -120,9 +110,6 @@ export function FriendsHeader({
             {t('Mulai DM Baru')}
           </TooltipContent>
         </Tooltip>
-
-        {/* Discord-style Inbox Dialog Popover */}
-        <InboxPopover />
 
         {/* Primary Theme Action Button: Tambah Teman placed at FAR RIGHT */}
         <TopBarActionButton

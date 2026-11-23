@@ -298,17 +298,7 @@ export function ColoniesView({
           horizontalPadding
         )}
       >
-        <div className="flex items-center gap-2 shrink-0">
-          <SidebarNavToggle onClick={onOpenSidebar} />
-
-          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
-          <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <Globe className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">{t('Colony')}</span>
-          </div>
-
-          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
-        </div>
+        <SidebarNavToggle onClick={onOpenSidebar} />
 
         {/* Tab Filter Pills: Server Saya & Jelajahi */}
         <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1 touch-pan-x">
@@ -374,9 +364,6 @@ export function ColoniesView({
             }
             inputWidth="w-36 sm:w-44 md:w-56"
           />
-
-          {/* Discord-style Inbox Dialog Popover */}
-          <InboxPopover />
 
           {/* Primary Theme Action Button: Buat Colony placed at FAR RIGHT */}
           <TopBarActionButton

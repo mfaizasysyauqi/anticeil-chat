@@ -76,17 +76,7 @@ export function MessageRequestsView({
           horizontalPadding
         )}
       >
-        <div className="flex items-center gap-2 shrink-0">
-          <SidebarNavToggle onClick={onOpenSidebar} />
-
-          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
-          <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <Mail className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">{t('Permintaan Pesan')}</span>
-          </div>
-
-          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
-        </div>
+        <SidebarNavToggle onClick={onOpenSidebar} />
 
         {/* Tab Filter Pills: Requests & Spam */}
         <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto scrollbar-none px-1">
@@ -107,11 +97,6 @@ export function MessageRequestsView({
               )}
             </button>
           ))}
-        </div>
-
-        {/* Discord-style Inbox Dialog Popover */}
-        <div className="shrink-0 flex items-center">
-          <InboxPopover />
         </div>
       </div>
 

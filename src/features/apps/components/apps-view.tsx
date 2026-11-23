@@ -553,17 +553,7 @@ export function AppsView({
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
       {/* ── Single App Bar (h-12) ─────────────────────────── */}
       <div className={cn('sticky top-0 z-20 h-12 border-b border-sidebar-border flex items-center justify-between shrink-0 bg-background gap-2 overflow-hidden', horizontalPadding)}>
-        <div className="flex items-center gap-2 shrink-0">
-          <SidebarNavToggle onClick={onOpenSidebar} />
-
-          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
-          <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <Rocket className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">{t('Aplikasi & Aktivitas')}</span>
-          </div>
-
-          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
-        </div>
+        <SidebarNavToggle onClick={onOpenSidebar} />
 
         {/* Category Tabs: 100% DRY TopBarTabButton */}
         <div className="flex-1 min-w-0 flex items-center gap-1 shrink-0 overflow-x-auto scrollbar-none px-1 touch-pan-x">
@@ -578,7 +568,7 @@ export function AppsView({
           ))}
         </div>
 
-        {/* Search Input & Inbox Popover */}
+        {/* Search Input */}
         <div className="flex items-center gap-2 shrink-0">
           <ResponsiveSearchBar
             value={searchQuery}
@@ -586,9 +576,6 @@ export function AppsView({
             placeholder={t('Cari aktivitas...')}
             inputWidth="w-32 sm:w-44 md:w-48"
           />
-
-          {/* Discord-style Inbox Dialog Popover */}
-          <InboxPopover />
         </div>
       </div>
 

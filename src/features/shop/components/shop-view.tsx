@@ -1153,17 +1153,7 @@ export function ShopView({
           horizontalPadding
         )}
       >
-        <div className="flex items-center gap-2 shrink-0">
-          <SidebarNavToggle onClick={onOpenSidebar} />
-
-          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop (100% Consistent with Apps & Colonies) */}
-          <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <Store className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">{t('Shop')}</span>
-          </div>
-
-          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
-        </div>
+        <SidebarNavToggle onClick={onOpenSidebar} />
 
         {/* Tab Filter Pills: Responsive dynamic tabs container (overflowing tabs move to 'More' like Discord) */}
         <div ref={tabsContainerRef} className="flex-1 min-w-0 flex items-center gap-1 overflow-hidden px-1 touch-pan-x">
@@ -1565,9 +1555,6 @@ export function ShopView({
             placeholder={t('Cari di shop...')}
             inputWidth="w-28 sm:w-40 md:w-48"
           />
-
-          {/* Discord-style Inbox Dialog Popover */}
-          <InboxPopover />
 
           {/* Currency Pill with quick Top Up (Single Dew Currency) */}
           <DropdownMenu>

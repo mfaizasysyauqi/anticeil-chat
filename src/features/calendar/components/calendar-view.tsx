@@ -246,17 +246,7 @@ export function CalendarView({
           horizontalPadding
         )}
       >
-        <div className="flex items-center gap-2 shrink-0">
-          <SidebarNavToggle onClick={onOpenSidebar} />
-
-          {/* Title & Icon: Hidden on mobile (<sm), shown on tablet & desktop */}
-          <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-            <CalendarIcon className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">Kalender</span>
-          </div>
-
-          <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
-        </div>
+        <SidebarNavToggle onClick={onOpenSidebar} />
 
         <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none px-1">
 
@@ -397,9 +387,6 @@ export function CalendarView({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
-          {/* Discord-style Inbox Dialog Popover */}
-          <InboxPopover />
 
           {/* Primary Theme Action Button: Jadwalkan Meeting placed at FAR RIGHT */}
           <TopBarActionButton

@@ -46,17 +46,7 @@ export function QuestsHeader({
         horizontalPadding
       )}
     >
-      {/* Left: Mobile Drawer Trigger + Title & Icon */}
-      <div className="flex items-center gap-2 shrink-0">
-        <SidebarNavToggle onClick={onOpenSidebar} />
-
-        <div className="hidden sm:flex items-center gap-2 shrink-0">
-          <Compass className="w-5 h-5 text-muted-foreground" />
-          <span className="text-sm font-bold text-foreground">{t('Quests')}</span>
-        </div>
-
-        <Separator orientation="vertical" className="hidden sm:block h-4 mx-1 shrink-0" />
-      </div>
+      <SidebarNavToggle onClick={onOpenSidebar} />
 
       {/* Center: Tabs with Reusable TopBarTabButton */}
       <div className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto scrollbar-none px-1 touch-pan-x">
@@ -110,9 +100,6 @@ export function QuestsHeader({
           <span className="text-xs">💧</span>
           <span>{dewBalance.toLocaleString()}</span>
         </div>
-
-        {/* Discord-style Inbox Dialog Popover */}
-        <InboxPopover />
       </div>
     </div>
   );
