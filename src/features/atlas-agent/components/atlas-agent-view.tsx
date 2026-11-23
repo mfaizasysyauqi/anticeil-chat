@@ -558,8 +558,9 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
           {/* 2. Messages & Capability Hero Feed (100% Symmetrical with App Bar via LAYOUT_PAGE_SPACING) */}
           <div
             className={cn(
-              'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar py-4 space-y-4 w-full',
+              'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar space-y-4 w-full',
               horizontalPadding || LAYOUT_PAGE_SPACING.BODY_HORIZONTAL,
+              LAYOUT_PAGE_SPACING.VERTICAL,
             )}
           >
             {messages.length === 0 ? (

@@ -16,6 +16,7 @@ import {
   Minimize2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import type { AiArtifact } from '../types';
 import { getArtifactFileExtension, isArtifactPreviewable } from '../utils/artifact-parser';
 import { AiMarkdown } from './ai-markdown';
@@ -185,7 +186,7 @@ export function ArtifactViewer({ artifact, onClose, className }: ArtifactViewerP
       )}
     >
       {/* 1. Artifact Top Navigation Bar */}
-      <div className="h-12 border-b border-white/10 px-3.5 flex items-center justify-between shrink-0 bg-[#16171a] gap-2">
+      <div className={cn("h-12 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#16171a] gap-2", LAYOUT_PAGE_SPACING.HORIZONTAL)}>
         {/* Left: Icon, Title & Type */}
         <div className="flex items-center gap-2.5 min-w-0 pr-2">
           <div className="w-6 h-6 rounded-md bg-white/5 border border-white/10 flex items-center justify-center shrink-0">

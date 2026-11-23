@@ -40,6 +40,7 @@ import { cn } from '@/lib/utils';
 import { YouTubeBadgeIcon } from './activity-app-bar';
 import {
   LAYOUT_PAGE_SPACING,
+  CHANNEL_VERTICAL_PADDING,
 } from '@/lib/layout-constants';
 import type { VoiceAppDefinition } from '@/features/voice/data/voice-activities';
 import { ANTICEIL_APPS } from '@/features/voice/data/voice-activities';
@@ -68,7 +69,7 @@ export function AppDetailView({
   onSelectOtherApp,
   onAppUpdated,
   horizontalPadding = LAYOUT_PAGE_SPACING.HORIZONTAL,
-  verticalPadding = 'py-4 sm:py-6',
+  verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: AppDetailViewProps) {
   // Resolve current logged-in user from prop or fallback to localStorage
   const effectiveUser = useMemo(() => {

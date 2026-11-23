@@ -28,6 +28,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { CHANNEL_HORIZONTAL_PADDING } from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { KanbanCard, KanbanColumn, KanbanPriority } from '../types';
 import type { ColonyChannel, Colony, ColonyMember } from '@/chat/chat-types';
@@ -59,7 +60,7 @@ export function KanbanChannelView({
   displayMembers,
   currentUser,
   onOpenSidebar,
-  horizontalPadding = 'px-4 sm:px-6',
+  horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   onCardsUpdate,
 }: KanbanChannelViewProps) {
   const [cards, setCards] = useState<KanbanCard[]>([]);

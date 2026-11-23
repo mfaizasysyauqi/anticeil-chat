@@ -23,25 +23,23 @@ export const LAYOUT_BODY_CONTAINER = {
 export const LAYOUT_PAGE_SPACING = {
   /**
    * Symmetrical Horizontal Padding for all page App Bars:
-   * - Mobile (<640px): px-3.5 (14px)
-   * - Small devices / Phablet (640px - 767px): sm:px-4 (16px)
-   * - Tablet (768px - 1023px): md:px-5 (20px)
-   * - Desktop (>=1024px): lg:px-6 (24px)
+   * Aligned with mini rail horizontal padding (px-2 = 8px)
    */
-  HORIZONTAL: 'px-3.5 sm:px-4 md:px-5 lg:px-6',
+  HORIZONTAL: 'px-2',
 
   /**
    * Symmetrical Horizontal Padding for all page scrollable bodies:
-   * 100% matched with App Bar HORIZONTAL (px-3.5 sm:px-4 md:px-5 lg:px-6).
+   * 100% matched with App Bar HORIZONTAL (px-2 = 8px).
    * Combined with true overlay scrollbars (0px layout width), this guarantees
    * 100% pixel-perfect horizontal symmetry between the App Bar header and content body.
    */
-  BODY_HORIZONTAL: 'px-3.5 sm:px-4 md:px-5 lg:px-6',
+  BODY_HORIZONTAL: 'px-2',
 
   /**
-   * Vertical padding for page body scrolling content
+   * Vertical padding for page body scrolling content:
+   * Aligned with App Bar vertical padding rhythm (py-2 = 8px)
    */
-  VERTICAL: 'py-4 sm:py-5 md:py-6',
+  VERTICAL: 'py-2',
 
   /**
    * Universal scrollable body classes:
@@ -49,13 +47,13 @@ export const LAYOUT_PAGE_SPACING = {
    * guaranteeing 100% horizontal symmetry with the App Bar header above.
    */
   BODY_SCROLL:
-    'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar px-3.5 sm:px-4 md:px-5 lg:px-6',
+    'flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar px-2',
 
   /**
    * Combined page content scroll container classes
    */
   BODY_PADDING:
-    'px-3.5 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar',
+    'px-2 py-2 flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar',
 
   /**
    * Universal App Bar header height (48px)
@@ -66,7 +64,7 @@ export const LAYOUT_PAGE_SPACING = {
    * Standard single-line App Bar container
    */
   APP_BAR_CONTAINER:
-    'sticky top-0 z-20 h-12 border-b border-sidebar-border px-3.5 sm:px-4 md:px-5 lg:px-6 flex items-center justify-between shrink-0 bg-background overflow-hidden',
+    'sticky top-0 z-20 h-12 border-b border-sidebar-border px-2 flex items-center justify-between shrink-0 bg-background overflow-hidden',
 } as const;
 
 /**
