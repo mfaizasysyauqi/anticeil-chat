@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ColonyHeroCard } from './colony-hero-card';
 import { ColonyCard } from './colony-card';
 import type { Colony } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
@@ -71,15 +70,6 @@ export function ColoniesExploreTab({
     });
   }, [filteredExplore, selectedCategory]);
 
-  // Featured colony for hero spotlight
-  const featuredColony = useMemo(() => {
-    return (
-      filteredExplore.find((c) => c.verified || (c.boostTier && c.boostTier > 0)) ||
-      filteredExplore[0] ||
-      null
-    );
-  }, [filteredExplore]);
-
   const onJoin = async (colony: Colony) => {
     setJoiningColonyId(colony.id);
     try {
@@ -132,18 +122,7 @@ export function ColoniesExploreTab({
         </form>
       </div>
 
-      {/* ── 2. Featured Server Spotlight Hero (Reusable Card) ── */}
-      {featuredColony && (
-        <ColonyHeroCard
-          colony={featuredColony}
-          isJoined={joinedColonyIds.includes(featuredColony.id)}
-          onJoin={onJoin}
-          onOpen={handleSelectColony}
-          isJoining={joiningColonyId === featuredColony.id}
-        />
-      )}
-
-      {/* ── 3. Category Filter Tabs (Reusable Tabs System) ── */}
+      {/* ── 2. Category Filter Tabs (Reusable Tabs System) ── */}
       <div className="space-y-3">
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
           <TabsList className="h-auto p-1 bg-muted/40 border border-border/60 rounded-lg flex items-center gap-1 overflow-x-auto scrollbar-none justify-start">
