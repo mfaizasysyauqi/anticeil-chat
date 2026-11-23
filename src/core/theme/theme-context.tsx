@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import { getSavedColorTheme, applyColorTheme } from '@/features/user-settings/utils/color-theme-definitions';
 
 export type ThemeMode = 'midnight' | 'dark' | 'light';
 
@@ -129,6 +130,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--primary-100', '211 98% 20%');
       root.style.setProperty('--primary-300', '211 98% 65%');
       root.style.setProperty('--ring', 'rgba(2, 111, 228, 0.45)');
+    }
+
+    // Apply saved custom Color Theme if active
+    const savedColor = getSavedColorTheme();
+    if (savedColor && savedColor !== 'default_dark') {
+      applyColorTheme(savedColor, false);
     }
   }, [theme]);
 

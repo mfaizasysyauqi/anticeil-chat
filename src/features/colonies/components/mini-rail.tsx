@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Users, Globe, UserPlus, Compass, LayoutGrid, Sparkles, PanelLeftOpen, Folder, FolderOpen } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
+import { AnticeilAppIcon } from '@/features/user-settings/utils/app-icon-definitions';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import type { Colony } from '@/lib/colony';
@@ -143,6 +144,41 @@ export function MiniRail({
 
   const mode = railMode || internalMode;
   const isFriendsMode = mode === 'friends';
+
+  // Anticeil App Icon state (Fullstack & Live Theme reactive)
+  const [currentAppIcon, setCurrentAppIcon] = useState<string>(() => {
+    try {
+      const raw = localStorage.getItem('anticeil_user_settings');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.appearance?.selectedAppIcon) {
+          return parsed.appearance.selectedAppIcon;
+        }
+      }
+      const direct = localStorage.getItem('anticeil_app_icon');
+      if (direct) return direct;
+    } catch {}
+    return 'classic';
+  });
+
+  useEffect(() => {
+    const handleIconChanged = (e: any) => {
+      if (e.detail?.icon) {
+        setCurrentAppIcon(e.detail.icon);
+      }
+    };
+    const handleIconPreview = (e: any) => {
+      if (e.detail?.icon) {
+        setCurrentAppIcon(e.detail.icon);
+      }
+    };
+    window.addEventListener('anticeil_app_icon_changed', handleIconChanged);
+    window.addEventListener('anticeil_app_icon_preview', handleIconPreview);
+    return () => {
+      window.removeEventListener('anticeil_app_icon_changed', handleIconChanged);
+      window.removeEventListener('anticeil_app_icon_preview', handleIconPreview);
+    };
+  }, []);
 
   const handleToggleMode = () => {
     if (onToggleRailMode) {
@@ -741,13 +777,17 @@ export function MiniRail({
                   }
                 }}
                 className={cn(
-                  'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px]',
+                  'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px] overflow-hidden group/logo',
                   isAiCurrentlyActive
-                    ? 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
-                    : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
+                    ? 'ring-2 ring-primary shadow-sm scale-105'
+                    : 'hover:scale-105 hover:shadow-xs',
                 )}
               >
-                <img src="/logo.png" alt="Anticeil" className="size-6 object-contain" />
+                <AnticeilAppIcon
+                  iconId={currentAppIcon}
+                  className="w-full h-full"
+                  rounded="rounded-[14px]"
+                />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">

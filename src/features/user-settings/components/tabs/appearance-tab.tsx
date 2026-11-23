@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Palette, Sun, Moon, Sparkles, Check, ChevronDown, Radio, Info, Eye, Zap, SlidersHorizontal, ChevronRight
+  Palette, Sun, Moon, Sparkles, Check, ChevronDown, Radio, Info, Eye, Zap, SlidersHorizontal, ChevronRight, Lock
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,20 @@ import { toast } from 'sonner';
 import { StreamerModeSection } from './appearance/streamer-mode-section';
 import { ChatBoxAppearanceSection } from './appearance/chat-box-appearance-section';
 import { userSettingsApi, AppearanceSettings, DEFAULT_USER_SETTINGS } from '../../api/user-settings-api';
+import {
+  COLOR_THEME_LIST,
+  getColorThemeConfig,
+  applyColorTheme,
+  revertColorTheme,
+  getSavedColorTheme,
+} from '../../utils/color-theme-definitions';
+import {
+  APP_ICON_LIST,
+  getAppIconConfig,
+  AnticeilAppIcon,
+} from '../../utils/app-icon-definitions';
+import { DiscordPreviewPanel } from '../appearance/discord-preview-panel';
+import { getAiCreditsStatus } from '@/features/atlas-agent/services/ai-credits-service';
 
 export interface AppearanceTabProps {
   theme: any;
@@ -44,10 +58,33 @@ export function AppearanceTab({
   // ==========================================
   const [sameAsDeviceTheme, setSameAsDeviceTheme] = useState(initial.sameAsDeviceTheme ?? false);
   const [selectedDefaultTheme, setSelectedDefaultTheme] = useState<string>(initial.selectedDefaultTheme || 'navy');
-  const [selectedColorTheme, setSelectedColorTheme] = useState<string>(initial.selectedColorTheme || 'custom');
+  const [selectedColorTheme, setSelectedColorTheme] = useState<string>(() => {
+    return getSavedColorTheme() || initial.selectedColorTheme || 'default_dark';
+  });
   const [syncThemeDevices, setSyncThemeDevices] = useState(initial.syncThemeDevices ?? true);
   const [applyThemeToProfiles, setApplyThemeToProfiles] = useState(initial.applyThemeToProfiles ?? false);
-  const [selectedAppIcon, setSelectedAppIcon] = useState(initial.selectedAppIcon || 'blurple');
+  const [selectedAppIcon, setSelectedAppIcon] = useState<string>(() => {
+    try {
+      const stored = localStorage.getItem('anticeil_app_icon');
+      if (stored) return stored;
+    } catch {}
+    return initial.selectedAppIcon || 'classic';
+  });
+
+  // Discord-style Floating Preview Panel state
+  const [previewMode, setPreviewMode] = useState<'theme' | 'icon' | null>(null);
+  const [previewItemId, setPreviewItemId] = useState<string>('');
+
+  const creditsStatus = getAiCreditsStatus();
+  const currentPlan = creditsStatus.planId; // 'free' | 'nectar_basic' | 'nectar_boost' | 'royal_enterprise'
+
+  const canUseTier = (tier: 'free' | 'pollen' | 'nectar' | 'royal') => {
+    if (tier === 'free') return true;
+    if (currentPlan === 'royal_enterprise') return true;
+    if (currentPlan === 'nectar_boost') return tier === 'pollen' || tier === 'nectar';
+    if (currentPlan === 'nectar_basic') return tier === 'pollen';
+    return false;
+  };
 
   // Messages appearance states
   const [showMediaFromLinks, setShowMediaFromLinks] = useState(initial.showMediaFromLinks ?? true);
@@ -245,7 +282,11 @@ export function AppearanceTab({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => toast.info(t('Preview tema warna aktif selama 15 detik'))}
+                      onClick={() => {
+                        setPreviewMode('theme');
+                        setPreviewItemId(selectedColorTheme);
+                        applyColorTheme(selectedColorTheme, true);
+                      }}
                       className="h-8 text-xs font-semibold px-3 border-border/80 text-foreground cursor-pointer"
                     >
                       {t('Preview Theme')}
@@ -265,62 +306,51 @@ export function AppearanceTab({
                 </div>
 
                 {/* Swatches Grid */}
-                <div className="grid grid-cols-6 sm:grid-cols-9 gap-2.5 p-3 rounded-2xl border border-border/70 bg-[#1e1f22]">
-                  {/* Swatch 1: Custom Palette */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedColorTheme('custom');
-                      toast.info(t('Custom color theme selected'));
-                    }}
-                    className={cn(
-                      'aspect-square rounded-xl border flex items-center justify-center text-sm cursor-pointer transition-all',
-                      selectedColorTheme === 'custom'
-                        ? 'border-primary ring-2 ring-primary/40 bg-muted/40'
-                        : 'border-border/60 hover:bg-muted/20',
-                    )}
-                    title="Custom Palette"
-                  >
-                    🎨
-                  </button>
-
-                  {/* 16 Preset Swatches */}
-                  {[
-                    { id: 'mint', grad: 'from-emerald-300 to-teal-400', name: 'Mint Breeze' },
-                    { id: 'peach', grad: 'from-amber-200 to-orange-300', name: 'Peach Sunrise' },
-                    { id: 'lavender', grad: 'from-indigo-200 to-purple-300', name: 'Lavender Mist' },
-                    { id: 'sky', grad: 'from-sky-200 to-indigo-300', name: 'Soft Horizon' },
-                    { id: 'cream', grad: 'from-amber-100 to-stone-200', name: 'Cream Linen' },
-                    { id: 'rose', grad: 'from-pink-200 to-rose-300', name: 'Rose Blossom' },
-                    { id: 'sunset', grad: 'from-rose-500 via-purple-600 to-amber-500', name: 'Sunset Glow' },
-                    { id: 'violet', grad: 'from-purple-600 to-indigo-600', name: 'Violet Nebula' },
-                    { id: 'pine', grad: 'from-emerald-900 to-teal-950', name: 'Deep Pine' },
-                    { id: 'velvet', grad: 'from-red-950 to-rose-900', name: 'Velvet Wine' },
-                    { id: 'midnight', grad: 'from-blue-950 to-slate-900', name: 'Midnight Ocean' },
-                    { id: 'void', grad: 'from-purple-950 to-slate-950', name: 'Cosmic Void' },
-                    { id: 'cyber', grad: 'from-teal-800 to-purple-900', name: 'Neon Cyber' },
-                    { id: 'gold', grad: 'from-amber-700 to-yellow-900', name: 'Golden Hour' },
-                    { id: 'aurora', grad: 'from-teal-600 to-emerald-900', name: 'Aurora Borealis' },
-                    { id: 'magma', grad: 'from-orange-950 to-red-950', name: 'Dark Magma' },
-                  ].map((sw) => {
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5 p-3.5 rounded-2xl border border-border/70 bg-[#1e1f22]">
+                  {COLOR_THEME_LIST.map((sw) => {
                     const isSelected = selectedColorTheme === sw.id;
+                    const isUnlocked = canUseTier(sw.tier);
+
                     return (
                       <button
                         key={sw.id}
                         type="button"
                         onClick={() => {
-                          setSelectedColorTheme(sw.id);
-                          toast.success(t(`Tema warna diubah ke ${sw.name}`));
+                          if (isUnlocked) {
+                            setSelectedColorTheme(sw.id);
+                            applyColorTheme(sw.id, false);
+                            persistAppearance({ selectedColorTheme: sw.id });
+                            toast.success(t(`Tema warna diubah ke ${sw.name}`));
+                          } else {
+                            setPreviewMode('theme');
+                            setPreviewItemId(sw.id);
+                            applyColorTheme(sw.id, true);
+                            toast.info(t(`Melihat pratinjau tema ${sw.name}`));
+                          }
                         }}
                         className={cn(
-                          'aspect-square rounded-xl border transition-all cursor-pointer bg-linear-to-br',
-                          sw.grad,
+                          'relative aspect-square rounded-2xl border-2 transition-all cursor-pointer shadow-sm group overflow-hidden',
                           isSelected
-                            ? 'border-primary ring-2 ring-primary/40 scale-105'
-                            : 'border-white/10 hover:scale-105',
+                            ? 'border-primary ring-2 ring-primary/50 scale-105 shadow-md'
+                            : 'border-white/10 hover:border-white/40 hover:scale-105',
                         )}
-                        title={sw.name}
-                      />
+                        style={{ background: sw.gradient }}
+                        title={`${sw.name} (${sw.tier.toUpperCase()})`}
+                      >
+                        {/* Lock badge if locked */}
+                        {!isUnlocked && (
+                          <div className="absolute top-1 left-1 size-4 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white/80">
+                            <Lock className="size-2.5" />
+                          </div>
+                        )}
+
+                        {/* Selected checkmark */}
+                        {isSelected && (
+                          <span className="absolute -top-1 -right-1 size-4 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold shadow-md">
+                            ✓
+                          </span>
+                        )}
+                      </button>
                     );
                   })}
                 </div>
@@ -388,7 +418,15 @@ export function AppearanceTab({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => toast.info(t('Icon preview mode active'))}
+                    onClick={() => {
+                      setPreviewMode('icon');
+                      setPreviewItemId(selectedAppIcon);
+                      window.dispatchEvent(
+                        new CustomEvent('anticeil_app_icon_preview', {
+                          detail: { icon: selectedAppIcon },
+                        }),
+                      );
+                    }}
                     className="h-8 text-xs font-semibold px-3 border-border/80 text-foreground cursor-pointer"
                   >
                     {t('Preview Icon')}
@@ -405,55 +443,64 @@ export function AppearanceTab({
                 </div>
               </div>
 
-              {/* Grid of 23 App Icons */}
+              {/* Grid of Styled Anticeil App Icons */}
               <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
-                {[
-                  { id: 'blurple', label: 'Default Blurple', bg: 'bg-[#5865F2]', icon: '💬', active: true },
-                  { id: 'dark', label: 'Dark Charcoal', bg: 'bg-[#1e1f22]', icon: '⚡' },
-                  { id: 'crt', label: 'CRT Glitch', bg: 'bg-zinc-900 border-green-500/40', icon: '📺' },
-                  { id: 'slate', label: 'Monochrome', bg: 'bg-zinc-800', icon: '🌑' },
-                  { id: 'white', label: 'Clean White', bg: 'bg-zinc-100 text-zinc-900', icon: '✨' },
-                  { id: 'pastel', label: 'Pastel Rainbow', bg: 'bg-linear-to-br from-pink-300 via-purple-300 to-indigo-300', icon: '🌸' },
-                  { id: 'pirate', label: 'Pirate Skull', bg: 'bg-linear-to-br from-amber-700 to-stone-900', icon: '🏴‍☠️' },
-                  { id: 'camo', label: 'Army Camo', bg: 'bg-linear-to-br from-emerald-800 to-stone-800', icon: '🪖' },
-                  { id: 'vaporwave', label: '80s Synthwave', bg: 'bg-linear-to-br from-purple-700 via-pink-600 to-amber-500', icon: '🌇' },
-                  { id: 'galaxy', label: 'Cosmic Nebula', bg: 'bg-linear-to-br from-indigo-950 via-purple-900 to-pink-900', icon: '🌌' },
-                  { id: 'plushie', label: 'Cute Plushie', bg: 'bg-linear-to-br from-purple-400 to-indigo-400', icon: '🧸' },
-                  { id: 'sakura', label: 'Sakura Blossom', bg: 'bg-linear-to-br from-pink-400 via-rose-300 to-pink-500', icon: '🌺' },
-                  { id: 'chrome', label: 'Holo Chrome', bg: 'bg-linear-to-br from-slate-300 via-zinc-400 to-slate-200 text-black', icon: '💿' },
-                  { id: 'cyber', label: 'Neon Cyber', bg: 'bg-linear-to-br from-emerald-500 via-teal-600 to-black', icon: '🎮' },
-                  { id: 'matrix', label: 'Matrix Rain', bg: 'bg-black border-green-500', icon: '📟' },
-                  { id: 'spiral', label: 'Hypnotic Spiral', bg: 'bg-linear-to-br from-stone-900 to-zinc-700', icon: '🌀' },
-                  { id: 'magma', label: 'Magma Flame', bg: 'bg-linear-to-br from-red-600 via-orange-600 to-yellow-500', icon: '🔥' },
-                  { id: 'demon', label: 'Crimson Demon', bg: 'bg-linear-to-br from-red-950 to-rose-900', icon: '😈' },
-                  { id: 'classic', label: 'Classic 2015', bg: 'bg-[#7289da]', icon: '🕹️' },
-                  { id: 'mecha', label: 'Robot Mecha', bg: 'bg-linear-to-br from-sky-600 to-indigo-900', icon: '🤖' },
-                  { id: 'sunset', label: 'Sunset Neon', bg: 'bg-linear-to-br from-amber-500 via-rose-600 to-purple-800', icon: '🌅' },
-                  { id: 'pride', label: 'Rainbow Pride', bg: 'bg-linear-to-br from-red-500 via-green-500 to-violet-600', icon: '🌈' },
-                  { id: 'trans', label: 'Trans Pastel', bg: 'bg-linear-to-br from-sky-300 via-pink-300 to-white', icon: '🏳️‍⚧️' },
-                  { id: 'prestige', label: 'Gold Prestige', bg: 'bg-linear-to-br from-amber-400 via-yellow-500 to-amber-700', icon: '👑' },
-                ].map((ic) => {
+                {APP_ICON_LIST.map((ic) => {
                   const isSelected = selectedAppIcon === ic.id;
+                  const isUnlocked = canUseTier(ic.tier);
+
                   return (
                     <button
                       key={ic.id}
                       type="button"
                       onClick={() => {
-                        setSelectedAppIcon(ic.id);
-                        toast.success(t(`App Icon diubah ke ${ic.label}`));
+                        if (isUnlocked) {
+                          setSelectedAppIcon(ic.id);
+                          try {
+                            localStorage.setItem('anticeil_app_icon', ic.id);
+                          } catch {}
+                          persistAppearance({ selectedAppIcon: ic.id });
+                          window.dispatchEvent(
+                            new CustomEvent('anticeil_app_icon_changed', {
+                              detail: { icon: ic.id },
+                            }),
+                          );
+                          toast.success(t(`App Icon diubah ke ${ic.name}`));
+                        } else {
+                          setPreviewMode('icon');
+                          setPreviewItemId(ic.id);
+                          window.dispatchEvent(
+                            new CustomEvent('anticeil_app_icon_preview', {
+                              detail: { icon: ic.id },
+                            }),
+                          );
+                          toast.info(t(`Melihat pratinjau icon ${ic.name}`));
+                        }
                       }}
                       className={cn(
-                        'relative aspect-square rounded-2xl border-2 flex items-center justify-center text-xl transition-all cursor-pointer shadow-xs',
-                        ic.bg,
+                        'relative aspect-square rounded-2xl border-2 flex items-center justify-center transition-all cursor-pointer shadow-xs overflow-hidden group',
                         isSelected
                           ? 'border-primary ring-2 ring-primary/40 scale-105'
                           : 'border-border/60 hover:scale-105',
                       )}
-                      title={ic.label}
+                      title={`${ic.name} (${ic.tier.toUpperCase()})`}
                     >
-                      <span>{ic.icon}</span>
+                      <AnticeilAppIcon
+                        iconId={ic.id}
+                        className="w-full h-full"
+                        rounded="rounded-2xl"
+                      />
+
+                      {/* Lock badge if locked */}
+                      {!isUnlocked && (
+                        <div className="absolute top-1 left-1 size-4 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white/80 z-20">
+                          <Lock className="size-2.5" />
+                        </div>
+                      )}
+
+                      {/* Selected checkmark */}
                       {isSelected && (
-                        <span className="absolute -top-1 -right-1 size-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shadow-xs">
+                        <span className="absolute -top-1 -right-1 size-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shadow-xs z-20">
                           ✓
                         </span>
                       )}
@@ -679,6 +726,56 @@ export function AppearanceTab({
               streamerHideWindowCapture={streamerHideWindowCapture}
               setStreamerHideWindowCapture={setStreamerHideWindowCapture}
             />
+
+            {/* Discord-style Floating Preview Panel */}
+            {previewMode && (
+              <DiscordPreviewPanel
+                mode={previewMode}
+                currentPreviewId={previewItemId}
+                onSelectPreview={(id) => {
+                  setPreviewItemId(id);
+                  if (previewMode === 'theme') {
+                    applyColorTheme(id, true);
+                  } else {
+                    window.dispatchEvent(
+                      new CustomEvent('anticeil_app_icon_preview', {
+                        detail: { icon: id },
+                      }),
+                    );
+                  }
+                }}
+                onExitPreview={() => {
+                  if (previewMode === 'theme') {
+                    revertColorTheme();
+                  } else {
+                    window.dispatchEvent(
+                      new CustomEvent('anticeil_app_icon_changed', {
+                        detail: { icon: selectedAppIcon },
+                      }),
+                    );
+                  }
+                  setPreviewMode(null);
+                }}
+                onUnlockNectar={() => {
+                  if (previewMode === 'theme') {
+                    revertColorTheme();
+                  } else {
+                    window.dispatchEvent(
+                      new CustomEvent('anticeil_app_icon_changed', {
+                        detail: { icon: selectedAppIcon },
+                      }),
+                    );
+                  }
+                  setPreviewMode(null);
+                  onNavigateSection?.('nitro');
+                  window.dispatchEvent(
+                    new CustomEvent('anticeil_open_user_settings', {
+                      detail: { section: 'nitro' },
+                    }),
+                  );
+                }}
+              />
+            )}
           </div>
   );
 }
