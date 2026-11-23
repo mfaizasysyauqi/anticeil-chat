@@ -159,12 +159,12 @@ function ActivityCard({
       <div className="relative z-20 -mt-5 sm:-mt-7 mr-2.5 sm:mr-4 ml-auto flex items-center justify-end pointer-events-none">
         <div
           className={cn(
-            'size-9 sm:size-12 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-xl shrink-0 border-2 sm:border-[3px] border-card group-hover:scale-105 transition-transform',
+            'size-9 sm:size-12 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-xl shrink-0 border-2 sm:border-[3px] border-card group-hover:scale-105 transition-transform p-1.5 sm:p-2',
             app.iconBg || 'bg-primary',
             app.iconColor || 'text-white'
           )}
         >
-          <AppIcon className="w-4 h-4 sm:w-6 sm:h-6" />
+          <AppIcon className="w-full h-full object-contain" />
         </div>
       </div>
 

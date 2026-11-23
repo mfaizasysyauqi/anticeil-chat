@@ -308,12 +308,12 @@ export function AppDetailView({
                 {/* Responsive App Icon */}
                 <div
                   className={cn(
-                    'size-16 sm:size-20 md:size-24 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-2xl shrink-0 border-4 border-background',
+                    'size-16 sm:size-20 md:size-24 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-2xl shrink-0 border-4 border-background p-3 sm:p-4',
                     currentApp.iconBg || 'bg-primary',
                     currentApp.iconColor || 'text-white'
                   )}
                 >
-                  <AppIcon className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12" />
+                  <AppIcon className="w-full h-full object-contain" />
                 </div>
 
                 <div className="space-y-1 min-w-0 pb-1">
@@ -561,12 +561,12 @@ export function AppDetailView({
                           <div className="relative z-10 -mt-5 ml-3 flex items-center justify-between pr-3 pointer-events-none">
                             <div
                               className={cn(
-                                'size-10 rounded-xl flex items-center justify-center shadow-md shrink-0 border-2 border-card group-hover:scale-105 transition-transform',
+                                'size-10 rounded-xl flex items-center justify-center shadow-md shrink-0 border-2 border-card group-hover:scale-105 transition-transform p-1.5',
                                 rel.iconBg || 'bg-primary',
                                 rel.iconColor || 'text-white'
                               )}
                             >
-                              <RelIcon className="w-5 h-5" />
+                              <RelIcon className="w-full h-full object-contain" />
                             </div>
                           </div>
 

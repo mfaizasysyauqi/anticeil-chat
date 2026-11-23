@@ -5,6 +5,7 @@ import {
   YouTubeIcon,
   TradingViewIcon,
 } from '@/features/voice/data/voice-activities';
+import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import {
   Sparkles,
   Gamepad2,
@@ -26,9 +27,10 @@ const ICON_MAP: Record<string, any> = {
   whiteboard: Palette,
   ScreenShare,
   screenshare: ScreenShare,
+  AnticeilLogo,
+  flow: AnticeilLogo,
+  'anticeil-flow': AnticeilLogo,
   Sparkles,
-  flow: Sparkles,
-  'anticeil-flow': Sparkles,
   Gamepad2,
   Tv,
 };
