@@ -197,6 +197,12 @@ export function useChannelModals({
     }
     setChannelToDelete(null);
 
+    // Cascade clean local kanban storage & assignments
+    try {
+      localStorage.removeItem(`anticeil_kanban_${id}`);
+      window.dispatchEvent(new CustomEvent('anticeil_channel_deleted', { detail: { channelId: id } }));
+    } catch {}
+
     try {
       await colonyApi.deleteChannel(id);
     } catch (err) {

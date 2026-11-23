@@ -323,6 +323,11 @@ export function useColonyModals({
     setChannels((prev) => prev.filter((c) => c.colonyId !== colonyToDelete.id));
     setActiveColonyId('anticeil');
 
+    // Cascade clean assignments tied to deleted colony
+    try {
+      window.dispatchEvent(new CustomEvent('anticeil_colony_deleted', { detail: { colonyId: colonyToDelete.id } }));
+    } catch {}
+
     const firstDm = channels.find((c) => c.category === 'DIRECT MESSAGES');
     setActiveChannelId(firstDm?.id || '');
 

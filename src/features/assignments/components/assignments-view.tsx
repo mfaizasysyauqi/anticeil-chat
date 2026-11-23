@@ -12,6 +12,7 @@ import {
   Tag,
   ArrowRight,
   Filter,
+  Trash2,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import confetti from 'canvas-confetti';
@@ -41,6 +42,7 @@ export interface AssignmentsViewProps {
   colonies: Colony[];
   onOpenBoard?: (colonyId: string, channelId: string) => void;
   onToggleComplete?: (assignmentId: string, isCompleted: boolean) => void;
+  onDeleteAssignment?: (assignmentId: string) => void;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
   verticalPadding?: string;
@@ -51,6 +53,7 @@ export function AssignmentsView({
   colonies,
   onOpenBoard,
   onToggleComplete,
+  onDeleteAssignment,
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   verticalPadding = CHANNEL_VERTICAL_PADDING,
@@ -72,6 +75,12 @@ export function AssignmentsView({
     const matchesHub = selectedColonyFilter === 'all' || item.colonyId === selectedColonyFilter;
 
     if (!matchesSearch || !matchesHub) return false;
+
+    // Filter out orphan assignments if colony list is provided and colony was deleted
+    if (colonies && colonies.length > 0 && item.colonyId && item.colonyId !== 'anticeil') {
+      const colonyExists = colonies.some((c) => c.id === item.colonyId);
+      if (!colonyExists) return false;
+    }
 
     const isDone = item.columnId === 'done';
     const isOverdue = item.dueDate && dayjs(item.dueDate).isBefore(now, 'day') && !isDone;
@@ -326,8 +335,8 @@ export function AssignmentsView({
                     </div>
                   </div>
 
-                  {/* Open in Board Action */}
-                  <div className="flex items-center justify-end shrink-0 pl-8 sm:pl-0">
+                  {/* Open in Board & Delete Actions */}
+                  <div className="flex items-center gap-1.5 justify-end shrink-0 pl-8 sm:pl-0">
                     <Button
                       variant="outline"
                       size="sm"
@@ -337,6 +346,20 @@ export function AssignmentsView({
                       <span>Buka di Papan</span>
                       <ExternalLink className="w-3 h-3" />
                     </Button>
+
+                    {onDeleteAssignment && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          onDeleteAssignment(item.id);
+                        }}
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer shrink-0"
+                        title="Hapus tugas"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               );

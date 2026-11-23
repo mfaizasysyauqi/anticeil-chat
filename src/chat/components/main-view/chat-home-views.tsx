@@ -43,6 +43,7 @@ export interface ChatHomeViewsProps {
   isAssignmentsView: boolean;
   assignments: AssignmentItem[];
   handleToggleComplete: (id: string) => void;
+  handleDeleteAssignment?: (id: string) => void;
   isCallsView: boolean;
   callLogs: CallLogItem[];
   friends: {
@@ -100,6 +101,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   isAssignmentsView,
   assignments,
   handleToggleComplete,
+  handleDeleteAssignment,
   isCallsView,
   callLogs,
   friends,
@@ -325,6 +327,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
           setActiveColonyId(colonyId);
           setActiveChannelId(channelId);
         }}
+        onDeleteAssignment={handleDeleteAssignment}
         onToggleComplete={(id) => {
           if (!currentUser && requireAuth) {
             requireAuth(

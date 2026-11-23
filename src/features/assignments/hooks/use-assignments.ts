@@ -25,6 +25,35 @@ export function useAssignments(initialData: AssignmentItem[] = []) {
     fetchAssignments();
   }, [fetchAssignments]);
 
+  // Listen for channel/colony deletions to automatically cascade-remove assignments
+  useEffect(() => {
+    const handleChannelDeleted = (e: any) => {
+      const deletedChannelId = e?.detail?.channelId;
+      if (deletedChannelId) {
+        setAssignments((prev) => prev.filter((a) => a.channelId !== deletedChannelId));
+      }
+    };
+    const handleColonyDeleted = (e: any) => {
+      const deletedColonyId = e?.detail?.colonyId;
+      if (deletedColonyId) {
+        setAssignments((prev) =>
+          prev.filter(
+            (a) =>
+              (a as any).colonyId !== deletedColonyId &&
+              (a as any).hubId !== deletedColonyId
+          )
+        );
+      }
+    };
+
+    window.addEventListener('anticeil_channel_deleted', handleChannelDeleted);
+    window.addEventListener('anticeil_colony_deleted', handleColonyDeleted);
+    return () => {
+      window.removeEventListener('anticeil_channel_deleted', handleChannelDeleted);
+      window.removeEventListener('anticeil_colony_deleted', handleColonyDeleted);
+    };
+  }, []);
+
   const handleToggleComplete = async (cardId: string) => {
     const target = assignments.find((c) => c.id === cardId);
     if (!target) return;
