@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { InboxPopover } from '@/features/inbox';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
+import { LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
 
 export interface AppTopTitleBarProps {
@@ -111,7 +112,8 @@ export function AppTopTitleBar({
       role="banner"
       aria-label={t('Top Window Bar')}
       className={cn(
-        'h-7 min-h-[28px] max-h-[28px] w-full shrink-0 bg-background border-b border-border px-2 flex items-center justify-between select-none z-30 transition-colors',
+        'h-7 min-h-[28px] max-h-[28px] w-full shrink-0 bg-background border-b border-border flex items-center justify-between select-none z-30 transition-colors',
+        LAYOUT_PAGE_SPACING.HORIZONTAL,
         className
       )}
     >
