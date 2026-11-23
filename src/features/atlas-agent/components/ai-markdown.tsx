@@ -87,9 +87,67 @@ function CodeBlock({ language, code, onOpenAsArtifact }: CodeBlockProps) {
   );
 }
 
+function isPotentialTableRow(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.includes('|') && !trimmed.startsWith('```');
+}
+
+function isTableSeparator(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed.includes('|') || !trimmed.includes('-')) return false;
+  let s = trimmed;
+  if (s.startsWith('|')) s = s.slice(1);
+  if (s.endsWith('|')) s = s.slice(0, -1);
+  const parts = s.split('|');
+  return parts.length >= 1 && parts.every((p) => /^[\s:-]+$/.test(p) && p.includes('-'));
+}
+
+function splitTableCells(rowLine: string): string[] {
+  let trimmed = rowLine.trim();
+  if (trimmed.startsWith('|')) trimmed = trimmed.slice(1);
+  if (trimmed.endsWith('|')) trimmed = trimmed.slice(0, -1);
+
+  const cells: string[] = [];
+  let current = '';
+  let escaped = false;
+
+  for (let i = 0; i < trimmed.length; i++) {
+    const char = trimmed[i];
+    if (char === '\\' && !escaped) {
+      escaped = true;
+    } else if (char === '|' && !escaped) {
+      cells.push(current.trim());
+      current = '';
+    } else {
+      if (escaped) {
+        current += '\\';
+        escaped = false;
+      }
+      current += char;
+    }
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+function getColumnAlignments(separatorLine: string): Array<'left' | 'center' | 'right'> {
+  const cells = splitTableCells(separatorLine);
+  return cells.map((cell) => {
+    const trimmed = cell.trim();
+    const starts = trimmed.startsWith(':');
+    const ends = trimmed.endsWith(':');
+    if (starts && ends) return 'center';
+    if (ends) return 'right';
+    return 'left';
+  });
+}
+
 function renderInlineMarkdown(text: string): React.ReactNode[] {
+  if (!text) return [];
+
   const parts: React.ReactNode[] = [];
-  const regex = /(\*\*.*?\*\*|`.*?`|\[.*?\]\(.*?\)|\*.*?\*|https?:\/\/[^\s]+)/g;
+  const regex =
+    /(<br\s*\/?>|<strong>[\s\S]*?<\/strong>|<b>[\s\S]*?<\/b>|<em>[\s\S]*?<\/em>|<i>[\s\S]*?<\/i>|<code>[\s\S]*?<\/code>|\*\*.*?\*\*|~~.*?~~|`.*?`|\[.*?\]\(.*?\)|\*.*?\*|@[a-zA-Z0-9_]+|#[a-zA-Z0-9_-]+|https?:\/\/[^\s]+)/gi;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -99,16 +157,48 @@ function renderInlineMarkdown(text: string): React.ReactNode[] {
     }
     const token = match[0];
 
-    if (token.startsWith('**') && token.endsWith('**') && token.length > 4) {
+    if (/^<br\s*\/?>$/i.test(token)) {
+      parts.push(<br key={`br-${match.index}`} />);
+    } else if (/^<strong>([\s\S]*?)<\/strong>$/i.test(token) || /^<b>([\s\S]*?)<\/b>$/i.test(token)) {
+      const inner = token.replace(/^<(?:strong|b)>/i, '').replace(/<\/(?:strong|b)>$/i, '');
       parts.push(
-        <strong key={match.index} className="font-bold text-foreground">
+        <strong key={`str-${match.index}`} className="font-bold text-foreground">
+          {renderInlineMarkdown(inner)}
+        </strong>
+      );
+    } else if (/^<em>([\s\S]*?)<\/em>$/i.test(token) || /^<i>([\s\S]*?)<\/i>$/i.test(token)) {
+      const inner = token.replace(/^<(?:em|i)>/i, '').replace(/<\/(?:em|i)>$/i, '');
+      parts.push(
+        <em key={`em-${match.index}`} className="italic text-foreground/90">
+          {renderInlineMarkdown(inner)}
+        </em>
+      );
+    } else if (/^<code>([\s\S]*?)<\/code>$/i.test(token)) {
+      const inner = token.replace(/^<code>/i, '').replace(/<\/code>$/i, '');
+      parts.push(
+        <code
+          key={`code-${match.index}`}
+          className="px-1.5 py-0.5 rounded-md bg-muted font-mono text-[11px] text-primary border border-border/40 inline-block align-baseline font-medium"
+        >
+          {inner}
+        </code>
+      );
+    } else if (token.startsWith('**') && token.endsWith('**') && token.length > 4) {
+      parts.push(
+        <strong key={`b-${match.index}`} className="font-bold text-foreground">
           {token.slice(2, -2)}
         </strong>
+      );
+    } else if (token.startsWith('~~') && token.endsWith('~~') && token.length > 4) {
+      parts.push(
+        <del key={`del-${match.index}`} className="line-through text-muted-foreground">
+          {token.slice(2, -2)}
+        </del>
       );
     } else if (token.startsWith('`') && token.endsWith('`') && token.length > 2) {
       parts.push(
         <code
-          key={match.index}
+          key={`c-${match.index}`}
           className="px-1.5 py-0.5 rounded-md bg-muted font-mono text-[11px] text-primary border border-border/40 inline-block align-baseline font-medium"
         >
           {token.slice(1, -1)}
@@ -120,7 +210,7 @@ function renderInlineMarkdown(text: string): React.ReactNode[] {
       const url = token.slice(splitIdx + 2, -1);
       parts.push(
         <a
-          key={match.index}
+          key={`a-${match.index}`}
           href={url}
           target="_blank"
           rel="noopener noreferrer"
@@ -131,14 +221,32 @@ function renderInlineMarkdown(text: string): React.ReactNode[] {
       );
     } else if (token.startsWith('*') && token.endsWith('*') && token.length > 2) {
       parts.push(
-        <em key={match.index} className="italic text-foreground/90">
+        <em key={`i-${match.index}`} className="italic text-foreground/90">
           {token.slice(1, -1)}
         </em>
+      );
+    } else if (token.startsWith('@') && token.length > 1) {
+      parts.push(
+        <span
+          key={`mention-${match.index}`}
+          className="px-1.5 py-0.5 rounded-md bg-primary/15 text-primary font-medium text-[11px] inline-flex items-center align-baseline hover:bg-primary/25 transition-colors"
+        >
+          {token}
+        </span>
+      );
+    } else if (token.startsWith('#') && token.length > 1 && !token.includes(' ')) {
+      parts.push(
+        <span
+          key={`channel-${match.index}`}
+          className="px-1.5 py-0.5 rounded-md bg-muted text-foreground/90 font-medium text-[11px] inline-flex items-center align-baseline border border-border/40"
+        >
+          {token}
+        </span>
       );
     } else if (token.startsWith('http')) {
       parts.push(
         <a
-          key={match.index}
+          key={`url-${match.index}`}
           href={token}
           target="_blank"
           rel="noopener noreferrer"
@@ -253,7 +361,115 @@ export function AiMarkdown({
       continue;
     }
 
+    // Check for Markdown Table (Header followed by separator row)
+    if (isPotentialTableRow(line) && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      const headerLine = line;
+      const separatorLine = lines[i + 1];
+      const headers = splitTableCells(headerLine);
+      const alignments = getColumnAlignments(separatorLine);
+      const rows: string[][] = [];
+
+      let j = i + 2;
+      while (j < lines.length && isPotentialTableRow(lines[j]) && !isTableSeparator(lines[j])) {
+        const rowCells = splitTableCells(lines[j]);
+        // Normalize column count to match headers
+        while (rowCells.length < headers.length) {
+          rowCells.push('');
+        }
+        rows.push(rowCells);
+        j++;
+      }
+      i = j - 1; // Advance loop to end of table
+
+      blocks.push(
+        <div
+          key={`table-${i}`}
+          className="my-3 w-full overflow-x-auto rounded-xl border border-border/80 bg-zinc-950/60 shadow-xs custom-scrollbar"
+        >
+          <table className="w-full text-xs text-left border-collapse min-w-[340px]">
+            <thead>
+              <tr className="border-b border-border/80 bg-muted/60">
+                {headers.map((h, idx) => (
+                  <th
+                    key={`th-${idx}`}
+                    className={cn(
+                      'px-3.5 py-2.5 font-bold text-foreground text-xs select-none',
+                      alignments[idx] === 'center' && 'text-center',
+                      alignments[idx] === 'right' && 'text-right'
+                    )}
+                  >
+                    {renderInlineMarkdown(h)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {rows.map((row, rIdx) => (
+                <tr
+                  key={`tr-${rIdx}`}
+                  className="transition-colors hover:bg-muted/20 even:bg-muted/10"
+                >
+                  {row.map((cell, cIdx) => (
+                    <td
+                      key={`td-${rIdx}-${cIdx}`}
+                      className={cn(
+                        'px-3.5 py-2.5 align-top text-foreground/90 leading-relaxed text-xs break-words',
+                        alignments[cIdx] === 'center' && 'text-center',
+                        alignments[cIdx] === 'right' && 'text-right'
+                      )}
+                    >
+                      {renderInlineMarkdown(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
+
+    // Horizontal Rule (---, ***, ___)
+    if (/^(\*{3,}|-{3,}|_{3,})$/.test(trimmed)) {
+      blocks.push(<hr key={`hr-${i}`} className="my-3 border-t border-border/70" />);
+      continue;
+    }
+
+    // Task List (- [ ] or - [x])
+    const taskMatch = trimmed.match(/^[-*•]\s+\[([ xX])\]\s+(.*)/);
+    if (taskMatch) {
+      const isChecked = taskMatch[1].toLowerCase() === 'x';
+      blocks.push(
+        <div key={`task-${i}`} className="flex items-center gap-2 my-1 pl-1">
+          <input
+            type="checkbox"
+            checked={isChecked}
+            readOnly
+            className="h-3.5 w-3.5 rounded border-border text-primary pointer-events-none accent-primary"
+          />
+          <span
+            className={cn(
+              'text-xs leading-relaxed',
+              isChecked && 'line-through text-muted-foreground'
+            )}
+          >
+            {renderInlineMarkdown(taskMatch[2])}
+          </span>
+        </div>
+      );
+      continue;
+    }
+
     // Headers
+    if (trimmed.startsWith('#### ')) {
+      blocks.push(
+        <h5 key={`h5-${i}`} className="text-xs font-bold text-foreground mt-2 mb-0.5">
+          {renderInlineMarkdown(trimmed.slice(5))}
+        </h5>
+      );
+      continue;
+    }
     if (trimmed.startsWith('### ')) {
       blocks.push(
         <h4 key={`h4-${i}`} className="text-xs font-bold text-foreground mt-2 mb-1">
@@ -292,24 +508,28 @@ export function AiMarkdown({
       continue;
     }
 
-    // Unordered List (- or *)
-    if (/^[-*]\s+/.test(trimmed)) {
+    // Unordered List (- or * or •) with indentation support
+    if (/^[-*•]\s+/.test(trimmed)) {
+      const indent = line.search(/\S/);
+      const plClass = indent >= 4 ? 'pl-6' : indent >= 2 ? 'pl-3.5' : 'pl-1';
       blocks.push(
-        <div key={`li-${i}`} className="flex items-start gap-2 my-0.5 pl-1">
+        <div key={`li-${i}`} className={cn('flex items-start gap-2 my-0.5', plClass)}>
           <span className="text-primary font-bold text-xs shrink-0 select-none">•</span>
           <div className="flex-1 leading-relaxed">
-            {renderInlineMarkdown(trimmed.replace(/^[-*]\s+/, ''))}
+            {renderInlineMarkdown(trimmed.replace(/^[-*•]\s+/, ''))}
           </div>
         </div>
       );
       continue;
     }
 
-    // Ordered List (1., 2.)
+    // Ordered List (1., 2.) with indentation support
     const orderedMatch = trimmed.match(/^(\d+)\.\s+(.+)/);
     if (orderedMatch) {
+      const indent = line.search(/\S/);
+      const plClass = indent >= 4 ? 'pl-6' : indent >= 2 ? 'pl-3.5' : 'pl-1';
       blocks.push(
-        <div key={`oli-${i}`} className="flex items-start gap-2 my-0.5 pl-1">
+        <div key={`oli-${i}`} className={cn('flex items-start gap-2 my-0.5', plClass)}>
           <span className="text-primary font-bold text-xs shrink-0 select-none font-mono">
             {orderedMatch[1]}.
           </span>

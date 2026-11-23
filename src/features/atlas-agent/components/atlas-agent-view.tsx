@@ -618,7 +618,7 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
                     )}
 
                     <div
-                      className={`flex flex-col space-y-2 max-w-[85%] sm:max-w-[75%] ${
+                      className={`flex flex-col space-y-2 max-w-[92%] sm:max-w-[85%] lg:max-w-[80%] ${
                         msg.role === 'user' ? 'items-end' : 'items-start'
                       }`}
                     >
