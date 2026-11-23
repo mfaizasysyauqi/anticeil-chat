@@ -115,6 +115,50 @@ export function ShopItemModal({
                 <div className="w-28 sm:w-36 h-4 sm:h-4.5 rounded-full bg-white/20 backdrop-blur-md z-10" />
               )}
             </div>
+          ) : item.category === 'profile_effect' ? (
+            <div className="relative w-full max-w-[280px] sm:max-w-[300px] h-38 rounded-2xl bg-[#1e1f22] border border-border/80 overflow-hidden shadow-2xl z-10 select-none">
+              {/* Top Banner area */}
+              <div className="h-14 bg-[#111214] border-b border-white/5 relative" />
+
+              {/* Body area */}
+              <div className="p-3 pt-0 relative">
+                {/* Left Avatar Overlapping Banner */}
+                <div className="relative -mt-6 size-12 sm:size-13 rounded-full bg-[#2b2d31] border-[3px] border-[#1e1f22] flex items-center justify-center shrink-0 z-10 shadow-lg">
+                  {currentUser?.avatar ? (
+                    <img src={currentUser.avatar} alt="User Avatar" className="size-full rounded-full object-cover" />
+                  ) : (
+                    <div className="size-6 text-muted-foreground/60 flex items-center justify-center pointer-events-none">
+                      <AnticeilLogo className="size-full fill-current" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-0 right-0 size-3 rounded-full bg-[#23a55a] border-2 border-[#1e1f22]" />
+                </div>
+
+                {/* Profile Name & lines */}
+                {currentUser?.name ? (
+                  <div className="mt-1.5 space-y-0.5">
+                    <div className="text-xs font-bold text-white drop-shadow-md">
+                      {currentUser.name}
+                    </div>
+                    <p className="text-[10px] text-white/60">@{currentUser.username || 'user'}</p>
+                  </div>
+                ) : (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="w-24 sm:w-28 h-3 rounded-full bg-white/20" />
+                    <div className="w-16 h-2 rounded-full bg-white/10" />
+                  </div>
+                )}
+              </div>
+
+              {/* Overlaid Profile Effect */}
+              {(item.gifUrl || item.previewIcon) && (
+                <img
+                  src={item.gifUrl || item.previewIcon}
+                  alt={item.name}
+                  className="absolute inset-0 size-full object-cover pointer-events-none select-none z-20 mix-blend-screen drop-shadow-[0_0_16px_rgba(0,0,0,0.8)] animate-in fade-in duration-300"
+                />
+              )}
+            </div>
           ) : (
             <div className="absolute inset-0 size-full overflow-hidden">
               {(item.gifUrl || item.previewIcon) && (
@@ -126,8 +170,8 @@ export function ShopItemModal({
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
               <div className="absolute bottom-3 left-4 flex items-center gap-2.5 z-10">
-                <div className="size-9 rounded-full bg-white/20 border border-white/40 backdrop-blur-xs flex items-center justify-center text-white font-bold text-xs shrink-0">
-                  ❄
+                <div className="size-9 rounded-full bg-[#1e1f22] border border-white/40 backdrop-blur-xs flex items-center justify-center p-1.5 text-white shrink-0">
+                  <AnticeilLogo className="size-full fill-current" />
                 </div>
                 <div className="space-y-0.5">
                   <div className="text-xs font-bold text-white drop-shadow-md">{item.name}</div>
