@@ -568,7 +568,7 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
                 <div className="flex justify-center">
                   <div className="relative size-24 sm:size-28 flex items-center justify-center p-1 group">
                     <img
-                      src="/atlas.png"
+                      src="/atlas-head.png"
                       alt="Atlas Mascot"
                       className="size-full object-contain filter drop-shadow-[0_8px_16px_rgba(37,99,235,0.25)] transition-transform duration-300 group-hover:scale-105"
                     />
@@ -606,7 +606,7 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
                   >
                     {msg.role !== 'user' && (
                       <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5 p-0.5 overflow-hidden shadow-2xs">
-                        <img src="/atlas.png" alt="Atlas" className="size-full object-contain" />
+                        <img src="/atlas-head.png" alt="Atlas" className="size-full object-contain" />
                       </div>
                     )}
 
@@ -671,7 +671,7 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
             {isLoading && (
               <div className="flex gap-3 items-center text-muted-foreground text-xs py-2">
                 <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 p-0.5 overflow-hidden">
-                  <img src="/atlas.png" alt="Atlas" className="size-full object-contain animate-bounce" />
+                  <img src="/atlas-head.png" alt="Atlas" className="size-full object-contain animate-bounce" />
                 </div>
                 <div className="flex items-center gap-1.5 bg-card px-3 py-2 rounded-xl border border-border/40">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />

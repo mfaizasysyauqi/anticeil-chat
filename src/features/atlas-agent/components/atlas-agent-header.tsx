@@ -48,7 +48,7 @@ export function AtlasAgentHeader({
         <div className="flex items-center gap-2 shrink-0">
           <div className="size-6 flex items-center justify-center shrink-0">
             <img
-              src="/atlas.png"
+              src="/atlas-head.png"
               alt="Atlas Mascot"
               className="size-full object-contain filter drop-shadow-xs"
               onError={(e) => {

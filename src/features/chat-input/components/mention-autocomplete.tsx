@@ -49,7 +49,7 @@ export function MentionAutocomplete({
       value: '@atlas',
       name: 'Atlas Agent',
       tag: '@atlas',
-      avatar: '/atlas.png',
+      avatar: '/atlas-head.png',
       status: 'online',
       description: 'Tanya asisten pintar AI Atlas di saluran ini.',
     };

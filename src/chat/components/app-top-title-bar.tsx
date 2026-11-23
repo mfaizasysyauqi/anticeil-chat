@@ -79,7 +79,7 @@ export function AppTopTitleBar({
   } else if (isAiCommandCenterView || homeView === 'ai') {
     title = 'Atlas Agent';
     IconNode = (
-      <img src="/atlas.png" alt="Atlas" className="size-3.5 object-contain shrink-0" />
+      <img src="/atlas-head.png" alt="Atlas" className="size-3.5 object-contain shrink-0" />
     );
   } else if (isFriendsView || homeView === 'friends') {
     title = t('Teman');

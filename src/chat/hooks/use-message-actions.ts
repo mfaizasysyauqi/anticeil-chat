@@ -458,7 +458,7 @@ export function useMessageActions({
               senderId: 'atlas_agent',
               senderName: 'Atlas Agent',
               senderEmail: 'atlas@bot.anticeil.com',
-              senderAvatar: '/atlas.png',
+              senderAvatar: '/atlas-head.png',
               senderRole: 'bot' as ColonyRole,
               content: replyContent,
               replyTo: {

@@ -111,7 +111,7 @@ export function renderFormattedMessage(content: string) {
           >
             {isAtlas && (
               <img
-                src="/atlas.png"
+                src="/atlas-head.png"
                 alt="Atlas"
                 className="w-3.5 h-3.5 rounded-full object-cover shrink-0 inline-block align-middle"
               />
