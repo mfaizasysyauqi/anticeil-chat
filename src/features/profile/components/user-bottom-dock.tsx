@@ -350,7 +350,7 @@ export function UserBottomDock({
           >
             <CommunityAvatar
               name={currentUserName}
-              imageUrl={currentUser?.imageUrl}
+              imageUrl={currentUser?.imageUrl || currentUser?.avatar}
               size={34}
               status={presence}
               showStatus

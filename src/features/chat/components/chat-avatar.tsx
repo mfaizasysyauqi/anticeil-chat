@@ -77,11 +77,17 @@ export function ChatAvatar({
 
   const roundedClass = isSquircle ? 'rounded-[14px]' : 'rounded-full';
 
+  const isLogoPlaceholder = Boolean(
+    imageUrl &&
+      (imageUrl.includes('logo.png') ||
+        imageUrl.includes('logo.svg') ||
+        imageUrl.includes('brand-assets'))
+  );
+
   const hasImage = Boolean(
     imageUrl &&
-      !imageError &&
-      !imageUrl.includes('logo.png') &&
-      !imageUrl.includes('logo.svg')
+      !isLogoPlaceholder &&
+      !imageError
   );
 
   const statusIndicator = showStatus && status && (
@@ -115,18 +121,14 @@ export function ChatAvatar({
         )}
         style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
       >
-        {imageUrl && (imageUrl.includes('logo.png') || imageUrl.includes('logo.svg')) ? (
-          <AnticeilLogo className={cn('w-3/5 h-3/5 transition-colors duration-150', isActive ? 'text-primary' : 'text-foreground')} />
-        ) : imageUrl && !imageError ? (
+        {hasImage ? (
           <img
-            src={imageUrl}
+            src={imageUrl!}
             alt={name}
             onError={() => setImageError(true)}
             style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
             className={cn('w-full h-full object-cover aspect-square', roundedClass)}
           />
-        ) : isSquircle && (name?.toLowerCase() === 'anticeil') ? (
-          <AnticeilLogo className={cn('w-3/5 h-3/5 transition-colors duration-150', isActive ? 'text-primary' : 'text-foreground')} />
         ) : isSquircle ? (
           <div
             className={cn(

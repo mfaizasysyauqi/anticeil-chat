@@ -498,17 +498,26 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
         return;
       }
       try {
-        const user = await api.get(`/v1/users/${payload.id}`);
+        const [user, profile]: any = await Promise.all([
+          api.get(`/v1/users/${payload.id}`).catch(() => null),
+          api.get('/v1/users/me/profile').catch(() => null),
+        ]);
         if (user && (user.id || user.email)) {
-          const rawImg = user.imageUrl || user.avatar || payload.imageUrl;
+          const rawImg = profile?.avatarUrl || profile?.avatar || user.imageUrl || user.avatar || payload.imageUrl;
           const validImg =
-            rawImg && !rawImg.includes('unsplash.com') && !rawImg.includes('53994a69daeb')
+            rawImg &&
+            !rawImg.includes('unsplash.com') &&
+            !rawImg.includes('53994a69daeb') &&
+            !rawImg.includes('logo.png') &&
+            !rawImg.includes('logo.svg') &&
+            !rawImg.includes('brand-assets')
               ? rawImg
               : null;
           const formatted = {
             ...payload,
             ...user,
             name:
+              profile?.displayName ||
               `${user.firstName || payload.firstName || ''} ${user.lastName || payload.lastName || ''}`.trim() ||
               user.username ||
               user.email,

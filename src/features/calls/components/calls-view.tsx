@@ -36,8 +36,7 @@ import {
   SURFACE_STYLES,
 } from '@/lib/layout-constants';
 import { CommunityAvatar } from '@/chat/chat-avatar';
-import { ColonyIcon } from '@/features/colonies/components/colony-icon';
-import { AnticeilLogo } from '@/components/ui/anticeil-logo';
+import { getColonyInitials } from '@/features/colonies/components/colony-icon';
 import type { CallLogItem, CallsTab } from '../types';
 import type { FriendMember } from '@/features/friends';
 import type { Colony } from '@/chat/chat-types';
@@ -358,7 +357,18 @@ export function CallsView({
                           (!isGeneralVoiceName && f.name.toLowerCase() === call.peerName.toLowerCase())
                       );
 
-                      const isColonyCall = isExplicitColony || (!friendMatch && isGeneralVoiceName) || (!friendMatch && !call.isDm);
+                      // Match peer from any colony member list if not in friends
+                      const colonyMemberMatch = !friendMatch
+                        ? colonies
+                            .flatMap((c: any) => c.members || [])
+                            .find(
+                              (m: any) =>
+                                m.id === call.peerId ||
+                                (!isGeneralVoiceName && m.name?.toLowerCase() === call.peerName.toLowerCase())
+                            )
+                        : null;
+
+                      const isColonyCall = isExplicitColony || (!friendMatch && !colonyMemberMatch && isGeneralVoiceName) || (!friendMatch && !colonyMemberMatch && !call.isDm);
 
                       // Find matching hub if it's a colony call
                       const matchedHub =
@@ -366,20 +376,30 @@ export function CallsView({
                           (h) =>
                             (call.colonyId && h.id === call.colonyId) ||
                             (call.hubName && h.name.toLowerCase() === call.hubName.toLowerCase()) ||
-                            h.id === call.peerId
-                        ) || colonies.find((h) => h.id !== 'anticeil') || colonies[0];
+                            (h.id === call.peerId && h.id !== 'anticeil')
+                        ) || (colonies.find((h) => h.id !== 'anticeil'));
 
                       const colonyName = call.hubName || (matchedHub?.id !== 'anticeil' ? matchedHub?.name : null) || 'Colony Komunitas';
-                      const colonyIcon = call.hubIcon || (matchedHub?.id !== 'anticeil' ? matchedHub?.iconUrl : null) || null;
+                      const rawColonyIcon = call.hubIcon || (matchedHub?.id !== 'anticeil' ? matchedHub?.iconUrl : null) || null;
+                      const colonyIcon = rawColonyIcon && !rawColonyIcon.includes('logo.png') && !rawColonyIcon.includes('logo.svg') ? rawColonyIcon : null;
+
+                      const rawPeerAvatar =
+                        friendMatch?.imageUrl ||
+                        friendMatch?.avatar ||
+                        colonyMemberMatch?.avatar ||
+                        colonyMemberMatch?.imageUrl ||
+                        call.peerAvatar;
+                      const validPeerAvatar =
+                        rawPeerAvatar && !rawPeerAvatar.includes('logo.png') && !rawPeerAvatar.includes('logo.svg')
+                          ? rawPeerAvatar
+                          : null;
 
                       const displayName = isColonyCall
                         ? call.peerName
-                        : friendMatch?.name || call.peerName;
+                        : friendMatch?.name || colonyMemberMatch?.name || call.peerName;
 
                       const avatarName = isColonyCall ? colonyName : displayName;
-                      const avatarUrl = isColonyCall
-                        ? colonyIcon
-                        : friendMatch?.avatar || friendMatch?.imageUrl || call.peerAvatar;
+                      const avatarUrl = isColonyCall ? colonyIcon : validPeerAvatar;
 
                       return (
                         <div
@@ -389,17 +409,16 @@ export function CallsView({
                           <div className="flex items-center gap-3.5 min-w-0">
                             <div className="relative shrink-0">
                               {isColonyCall ? (
-                                <div className="size-10 rounded-[14px] bg-sidebar-accent border border-sidebar-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs font-bold text-sm text-foreground">
-                                  <ColonyIcon
-                                    hub={
-                                      matchedHub || {
-                                        id: call.colonyId || 'colony',
-                                        name: colonyName,
-                                        initials: colonyName.slice(0, 2).toUpperCase(),
-                                        iconUrl: colonyIcon || undefined,
-                                      }
-                                    }
-                                  />
+                                <div className="size-10 rounded-[14px] bg-sidebar-accent border border-sidebar-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs font-bold text-xs text-foreground uppercase tracking-wide">
+                                  {colonyIcon ? (
+                                    <img
+                                      src={colonyIcon}
+                                      alt={colonyName}
+                                      className="size-10 object-cover rounded-[14px]"
+                                    />
+                                  ) : (
+                                    <span>{getColonyInitials(colonyName || call.peerName)}</span>
+                                  )}
                                 </div>
                               ) : (
                                 <div className="size-10 rounded-[14px] bg-sidebar-accent border border-sidebar-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
@@ -450,16 +469,11 @@ export function CallsView({
                                 {isColonyCall ? (
                                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sidebar-accent text-foreground border border-sidebar-border flex items-center gap-1.5 shrink-0">
                                     <div className="size-3.5 rounded-[4px] bg-sidebar-accent border border-sidebar-border/40 flex items-center justify-center shrink-0 overflow-hidden text-[8px] font-bold">
-                                      <ColonyIcon
-                                        hub={
-                                          matchedHub || {
-                                            id: call.colonyId || 'colony',
-                                            name: colonyName,
-                                            initials: colonyName.slice(0, 2).toUpperCase(),
-                                            iconUrl: colonyIcon || undefined,
-                                          }
-                                        }
-                                      />
+                                      {colonyIcon ? (
+                                        <img src={colonyIcon} alt={colonyName} className="size-3.5 object-cover rounded-[4px]" />
+                                      ) : (
+                                        <span>{getColonyInitials(colonyName || call.peerName)}</span>
+                                      )}
                                     </div>
                                     <span className="truncate max-w-[120px]">{colonyName}</span>
                                   </span>
