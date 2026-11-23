@@ -4,6 +4,7 @@ import { ChatDesktopSidebar } from './chat-desktop-sidebar';
 import { ChatMobileDrawers } from './chat-mobile-drawers';
 import { ChatContentContainer, type ChatContentContainerProps } from './chat-content-container';
 import { ChatModalsCoordinator, type ChatModalsCoordinatorProps } from './chat-modals-coordinator';
+import { AppTopTitleBar } from './app-top-title-bar';
 import {
   ColonyRailWrapper,
   type ColonyRailWrapperProps,
@@ -86,44 +87,56 @@ export const ChatPageContent: React.FC<ChatPageContentProps> = ({
     >
       <TooltipProvider delayDuration={200}>
         <div
-          className="flex h-full w-full overflow-hidden bg-background"
+          className="flex flex-col h-full w-full overflow-hidden bg-background"
           data-sidebar-collapsed={isDesktopSidebarCollapsed ? 'true' : 'false'}
         >
-          {/* DESKTOP & TABLET COMBINED LEFT COLUMN */}
-          <ChatDesktopSidebar
-            sidebarWidth={sidebarWidth}
-            isResizingSidebar={isResizingSidebar}
-            onResizeStart={handleSidebarResizeStart}
-            onResizeReset={handleSidebarResizeReset}
-            renderDiscordHubRail={renderDiscordHubRail}
-            renderChannelsSidebarContent={renderChannelsSidebarContent}
-            renderUserBottomDock={renderUserBottomDock}
-            isSidebarCollapsed={isDesktopSidebarCollapsed}
-            t={t}
+          {/* TOP GLOBAL TITLE BAR (Discord-style) */}
+          <AppTopTitleBar
+            activeColony={channelsSidebarProps.activeColony || (contentProps as any).activeColony}
+            activeChannel={(contentProps as any).activeChannel}
+            homeView={channelsSidebarProps.homeView}
+            isHome={channelsSidebarProps.isHome}
+            isFriendsView={(contentProps as any).isFriendsView}
+            isAiCommandCenterView={(contentProps as any).isAiCommandCenterView}
           />
 
-          {/* MOBILE & TABLET DRAWERS */}
-          <ChatMobileDrawers
-            isMobileChannelsOpen={isMobileChannelsOpen}
-            setIsMobileChannelsOpen={setIsMobileChannelsOpen}
-            isMobileMembersOpen={isMobileMembersOpen}
-            setIsMobileMembersOpen={setIsMobileMembersOpen}
-            renderDiscordHubRail={renderDiscordHubRail}
-            renderChannelsSidebarContent={renderChannelsSidebarContent}
-            renderMembersSidebarContent={renderMembersSidebarContent}
-            renderUserBottomDock={renderUserBottomDock}
-            t={t}
-          />
+          <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
+            {/* DESKTOP & TABLET COMBINED LEFT COLUMN */}
+            <ChatDesktopSidebar
+              sidebarWidth={sidebarWidth}
+              isResizingSidebar={isResizingSidebar}
+              onResizeStart={handleSidebarResizeStart}
+              onResizeReset={handleSidebarResizeReset}
+              renderDiscordHubRail={renderDiscordHubRail}
+              renderChannelsSidebarContent={renderChannelsSidebarContent}
+              renderUserBottomDock={renderUserBottomDock}
+              isSidebarCollapsed={isDesktopSidebarCollapsed}
+              t={t}
+            />
 
-          {/* MAIN CONTENT & MEMBERS CONTAINER */}
-          <ChatContentContainer
-            {...contentProps}
-            renderFriendsMainPage={renderFriendsMainPage}
-            renderMembersSidebarContent={renderMembersSidebarContent}
-          />
+            {/* MOBILE & TABLET DRAWERS */}
+            <ChatMobileDrawers
+              isMobileChannelsOpen={isMobileChannelsOpen}
+              setIsMobileChannelsOpen={setIsMobileChannelsOpen}
+              isMobileMembersOpen={isMobileMembersOpen}
+              setIsMobileMembersOpen={setIsMobileMembersOpen}
+              renderDiscordHubRail={renderDiscordHubRail}
+              renderChannelsSidebarContent={renderChannelsSidebarContent}
+              renderMembersSidebarContent={renderMembersSidebarContent}
+              renderUserBottomDock={renderUserBottomDock}
+              t={t}
+            />
 
-          {/* Community Dialogs & Modals Coordinator */}
-          <ChatModalsCoordinator {...modalProps} />
+            {/* MAIN CONTENT & MEMBERS CONTAINER */}
+            <ChatContentContainer
+              {...contentProps}
+              renderFriendsMainPage={renderFriendsMainPage}
+              renderMembersSidebarContent={renderMembersSidebarContent}
+            />
+
+            {/* Community Dialogs & Modals Coordinator */}
+            <ChatModalsCoordinator {...modalProps} />
+          </div>
         </div>
       </TooltipProvider>
     </LockedFeatureGuard>
