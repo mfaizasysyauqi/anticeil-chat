@@ -2324,6 +2324,7 @@ export const idTranslations: Record<string, string> = {
   'Sembunyikan Daftar Anggota': 'Sembunyikan Daftar Anggota',
   'Sembunyikan Profil Pengguna': 'Sembunyikan Profil Pengguna',
   'Semua': 'Semua',
+  'Semua Colony': 'Semua Colony',
   'Semua channel di kategori ini ditandai telah dibaca': 'Semua channel di kategori ini ditandai telah dibaca',
   'Semua colony diaktifkan pembagian aktivitas': 'Semua colony diaktifkan pembagian aktivitas',
   'Semua colony dinonaktifkan pembagian aktivitas': 'Semua colony dinonaktifkan pembagian aktivitas',

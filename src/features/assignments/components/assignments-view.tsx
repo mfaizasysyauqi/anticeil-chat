@@ -44,6 +44,7 @@ import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACI
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { AssignmentItem, AssignmentTab } from '../types';
 import type { Colony } from '@/chat/chat-types';
+import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 
 export interface AssignmentsViewProps {
@@ -69,6 +70,7 @@ export function AssignmentsView({
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: AssignmentsViewProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<AssignmentTab>('assigned_to_me');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedColonyFilter, setSelectedColonyFilter] = useState('all');
@@ -221,10 +223,10 @@ export function AssignmentsView({
               size="xs"
               className="h-7 w-24 sm:w-28 md:w-32 lg:w-36 text-xs bg-muted/40 border-sidebar-border"
             >
-              <SelectValue placeholder="Semua Colony" />
+              <SelectValue placeholder={t('Semua Colony')} />
             </SelectTrigger>
             <SelectContent align="end">
-              <SelectItem value="all">Semua Server</SelectItem>
+              <SelectItem value="all">{t('Semua Colony')}</SelectItem>
               {colonies.map((h) => (
                 <SelectItem key={h.id} value={h.id}>
                   {h.name}

@@ -2321,6 +2321,7 @@ export const enTranslations: Record<string, string> = {
   'Sembunyikan Daftar Anggota': 'Sembunyikan Anggota List',
   'Sembunyikan Profil Pengguna': 'Sembunyikan Profil Pengguna',
   'Semua': 'All',
+  'Semua Colony': 'All Colonies',
   'Semua channel di kategori ini ditandai telah dibaca': 'Semua channel di kategori ini ditandai telah dibaca',
   'Semua colony diaktifkan pembagian aktivitas': 'Semua colony diaktifkan pembagian aktivitas',
   'Semua colony dinonaktifkan pembagian aktivitas': 'Semua colony dinonaktifkan pembagian aktivitas',
