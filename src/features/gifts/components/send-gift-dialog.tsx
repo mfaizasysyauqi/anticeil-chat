@@ -27,11 +27,11 @@ export function SendGiftDialog({
       <DialogContent
         size="lg"
         showCloseButton={false}
-        className="overflow-hidden bg-card border-0 sm:border border-border flex flex-col rounded-none sm:rounded-2xl shadow-2xl z-[80] select-none"
+        className="overflow-hidden bg-card border-0 sm:border border-border flex flex-col md:flex-col rounded-none sm:rounded-2xl shadow-2xl z-[80] select-none"
         overlayClassName="z-[80]"
       >
         {/* Header (Template Dialog Besar) */}
-        <div className={cn(LAYOUT_DIALOG_SPACING.HEADER_CONTAINER, 'bg-card/95 border-b border-border/70')}>
+        <div className={cn(LAYOUT_DIALOG_SPACING.HEADER_CONTAINER, 'w-full bg-card/95 border-b border-border/70')}>
           <div className="flex items-center gap-3 min-w-0">
             <div className="size-9 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shrink-0 shadow-2xs">
               <Gift className="w-5 h-5" />
@@ -61,7 +61,7 @@ export function SendGiftDialog({
         </div>
 
         {/* Scrollable Body (Template Dialog Besar) */}
-        <div className={cn(LAYOUT_DIALOG_SPACING.BODY_PADDING, 'space-y-5 flex-1 min-h-0')}>
+        <div className={cn(LAYOUT_DIALOG_SPACING.BODY_PADDING, 'space-y-5 flex-1 min-h-0 w-full')}>
           {/* Top Intro Banner */}
           <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-r from-primary/10 via-accent/30 to-background border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">

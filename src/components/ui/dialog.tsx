@@ -17,8 +17,8 @@ export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | 'two-pane';
 export const dialogSizeClasses: Record<DialogSize, string> = {
   sm: 'w-[calc(100vw-2rem)] sm:w-full sm:max-w-sm',
   md: 'w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md',
-  lg: cn(LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER, 'p-0'),
-  xl: cn(LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER, 'p-0'),
+  lg: cn(LAYOUT_DIALOG_SPACING.LARGE_CONTAINER, 'p-0'),
+  xl: cn(LAYOUT_DIALOG_SPACING.LARGE_CONTAINER, 'p-0'),
   'two-pane': cn(LAYOUT_DIALOG_SPACING.TWO_PANE_CONTAINER, 'p-0'),
 };
 

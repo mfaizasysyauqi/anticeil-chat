@@ -98,6 +98,13 @@ export const LAYOUT_DIALOG_SPACING = {
     'p-0 w-full h-full max-w-full max-h-full sm:w-[96vw] sm:h-[94dvh] sm:max-w-[96vw] sm:max-h-[94dvh] md:w-[94vw] md:max-w-[94vw] md:h-[92vh] md:max-h-[860px] lg:w-[92vw] lg:max-w-6xl xl:w-[90vw] xl:max-w-7xl xl:h-[90vh] xl:max-h-[900px] overflow-hidden bg-background border-0 sm:border border-border flex flex-col md:flex-row rounded-none sm:rounded-2xl shadow-2xl gap-0 select-none',
 
   /**
+   * Single-pane large modal (Dialog Besar: Send a Gift, Full Showcase, etc.):
+   * Same proportional 90% viewport size with 5% outer padding, vertical layout (flex-col across all breakpoints).
+   */
+  LARGE_CONTAINER:
+    'p-0 w-full h-full max-w-full max-h-full sm:w-[96vw] sm:h-[94dvh] sm:max-w-[96vw] sm:max-h-[94dvh] md:w-[94vw] md:max-w-5xl md:h-[92vh] md:max-h-[860px] lg:w-[92vw] lg:max-w-6xl xl:w-[90vw] xl:max-w-7xl xl:h-[90vh] xl:max-h-[900px] overflow-hidden bg-background border-0 sm:border border-border flex flex-col md:flex-col rounded-none sm:rounded-2xl shadow-2xl gap-0 select-none',
+
+  /**
    * Single-pane dialog standard container (Dialog Sedang: e.g. Colony Komunitas, Create Channel, Schedule, etc.)
    * Symmetrical horizontal padding matching the app bar (px-3.5 sm:px-4 md:px-5 lg:px-6) and max-w-md
    */
