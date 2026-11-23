@@ -198,6 +198,19 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
     setIsAuthRequiredOpen(false);
     window.dispatchEvent(new Event('storage'));
     toast.success(`[DEV MODE] Masuk sebagai ${selected.name}`);
+
+    // Trigger JIT Domain Capture Auto-Join for dev testing
+    if (selected.email && selected.email.includes('@')) {
+      colonyApi.checkAndAutoJoinSSO(selected.email, selected).then((joined) => {
+        if (joined.length > 0) {
+          toast.success(
+            t('Domain Auto-Capture: Otomatis tergabung ke Colony: {{colonies}} 👑', {
+              colonies: joined.map((c) => c.name).join(', '),
+            })
+          );
+        }
+      }).catch(() => {});
+    }
   };
 
   const handleGuestLogin = () => {
@@ -504,6 +517,23 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
           };
           setCurrentUser(formatted);
           localStorage.setItem('anticeil_current_user', JSON.stringify(formatted));
+
+          // Check Domain Auto-Join once per session
+          if (formatted.email && formatted.email.includes('@')) {
+            const sessionKey = `anticeil_domain_captured_${formatted.email}`;
+            if (!sessionStorage.getItem(sessionKey)) {
+              sessionStorage.setItem(sessionKey, 'true');
+              colonyApi.checkAndAutoJoinSSO(formatted.email, formatted).then((joined) => {
+                if (joined.length > 0) {
+                  toast.success(
+                    t('Domain Auto-Capture: Anda tergabung ke Colony: {{colonies}} 👑', {
+                      colonies: joined.map((c) => c.name).join(', '),
+                    })
+                  );
+                }
+              }).catch(() => {});
+            }
+          }
         }
       } catch (err) {
         // Fallback to token payload
@@ -558,6 +588,22 @@ export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
 
             // Immediately fetch live user profile & avatar with new token
             await fetchLiveUser(claimRes.token);
+
+            // Auto-Join Enterprise Colony via Domain Capture
+            const finalEmail = formatted.email || claimRes.email;
+            if (finalEmail && finalEmail.includes('@')) {
+              try {
+                const joined = await colonyApi.checkAndAutoJoinSSO(finalEmail, formatted);
+                if (joined.length > 0) {
+                  toast.success(
+                    t('Domain Auto-Capture: Anda otomatis tergabung ke Colony: {{colonies}} 👑', {
+                      colonies: joined.map((c) => c.name).join(', '),
+                    }),
+                    { duration: 5000 }
+                  );
+                }
+              } catch {}
+            }
 
             toast.success(t('Berhasil masuk!'), { id: 'oauth-claim' });
 

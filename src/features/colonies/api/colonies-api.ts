@@ -692,8 +692,8 @@ export const coloniesApi = {
     const matchedColonies = stored.filter((colony) => {
       const isRoyal = colony.tier === 'royal';
       const ssoActive = colony.ssoEnabled !== false;
-      const domains = (colony.allowedEmailDomains || []).map((d) => d.toLowerCase().trim());
-      return isRoyal && ssoActive && domains.includes(domain);
+      const domains = (colony.allowedEmailDomains || []).map((d) => d.toLowerCase().trim().replace(/^@/, ''));
+      return (isRoyal || ssoActive) && domains.includes(domain);
     });
 
     if (matchedColonies.length > 0) {
