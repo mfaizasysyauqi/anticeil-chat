@@ -49,13 +49,15 @@ export const coloniesApi = {
   async getColonies(userId?: string): Promise<Colony[]> {
     try {
       const user = getCurrentAuthUser();
-      const currentUserId = userId || user?.id;
+      const currentUserId = (userId && userId !== 'undefined' && userId !== 'null')
+        ? userId
+        : (user?.id && user.id !== 'undefined' && user.id !== 'null' ? user.id : undefined);
       const params = new URLSearchParams();
       if (currentUserId) params.set('userId', currentUserId);
       if (user?.email) params.set('email', user.email);
       const qs = params.toString() ? `?${params.toString()}` : '';
       const res = await api.get<Colony[]>(`/v1/colony/colonies${qs}`);
-      if (Array.isArray(res) && res.length > 0) {
+      if (Array.isArray(res)) {
         saveStoredColonies(res);
         return res;
       }
@@ -174,10 +176,16 @@ export const coloniesApi = {
   async deleteColony(id: string): Promise<{ success: boolean; id: string }> {
     try {
       await api.delete(`/v1/colony/colonies/${id}`);
-    } catch {}
+    } catch (err) {
+      console.warn('Failed to delete colony on server', err);
+    }
     const stored = loadStoredColonies();
     saveStoredColonies(stored.filter((h) => h.id !== id));
     this.recordAudit(id, 'HUB_DELETED', 'Admin', id);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('anticeil_colonies_changed'));
+      window.dispatchEvent(new Event('anticeil_channels_changed'));
+    }
     return { success: true, id };
   },
 
@@ -592,11 +600,10 @@ export const coloniesApi = {
       if (params?.category) queryParams.set('category', params.category);
       const qs = queryParams.toString();
       const res = await api.get<Colony[]>(`/v1/colony/colonies/discover${qs ? `?${qs}` : ''}`);
-      if (Array.isArray(res)) {
+      if (Array.isArray(res) && res.length > 0) {
         return res.filter((c) =>
           c.id !== 'anticeil' &&
           c.id !== 'direct-messages' &&
-          (c.isPublic === true || c.visibility === 'public' || c.accessSettings?.joinMethod === 'discoverable') &&
           c.isPublic !== false &&
           c.visibility !== 'private'
         );
@@ -606,7 +613,6 @@ export const coloniesApi = {
     return stored.filter((h) =>
       h.id !== 'anticeil' &&
       h.id !== 'direct-messages' &&
-      (h.isPublic === true || h.visibility === 'public' || h.accessSettings?.joinMethod === 'discoverable') &&
       h.isPublic !== false &&
       h.visibility !== 'private'
     );

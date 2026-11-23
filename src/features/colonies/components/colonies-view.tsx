@@ -150,7 +150,6 @@ export function ColoniesView({
             (h) =>
               h.id !== 'anticeil' &&
               h.id !== 'direct-messages' &&
-              (h.isPublic === true || h.visibility === 'public' || h.accessSettings?.joinMethod === 'discoverable') &&
               h.isPublic !== false &&
               h.visibility !== 'private'
           );

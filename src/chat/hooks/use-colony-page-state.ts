@@ -176,6 +176,9 @@ export function useColonyPageState(): ChatPageContentProps {
     setActiveChannelId,
     setMessagesMap,
     setChannels,
+    setColonies,
+    activeColonyId,
+    setActiveColonyId,
   });
 
   // ── 7. Initial Data Loader Hook ────────────────────────────────────

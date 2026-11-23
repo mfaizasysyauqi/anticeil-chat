@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { type ColonyMessage, type ColonyChannel, resolveChannelType } from '@/chat/chat-types';
-import { saveStoredChannels, saveStoredMessages, loadStoredMessages, saveStoredDmChannels, setClosedDmId } from '@/chat/chat-defaults';
+import { type ColonyMessage, type ColonyChannel, type Colony, resolveChannelType } from '@/chat/chat-types';
+import { saveStoredChannels, saveStoredMessages, loadStoredMessages, saveStoredDmChannels, saveStoredColonies, setClosedDmId } from '@/chat/chat-defaults';
 
 export interface UseColonySocketOptions {
   socket: any;
@@ -9,6 +9,9 @@ export interface UseColonySocketOptions {
   setChannels: React.Dispatch<React.SetStateAction<ColonyChannel[]>>;
   setActiveChannelId: React.Dispatch<React.SetStateAction<string>>;
   setActiveCallCounts?: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  setColonies?: React.Dispatch<React.SetStateAction<Colony[]>>;
+  activeColonyId?: string;
+  setActiveColonyId?: (id: string) => void;
 }
 
 export function useColonySocket({
@@ -18,6 +21,9 @@ export function useColonySocket({
   setChannels,
   setActiveChannelId,
   setActiveCallCounts,
+  setColonies,
+  activeColonyId,
+  setActiveColonyId,
 }: UseColonySocketOptions) {
   useEffect(() => {
     if (!socket) return;
@@ -174,6 +180,38 @@ export function useColonySocket({
       setActiveChannelId((current) => (current === id ? '' : current));
     };
 
+    const handleColonyDeleted = ({ colonyId }: { colonyId: string }) => {
+      if (!colonyId) return;
+      if (setColonies) {
+        setColonies((prev) => {
+          const next = prev.filter((c) => c.id !== colonyId);
+          saveStoredColonies(next);
+          return next;
+        });
+      }
+      setChannels((prev) => {
+        const next = prev.filter((c) => c.colonyId !== colonyId);
+        try {
+          saveStoredChannels(next);
+        } catch {}
+        return next;
+      });
+      if (activeColonyId === colonyId && setActiveColonyId) {
+        setActiveColonyId('anticeil');
+        setActiveChannelId('');
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('anticeil_colonies_changed'));
+        window.dispatchEvent(new Event('anticeil_channels_changed'));
+      }
+    };
+
+    const handleDiscoverColonyUpdated = () => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('anticeil_colonies_changed'));
+      }
+    };
+
     socket.on('COMMUNITY_CALL_STATE', handleCallState);
     socket.on('COMMUNITY_CHAT_MESSAGE', handleIncomingMessage);
     socket.on('COMMUNITY_MESSAGE_DELETED', handleMessageDeleted);
@@ -181,6 +219,8 @@ export function useColonySocket({
     socket.on('COMMUNITY_CHANNEL_CREATED', handleChannelCreated);
     socket.on('COMMUNITY_CHANNEL_UPDATED', handleChannelUpdated);
     socket.on('COMMUNITY_CHANNEL_DELETED', handleChannelDeleted);
+    socket.on('COMMUNITY_COLONY_DELETED', handleColonyDeleted);
+    socket.on('COMMUNITY_COLONY_DISCOVER_UPDATED', handleDiscoverColonyUpdated);
 
     return () => {
       socket.off('COMMUNITY_CALL_STATE', handleCallState);
@@ -190,6 +230,8 @@ export function useColonySocket({
       socket.off('COMMUNITY_CHANNEL_CREATED', handleChannelCreated);
       socket.off('COMMUNITY_CHANNEL_UPDATED', handleChannelUpdated);
       socket.off('COMMUNITY_CHANNEL_DELETED', handleChannelDeleted);
+      socket.off('COMMUNITY_COLONY_DELETED', handleColonyDeleted);
+      socket.off('COMMUNITY_COLONY_DISCOVER_UPDATED', handleDiscoverColonyUpdated);
     };
-  }, [socket, activeChannelId, setMessagesMap, setChannels, setActiveChannelId, setActiveCallCounts]);
+  }, [socket, activeChannelId, setMessagesMap, setChannels, setActiveChannelId, setActiveCallCounts, setColonies, activeColonyId, setActiveColonyId]);
 }
