@@ -354,6 +354,10 @@ export function AppsView({
     appsApi.getApps().then((apps) => {
       if (isMounted && Array.isArray(apps) && apps.length > 0) {
         setAppList(apps);
+        setSelectedDetailApp((prev) => {
+          if (!prev) return null;
+          return apps.find((a) => a.id === prev.id) || prev;
+        });
       }
     });
     return () => {
@@ -516,10 +520,15 @@ export function AppsView({
       <>
         <AppDetailView
           app={selectedDetailApp}
+          allApps={appList}
           onBack={handleBackFromDetail}
           onLaunchStandalone={handleLaunchStandalone}
           onOpenSendToChannel={handleOpenSendToChannel}
           onSelectOtherApp={handleOpenDetail}
+          onAppUpdated={(updated) => {
+            setAppList((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+            setSelectedDetailApp(updated);
+          }}
           horizontalPadding={horizontalPadding}
           verticalPadding={verticalPadding}
         />
