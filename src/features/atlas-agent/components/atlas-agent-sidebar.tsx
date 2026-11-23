@@ -173,14 +173,21 @@ export function AtlasAgentSidebar(props: AtlasAgentSidebarProps) {
           </span>
 
           {regularSessions.length === 0 && pinnedSessions.length === 0 ? (
-            <div className="py-6 px-3 flex flex-col items-center text-center">
-              <EmptyIconBadge size="compact" className="mb-2.5">
-                <Bot className="stroke-[1.8]" />
-              </EmptyIconBadge>
+            <div className="py-6 px-3 flex flex-col items-center text-center animate-in fade-in duration-200">
+              <div className="relative w-28 h-36 flex items-center justify-center mb-2 group">
+                <img
+                  src="/atlas-standing.png"
+                  alt="Atlas Mascot"
+                  className="size-full object-contain filter drop-shadow-[0_8px_16px_rgba(37,99,235,0.25)] transition-transform duration-300 group-hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/atlas-mascot.png';
+                  }}
+                />
+              </div>
               <p className="text-xs font-semibold text-foreground mb-1">
                 {t('Belum Ada Riwayat')}
               </p>
-              <p className="text-[11px] text-muted-foreground mb-3 max-w-[180px]">
+              <p className="text-[11px] text-muted-foreground mb-3 max-w-[180px] leading-relaxed">
                 {t('Belum ada riwayat perintah AI.')}
               </p>
               <Button
