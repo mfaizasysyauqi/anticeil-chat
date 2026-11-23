@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { isEncryptedMessage, decryptMessage, getDecryptedCachedText } from '@/lib/e2ee';
 
 export function DecryptedMessageText({
@@ -97,12 +98,25 @@ export function renderFormattedMessage(content: string) {
           </code>,
         );
       } else if (token.startsWith('@')) {
+        const isAtlas = token.toLowerCase() === '@atlas' || token.toLowerCase() === '@atlas-agent';
         tokens.push(
           <span
             key={`${lineIdx}-${match.index}`}
-            className="px-1.5 py-0.5 rounded-sm bg-primary/15 text-primary font-medium hover:underline cursor-pointer inline-block"
+            className={cn(
+              'px-1.5 py-0.5 rounded-md font-medium hover:underline cursor-pointer inline-flex items-center gap-1 align-baseline transition-all',
+              isAtlas
+                ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30 font-semibold shadow-xs'
+                : 'bg-primary/15 text-primary rounded-sm'
+            )}
           >
-            {token}
+            {isAtlas && (
+              <img
+                src="/atlas.png"
+                alt="Atlas"
+                className="w-3.5 h-3.5 rounded-full object-cover shrink-0 inline-block align-middle"
+              />
+            )}
+            <span>{token}</span>
           </span>,
         );
       } else if (token.startsWith('http')) {

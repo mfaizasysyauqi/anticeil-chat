@@ -42,7 +42,19 @@ export function MentionAutocomplete({
 
   // 1. Build members list
   const memberOptions = useMemo<MentionOption[]>(() => {
-    return members.map((m) => {
+    const atlasOption: MentionOption = {
+      id: 'special_atlas',
+      type: 'member',
+      label: 'Atlas Agent',
+      value: '@atlas',
+      name: 'Atlas Agent',
+      tag: '@atlas',
+      avatar: '/atlas.png',
+      status: 'online',
+      description: 'Tanya asisten pintar AI Atlas di saluran ini.',
+    };
+
+    const regularMembers = members.map((m) => {
       const cleanName = m.name?.trim() || 'Pengguna';
       const cleanUsername = (m.username?.replace(/^@/, '').trim())
         || (m.email ? m.email.split('@')[0]?.trim() : '')
@@ -51,7 +63,7 @@ export function MentionAutocomplete({
 
       return {
         id: `member_${m.id}`,
-        type: 'member',
+        type: 'member' as MentionOptionType,
         label: cleanName,
         value: `@${cleanUsername}`,
         name: cleanName,
@@ -60,6 +72,8 @@ export function MentionAutocomplete({
         status: m.status || 'offline',
       };
     });
+
+    return [atlasOption, ...regularMembers];
   }, [members]);
 
   // 2. Special Mentions matching Discord
@@ -212,6 +226,11 @@ export function MentionAutocomplete({
                       className="w-6 h-6 rounded-full shrink-0"
                     />
                     <span className="font-semibold text-sm truncate">{item.name}</span>
+                    {item.id === 'special_atlas' && (
+                      <span className="px-1.5 py-0.2 bg-sky-500/20 text-sky-400 border border-sky-500/30 text-[9px] font-bold rounded uppercase tracking-wider shrink-0">
+                        AI
+                      </span>
+                    )}
                   </div>
                   {item.tag && (
                     <span className="text-xs text-muted-foreground/80 font-mono shrink-0">

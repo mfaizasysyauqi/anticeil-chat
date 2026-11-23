@@ -26,6 +26,9 @@ import { DIRECTORY_APPS } from '@/features/colony-settings/components/tabs/direc
 import { notificationsApi } from '@/features/notifications/api/notifications-api';
 import { giftsApi } from '@/features/billing/api/gifts-api';
 import { loadMidtransSnap } from '@/features/billing/api/subscriptions-api';
+import { executeGroqCommand } from '@/features/atlas-agent/services/groq-service';
+import { getStoredGroqConfig } from '@/features/atlas-agent/services/ai-storage';
+import type { AiSystemContext } from '@/features/atlas-agent/types';
 
 function getBotSlashResponse(commandText: string, botName: string): string {
   const lower = commandText.toLowerCase();
@@ -385,6 +388,100 @@ export function useMessageActions({
             }, 600);
           }
         }
+      }
+
+      // ── Atlas AI Agent Mention Handling (@atlas) ──
+      const isAtlasMentioned = /@atlas(-agent)?\b/i.test(trimmedContent);
+      if (isAtlasMentioned && activeChannel) {
+        setTimeout(async () => {
+          try {
+            const cleanPrompt = trimmedContent.replace(/@atlas(-agent)?\b/gi, '').trim() || trimmedContent;
+
+            const aiContext: AiSystemContext = {
+              colonies: activeColony ? [{ id: activeColony.id, name: activeColony.name }] : [],
+              channels: activeChannel ? [{ id: activeChannel.id, name: activeChannel.name, colonyId: activeColony?.id }] : [],
+              friends: (allFriends || []).map((f: any) => ({
+                id: f.id,
+                name: f.name || f.username || 'Pengguna',
+                username: f.username,
+              })),
+              apps: DIRECTORY_APPS.map((a) => ({ id: a.id, name: a.name, description: a.description })),
+              currentUser: currentUser ? {
+                id: currentUser.id,
+                name: currentUser.name,
+                username: currentUser.username,
+                email: currentUser.email,
+              } : undefined,
+            };
+
+            const groqConfig = getStoredGroqConfig();
+            const result = await executeGroqCommand({
+              messages: [
+                {
+                  id: `user_prompt_${Date.now()}`,
+                  role: 'user',
+                  content: cleanPrompt,
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+              context: aiContext,
+              config: groqConfig,
+            });
+
+            const replyContent = result.replyText || 'Halo! Saya Atlas Agent, asisten pintar Anticeil. Ada yang bisa saya bantu?';
+
+            // Optional: execute any direct tool calls from local/groq parsing
+            if (result.toolCalls && result.toolCalls.length > 0 && typeof window !== 'undefined') {
+              for (const tc of result.toolCalls) {
+                if (tc.function?.name === 'launch_application') {
+                  const appId = (tc as any).parsedArgs?.appId;
+                  if (appId === 'apps-view' || appId === 'apps') {
+                    window.location.hash = '#apps';
+                    window.dispatchEvent(new CustomEvent('anticeil_navigate_view', { detail: 'apps' }));
+                  } else if (appId) {
+                    window.dispatchEvent(
+                      new CustomEvent('anticeil_launch_activity', {
+                        detail: {
+                          appId,
+                          channelId: activeChannel?.id,
+                          mode: (tc as any).parsedArgs?.mode || 'channel',
+                        },
+                      }),
+                    );
+                  }
+                }
+              }
+            }
+
+            const botPayload: Partial<ColonyMessage> = {
+              channelId: activeChannel.id,
+              senderId: 'atlas_agent',
+              senderName: 'Atlas Agent',
+              senderEmail: 'atlas@bot.anticeil.com',
+              senderAvatar: '/atlas.png',
+              senderRole: 'bot' as ColonyRole,
+              content: replyContent,
+              replyTo: {
+                id: saved.id,
+                senderId: saved.senderId,
+                senderName: saved.senderName,
+                content: saved.content,
+              },
+            };
+
+            const botMsg = await colonyApi.sendMessage(activeChannel.id, botPayload);
+            setMessagesMap((prev) => {
+              const list = prev[activeChannel.id] || [];
+              if (list.some((m) => m.id === botMsg.id)) return prev;
+              return {
+                ...prev,
+                [activeChannel.id]: [...list, botMsg],
+              };
+            });
+          } catch (agentErr) {
+            console.error('Failed to execute Atlas Agent response:', agentErr);
+          }
+        }, 500);
       }
     } catch (err: any) {
       console.error('Failed to send message', err);

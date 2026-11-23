@@ -193,7 +193,21 @@ export function ChatInputBar({
     if (!isMentionOpen) return [];
     const cleanQ = (mentionQuery || '').toLowerCase().trim();
 
-    const mems: MentionOption[] = members.map((m) => {
+    const atlasOption: MentionOption = {
+      id: 'special_atlas',
+      type: 'member' as const,
+      label: 'Atlas Agent',
+      value: '@atlas',
+      name: 'Atlas Agent',
+      tag: '@atlas',
+      avatar: '/atlas.png',
+      status: 'online',
+      description: 'Tanya asisten pintar AI Atlas di saluran ini.',
+    };
+
+    const isAtlasMatch = !cleanQ || 'atlas'.includes(cleanQ) || 'agent'.includes(cleanQ) || '@atlas'.includes(cleanQ);
+
+    const regularMems: MentionOption[] = members.map((m) => {
       const cleanName = m.name?.trim() || 'Pengguna';
       const cleanUsername = (m.username?.replace(/^@/, '').trim())
         || (m.email ? m.email.split('@')[0]?.trim() : '')
@@ -210,6 +224,11 @@ export function ChatInputBar({
         status: m.status || 'offline',
       };
     }).filter((m) => !cleanQ || m.name.toLowerCase().includes(cleanQ) || m.value.toLowerCase().includes(cleanQ) || (m.tag && m.tag.toLowerCase().includes(cleanQ)));
+
+    const mems: MentionOption[] = [
+      ...(isAtlasMatch ? [atlasOption] : []),
+      ...regularMems,
+    ];
 
     const specials: MentionOption[] = [
       {

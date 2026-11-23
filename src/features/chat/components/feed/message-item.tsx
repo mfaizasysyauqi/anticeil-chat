@@ -13,6 +13,7 @@ import {
   ScreenShare,
   Sparkles,
   Gamepad2,
+  Bot,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
@@ -322,7 +323,12 @@ export function MessageItem({
                         <span className="text-xs font-semibold text-foreground hover:underline cursor-pointer">
                           {act ? act.name : msg.senderName}
                         </span>
-                        {act ? (
+                        {msg.senderId === 'atlas_agent' ? (
+                          <span className="bg-sky-500/20 text-sky-400 border border-sky-500/30 text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] flex items-center gap-1 leading-none shadow-xs uppercase">
+                            <Bot className="w-2.5 h-2.5" />
+                            <span>AI AGENT</span>
+                          </span>
+                        ) : act ? (
                           <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] flex items-center gap-0.5 leading-none shadow-xs">
                             <Check className="w-2.5 h-2.5 stroke-[3]" />
                             <span>APP</span>
