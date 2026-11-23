@@ -744,7 +744,7 @@ export function ColonyRail({
                     : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground',
                 )}
               >
-                <AnticeilLogo className="size-6 transition-colors duration-150" />
+                <img src="/atlas.png" alt="Atlas Agent" className="size-6 object-contain" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">

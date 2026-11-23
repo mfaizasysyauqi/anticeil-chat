@@ -410,7 +410,14 @@ export function ActivityLauncherDialog({
       {/* ── Anticeil Nectar Paywall Modal ──────────────────── */}
       <Dialog open={isUpgradeModalOpen} onOpenChange={setIsUpgradeModalOpen}>
         <DialogContent size="md" className="p-0 bg-background border border-border text-foreground overflow-hidden shadow-2xl">
-          <div className="relative h-32 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-6 flex flex-col justify-end">
+          <div className="relative h-32 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-6 flex flex-col justify-end overflow-hidden">
+            <div className="hidden sm:block absolute right-16 -bottom-2 h-36 w-auto pointer-events-none drop-shadow-lg opacity-90">
+              <img
+                src="/atlas-full.png"
+                alt="Atlas Mascot"
+                className="h-full w-auto object-contain select-none"
+              />
+            </div>
             <div className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-amber-300 animate-spin-slow" />
             </div>

@@ -105,6 +105,15 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         <div className="absolute -top-16 -right-16 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-purple-500/20 rounded-full blur-2xl pointer-events-none" />
 
+        {/* Mascot decoration */}
+        <div className="hidden md:block absolute right-6 -bottom-2 h-44 w-auto pointer-events-none drop-shadow-[0_12px_24px_rgba(0,0,0,0.35)]">
+          <img
+            src="/atlas-full.png"
+            alt="Atlas Mascot"
+            className="h-full w-auto object-contain select-none"
+          />
+        </div>
+
         {/* Heart bookmark top-right */}
         <button
           type="button"

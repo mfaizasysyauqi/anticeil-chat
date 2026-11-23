@@ -63,8 +63,16 @@ export function SendGiftDialog({
         {/* Scrollable Body (Template Dialog Besar) */}
         <div className={cn(LAYOUT_DIALOG_SPACING.BODY_PADDING, 'space-y-5 flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar')}>
           {/* Top Intro Banner */}
-          <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-r from-primary/10 via-accent/30 to-background border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="relative p-3 sm:p-4 rounded-xl bg-gradient-to-r from-primary/10 via-accent/30 to-background border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 overflow-hidden">
+            {/* Mascot decoration */}
+            <div className="hidden sm:block absolute right-44 -bottom-1 h-20 w-auto pointer-events-none drop-shadow-md opacity-90">
+              <img
+                src="/atlas-full.png"
+                alt="Atlas Mascot"
+                className="h-full w-auto object-contain select-none"
+              />
+            </div>
+            <div className="flex items-center gap-3 relative z-10">
               <div className="size-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary text-base shrink-0">
                 🎁
               </div>
