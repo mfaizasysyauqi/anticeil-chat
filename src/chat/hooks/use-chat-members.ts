@@ -1,6 +1,7 @@
 import { useMemo, useEffect } from 'react';
 import type { ColonyChannel, ColonyMember, ColonyRole, Colony } from '../chat-types';
 import { getDmChannelId, saveStoredDmChannels, setClosedDmId } from '../chat-defaults';
+import { api } from '@/lib/api';
 
 export interface UseChatMembersProps {
   members: ColonyMember[];
@@ -169,7 +170,9 @@ export function useChatMembers({
       const memberNames = allMemberIds
         .map((id) => {
           if (currentUser?.id && id === currentUser.id) return currentUser.name || 'Anda';
-          const found = members.find((m) => m.id === id);
+          const found =
+            members.find((m) => m.id === id) ||
+            (friendsList || []).find((f: any) => f.id === id);
           return found?.name || found?.username || id;
         })
         .slice(0, 3)
@@ -197,6 +200,24 @@ export function useChatMembers({
       );
       return updated;
     });
+
+    // Fullstack: persist group channel to server
+    api
+      .post('/v1/colony/channels', {
+        id: gdmId,
+        name: gdmName,
+        description: newGroupChannel.description,
+        category: 'DIRECT MESSAGES',
+        colonyId: 'anticeil',
+        isDirectMessage: true,
+        isGroupDm: true,
+        dmUserIds: allMemberIds,
+        ownerId: currentUser?.id || 'u1',
+        type: 'text',
+      })
+      .catch((err) => {
+        console.warn('Failed to sync group DM with server:', err);
+      });
 
     setActiveColonyId('anticeil');
     setActiveChannelId(gdmId);
@@ -228,6 +249,16 @@ export function useChatMembers({
       );
       return updated;
     });
+
+    // Fullstack: persist update to server
+    api
+      .put(`/v1/colony/channels/${activeChannel.id}`, {
+        dmUserIds: nextMembers,
+        description: `Grup DM dengan ${nextMembers.length} anggota`,
+      })
+      .catch((err) => {
+        console.warn('Failed to sync group DM member update with server:', err);
+      });
   };
 
   // Close / remove DM channel from sidebar

@@ -51,6 +51,8 @@ export interface ChatDialogsPortalProps {
   dmSearchQuery: string;
   setDmSearchQuery: (q: string) => void;
   dmChannels: ColonyChannel[];
+  friends?: any;
+  realFriends?: any[];
   isCreateGroupDmOpen?: boolean;
   setIsCreateGroupDmOpen?: (open: boolean) => void;
   handleCreateGroupDM?: (name: string, memberIds: string[]) => void;
@@ -135,6 +137,8 @@ export function ChatDialogsPortal({
   dmSearchQuery,
   setDmSearchQuery,
   dmChannels,
+  friends,
+  realFriends,
   isCreateGroupDmOpen = false,
   setIsCreateGroupDmOpen,
   handleCreateGroupDM,
@@ -381,7 +385,7 @@ export function ChatDialogsPortal({
         <CreateGroupDmDialog
           open={isCreateGroupDmOpen}
           onOpenChange={setIsCreateGroupDmOpen}
-          friends={members}
+          friends={realFriends && realFriends.length > 0 ? realFriends : (friends?.allFriends || [])}
           currentUser={currentUser}
           onCreateGroupDm={handleCreateGroupDM}
           t={t}

@@ -165,9 +165,25 @@ export function useChatInitLoader({
               });
               saveStoredDmChannels(storedDms);
             }
+
+            // Sync server-persisted group DMs for effective user
+            channelsRes.forEach((c: any) => {
+              if (c.isGroupDm || (c.category === 'DIRECT MESSAGES' && c.id?.startsWith('gdm-'))) {
+                const isMember =
+                  !c.dmUserIds ||
+                  !effectiveUser?.id ||
+                  c.dmUserIds.includes(effectiveUser.id) ||
+                  c.ownerId === effectiveUser.id;
+                if (isMember && !storedDms.some((d) => d.id === c.id)) {
+                  storedDms.push(c);
+                }
+              }
+            });
+            saveStoredDmChannels(storedDms);
+
             const serverChannels = channelsRes.filter(
               (c) =>
-                c.category !== 'DIRECT MESSAGES' && !c.id.startsWith('dm-'),
+                c.category !== 'DIRECT MESSAGES' && !c.id.startsWith('dm-') && !c.id.startsWith('gdm-'),
             );
             const mergedAllChannels = [...storedDms, ...serverChannels];
             setChannels(mergedAllChannels);
