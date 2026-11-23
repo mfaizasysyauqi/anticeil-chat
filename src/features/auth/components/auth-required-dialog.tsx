@@ -120,11 +120,11 @@ export function AuthRequiredDialog({
         </div>
 
         <div className="p-5 sm:p-6 flex flex-col items-center text-center space-y-4">
-          <DialogHeader className="space-y-1 flex flex-col items-center pr-0">
-            <DialogTitle className="text-base font-bold tracking-tight text-foreground">
+          <DialogHeader className="space-y-1 flex flex-col items-center text-center pr-0">
+            <DialogTitle className="text-base font-bold tracking-tight text-foreground text-center">
               {featureTitle || t('Masuk ke Anticeil')}
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground max-w-xs sm:max-w-sm leading-relaxed">
+            <DialogDescription className="text-xs text-muted-foreground max-w-xs sm:max-w-sm leading-relaxed text-center">
               {featureDescription ||
                 t('Pilih akun untuk melanjutkan ke percakapan, colony, dan aktivitas.')}
             </DialogDescription>
@@ -184,8 +184,8 @@ export function AuthRequiredDialog({
 
           {/* Dev / AI Testing Bypass Options (Only shown in Dev / Staging) */}
           {isDevLoginEnabled && (
-            <div className="w-full pt-2 mt-1 border-t border-amber-500/20 text-left space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="w-full pt-2 mt-1 border-t border-amber-500/20 text-center space-y-2">
+              <div className="flex items-center justify-center gap-1.5">
                 <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
                   <Bot className="size-3" />
                   <span>AI Testing / Dev Bypass</span>
@@ -216,7 +216,7 @@ export function AuthRequiredDialog({
           )}
 
           {/* Footer note */}
-          <div className="pt-1.5 border-t border-border/50 w-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/75">
+          <div className="pt-1.5 border-t border-border/50 w-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/75 text-center">
             <Sparkles className="size-3 text-amber-500" />
             <span>{t('Gratis & langsung terhubung ke seluruh fitur')}</span>
           </div>
