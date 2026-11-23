@@ -154,6 +154,8 @@ export function ShopAddProductModal({
             <label className="text-xs font-semibold text-foreground block mb-1.5">
               {newProductForm.category === 'avatar_decoration'
                 ? t('File Animasi Bingkai / Avatar Decoration (GIF / PNG)')
+                : newProductForm.category === 'nameplate'
+                ? t('File Animasi Nameplate / Strip Profil (GIF / PNG / WebP)')
                 : t('File Animasi GIF / Gambar (Upload ke Cloudflare R2)')}
             </label>
             <input
@@ -235,6 +237,90 @@ export function ShopAddProductModal({
                   >
                     <UploadCloud className="w-3.5 h-3.5" />
                     <span>{t('Pilih File Dekorasi (GIF / PNG)')}</span>
+                  </Button>
+                )}
+              </div>
+            ) : newProductForm.category === 'nameplate' ? (
+              /* ── Discord-Style Mannequin Capsule Preview for Nameplates ── */
+              <div className="rounded-xl border border-border/80 bg-gradient-to-b from-card/80 to-muted/20 p-3.5 flex flex-col items-center justify-center space-y-3">
+                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <span>{t('Pratinjau Manekin Nameplate (Discord Style)')}</span>
+                </div>
+
+                {/* Nameplate Strip Container (identical to Discord nameplate mannequin) */}
+                <div
+                  onClick={() => productFileInputRef.current?.click()}
+                  className="relative w-full max-w-[340px] h-14 sm:h-15 rounded-2xl bg-[#111214] border border-border/80 flex items-center px-3.5 gap-3 overflow-hidden shadow-2xl z-10 select-none cursor-pointer group/nameplate transition-transform hover:scale-[1.02]"
+                  title={t('Klik untuk upload / ganti file animasi nameplate')}
+                >
+                  {/* Background Graphic / Animation of the Nameplate */}
+                  {productImagePreview ? (
+                    <img
+                      src={productImagePreview}
+                      alt="Nameplate Preview"
+                      className="absolute inset-0 size-full object-cover pointer-events-none select-none z-0 opacity-95 animate-in fade-in duration-200"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 size-full bg-gradient-to-r from-purple-900/20 via-primary/15 to-blue-900/20 border-2 border-dashed border-primary/30 rounded-2xl pointer-events-none" />
+                  )}
+
+                  {/* Scrim overlay to ensure avatar and text stand out crisp like Discord */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent pointer-events-none z-[1]" />
+
+                  {/* Left Mannequin Circular Avatar with Anticeil Logo */}
+                  <div className="relative size-8 sm:size-9 rounded-full bg-[#2b2d31] border border-black/40 flex items-center justify-center shrink-0 z-10 shadow-md">
+                    <div className="size-4.5 sm:size-5 text-muted-foreground/60 flex items-center justify-center pointer-events-none">
+                      <AnticeilLogo className="size-full fill-current" />
+                    </div>
+                    {/* Status Dot */}
+                    <div className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-[#23a55a] border-2 border-[#111214]" />
+                  </div>
+
+                  {/* Translucent Rounded Pill Placeholder for Username (Exactly like Discord) */}
+                  <div className="w-28 sm:w-36 h-4 sm:h-4.5 rounded-full bg-white/20 backdrop-blur-md z-10" />
+                </div>
+
+                <p className="text-[10px] text-muted-foreground text-center max-w-[300px] leading-tight">
+                  {productImagePreview
+                    ? t('Desain nameplate terpasang pada strip profil dengan manekin logo Anticeil.')
+                    : t('Klik strip manekin di atas atau tombol di bawah untuk upload desain nameplate.')}
+                </p>
+
+                {/* Actions / Upload Bar */}
+                {productImagePreview ? (
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => productFileInputRef.current?.click()}
+                      className="h-7 text-xs gap-1.5 shadow-md cursor-pointer"
+                    >
+                      <UploadCloud className="w-3.5 h-3.5" />
+                      <span>{t('Ganti File')}</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={onRemoveProductImage}
+                      className="h-7 text-xs gap-1.5 shadow-md cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>{t('Hapus')}</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => productFileInputRef.current?.click()}
+                    className="h-7 text-xs gap-1.5 border-dashed border-primary/50 text-primary hover:bg-primary/10 cursor-pointer"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    <span>{t('Pilih File Nameplate (GIF / PNG)')}</span>
                   </Button>
                 )}
               </div>

@@ -79,24 +79,41 @@ export function ShopItemModal({
               )}
             </div>
           ) : item.category === 'nameplate' ? (
-            <div className="w-[90%] h-14 rounded-xl bg-card border border-border/80 p-2.5 flex items-center gap-3 relative overflow-hidden shadow-2xl z-10">
+            <div className="relative w-full max-w-[340px] h-14 sm:h-15 rounded-2xl bg-[#111214] border border-border/80 flex items-center px-3.5 gap-3 overflow-hidden shadow-2xl z-10 select-none">
               {(item.gifUrl || item.previewIcon) && (
                 <img
                   src={item.gifUrl || item.previewIcon}
                   alt={item.name}
-                  className="absolute inset-0 size-full object-cover opacity-85 mix-blend-screen pointer-events-none select-none"
+                  className="absolute inset-0 size-full object-cover opacity-95 pointer-events-none select-none z-0"
                 />
               )}
-              <div className="size-8 rounded-full bg-[#1e1f22] border border-border flex items-center justify-center p-1.5 text-muted-foreground z-10 shrink-0 select-none">
-                <AnticeilLogo className="size-full fill-current" />
+              {/* Scrim gradient for contrast */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent pointer-events-none z-[1]" />
+
+              {/* Mannequin Avatar with Anticeil Logo and status dot */}
+              <div className="relative size-8 sm:size-9 rounded-full bg-[#2b2d31] border border-black/40 flex items-center justify-center shrink-0 z-10 shadow-md">
+                {currentUser?.avatar ? (
+                  <img src={currentUser.avatar} alt="User Avatar" className="size-full rounded-full object-cover" />
+                ) : (
+                  <div className="size-4.5 sm:size-5 text-muted-foreground/60 flex items-center justify-center pointer-events-none select-none">
+                    <AnticeilLogo className="size-full fill-current" />
+                  </div>
+                )}
+                <div className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-[#23a55a] border-2 border-[#111214]" />
               </div>
-              <div className="min-w-0 z-10 space-y-0.5">
-                <div className="text-xs font-bold text-white drop-shadow-md flex items-center gap-2 leading-none">
-                  <span>{currentUser?.name || 'Username Anda'}</span>
-                  <span className="text-[8px] px-1.5 py-0.5 rounded bg-primary/40 text-primary-foreground font-bold">NAMECARD</span>
+
+              {/* Username display or Discord-style rounded placeholder pill */}
+              {currentUser?.name ? (
+                <div className="min-w-0 z-10 space-y-0.5">
+                  <div className="text-xs font-bold text-white drop-shadow-md flex items-center gap-2 leading-none">
+                    <span>{currentUser.name}</span>
+                    <span className="text-[8px] px-1.5 py-0.5 rounded bg-primary/40 text-primary-foreground font-bold">NAMECARD</span>
+                  </div>
+                  <p className="text-[10px] text-white/70 leading-none">Pratinjau tampilan strip namecard animasi di chat</p>
                 </div>
-                <p className="text-[10px] text-white/70 leading-none">Pratinjau tampilan strip namecard animasi di chat</p>
-              </div>
+              ) : (
+                <div className="w-28 sm:w-36 h-4 sm:h-4.5 rounded-full bg-white/20 backdrop-blur-md z-10" />
+              )}
             </div>
           ) : (
             <div className="absolute inset-0 size-full overflow-hidden">
