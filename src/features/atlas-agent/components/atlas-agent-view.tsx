@@ -56,15 +56,15 @@ import {
 import { useTranslation } from '@/core/i18n';
 import { executeGroqCommand } from '../services/groq-service';
 import { GroqSettingsDialog } from './groq-settings-dialog';
-import { AiCommandCenterHeader } from './ai-command-center-header';
+import { AtlasAgentHeader } from './atlas-agent-header';
 import { AiMarkdown } from './ai-markdown';
 import { ArtifactViewer } from './artifact-viewer';
 import { AiPromptCard, AI_COMMAND_PROMPTS } from './ai-prompt-card';
 import { parseArtifactsFromMessage } from '../utils/artifact-parser';
-import { useAiCommandCenterContext } from '../context/ai-command-center-context';
+import { useAtlasAgentContext } from '../context/atlas-agent-context';
 import { useResponsive } from '@/core/hooks/use-responsive';
 
-export interface AiCommandCenterViewProps {
+export interface AtlasAgentViewProps {
   sessions?: AiSession[];
   activeSessionId?: string | null;
   onCreateNewSession?: (title?: string) => Promise<AiSession> | AiSession;
@@ -93,11 +93,11 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function AiCommandCenterView(props: AiCommandCenterViewProps) {
+export function AtlasAgentView(props: AtlasAgentViewProps) {
   const { t } = useTranslation();
   let contextValue: any = null;
   try {
-    contextValue = useAiCommandCenterContext();
+    contextValue = useAtlasAgentContext();
   } catch {}
 
   const sessions = props.sessions || contextValue?.sessions || [];
@@ -533,7 +533,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 min-w-0 w-full bg-background relative overflow-hidden select-none">
       {/* 1. App Bar Header */}
-      <AiCommandCenterHeader
+      <AtlasAgentHeader
         onOpenSidebar={onOpenSidebar}
         horizontalPadding={horizontalPadding}
         onClearSessionMessages={activeSession ? () => onClearSessionMessages(activeSession.id) : undefined}
@@ -565,18 +565,21 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
             {messages.length === 0 ? (
               <div className="max-w-2xl mx-auto py-8 sm:py-12 text-center space-y-6">
                 <div className="flex justify-center">
-                  <EmptyIconBadge size="default">
-                    <Sparkles className="stroke-[1.8]" />
-                  </EmptyIconBadge>
+                  <div className="relative size-20 sm:size-24 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center p-2 shadow-inner group overflow-hidden">
+                    <img
+                      src="/atlas.png"
+                      alt="Atlas Mascot"
+                      className="size-full object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-110"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-                    Pusat Komando Cerdas Anticeil
+                    Atlas Agent - Asisten Pintar Anticeil
                   </h1>
                   <p className="text-xs sm:text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                    Kendalikan seluruh ekosistem Anticeil dalam hitungan milidetik dengan bahasa alami.
-                    Luncurkan aplikasi mandiri, buat Artifact interaktif (game, kalkulator, UI), atau kirim pesan langsung.
+                    Halo! Saya Atlas, maskot dan asisten pintar Anticeil. Tanyakan apa saja, perintahkan untuk membuka aplikasi, membuat Artifact interaktif (game, kalkulator, UI), atau mengelola ekosistem Anticeil Anda!
                   </p>
                 </div>
 
@@ -671,7 +674,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                 </div>
                 <div className="flex items-center gap-1.5 bg-card px-3 py-2 rounded-xl border border-border/40">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                  <span>Memproses perintah dengan Groq LPU...</span>
+                  <span>Atlas sedang memproses perintah dengan Groq LPU...</span>
                 </div>
               </div>
             )}
@@ -764,7 +767,7 @@ export function AiCommandCenterView(props: AiCommandCenterViewProps) {
                     handleSendMessage();
                   }
                 }}
-                placeholder="Ketik perintah (contoh: 'buka whiteboard', 'kirim pesan ke #general colony as: halo')..."
+                placeholder="Tanya atau perintahkan Atlas (contoh: 'buatkan kalkulator', 'buka whiteboard', 'kirim DM')..."
                 className={cn(
                   "flex-1 resize-none border-0 bg-transparent py-2 px-2 text-xs leading-5 focus:outline-hidden placeholder:text-muted-foreground/60 transition-colors custom-scrollbar",
                   !inputPrompt
@@ -1072,3 +1075,9 @@ function ToolExecutionCard({
 
   return null;
 }
+
+export default AtlasAgentView;
+
+// Backward-compatibility aliases
+export const AiCommandCenterView = AtlasAgentView;
+export type AiCommandCenterViewProps = AtlasAgentViewProps;

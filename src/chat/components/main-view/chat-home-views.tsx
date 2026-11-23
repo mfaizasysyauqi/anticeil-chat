@@ -10,7 +10,7 @@ import { AppsView } from '@/features/apps';
 import { ColoniesView } from '@/features/colonies';
 import { ShopView } from '@/features/shop';
 import { QuestsView } from '@/features/quests';
-import { AiCommandCenterView } from '@/features/ai-command-center';
+import { AtlasAgentView, AiCommandCenterView } from '@/features/atlas-agent';
 import { messagesApi } from '@/features/chat/api/messages-api';
 import type { ColonyChannel, Colony, ColonyMember } from '../../chat-types';
 

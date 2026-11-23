@@ -7,14 +7,14 @@ import {
   setActiveSessionId,
 } from '../services/ai-storage';
 
-export const aiCommandCenterApi = {
+export const atlasAgentApi = {
   /**
    * Read all saved chat sessions (Fullstack with offline/local fallback)
    * Guaranteed: NO dummy sessions injected. Returns [] when empty.
    */
   async getSessions(): Promise<AiSession[]> {
     try {
-      const res = await api.get<AiSession[]>('/v1/ai-command-center/sessions');
+      const res = await api.get<AiSession[]>('/v1/atlas-agent/sessions');
       if (Array.isArray(res)) {
         saveStoredSessions(res);
         return res;
@@ -26,13 +26,13 @@ export const aiCommandCenterApi = {
   },
 
   /**
-   * Create a new AI Command Center session
+   * Create a new Atlas Agent session
    */
   async createSession(title?: string): Promise<AiSession> {
     const safeTitle =
       typeof title === 'string' && title.trim() ? title.trim() : 'Percakapan Baru';
     const newSession: AiSession = {
-      id: `ai_sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: `atlas_sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       title: safeTitle,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -40,7 +40,7 @@ export const aiCommandCenterApi = {
     };
 
     try {
-      const res = await api.post<AiSession>('/v1/ai-command-center/sessions', newSession);
+      const res = await api.post<AiSession>('/v1/atlas-agent/sessions', newSession);
       if (res && res.id) {
         const stored = getStoredSessions();
         saveStoredSessions([res, ...stored.filter((s) => s.id !== res.id)]);
@@ -66,7 +66,7 @@ export const aiCommandCenterApi = {
     if (!cleanTitle) return null;
 
     try {
-      await api.patch(`/v1/ai-command-center/sessions/${sessionId}`, { title: cleanTitle });
+      await api.patch(`/v1/atlas-agent/sessions/${sessionId}`, { title: cleanTitle });
     } catch {}
 
     const stored = getStoredSessions();
@@ -100,78 +100,83 @@ export const aiCommandCenterApi = {
     }
 
     try {
-      await api.put(`/v1/ai-command-center/sessions/${sessionId}/messages`, {
+      await api.put(`/v1/atlas-agent/sessions/${sessionId}/messages`, {
         messages,
         title: newTitle,
       });
     } catch {}
 
-    const updatedList = stored.map((s) => {
-      if (s.id !== sessionId) return s;
-      return {
-        ...s,
-        title: newTitle || s.title,
-        messages,
-        updatedAt: new Date().toISOString(),
-      };
-    });
-
-    saveStoredSessions(updatedList);
-  },
-
-  /**
-   * Toggle pinned state
-   */
-  async togglePinSession(sessionId: string): Promise<boolean> {
-    const stored = getStoredSessions();
-    const existing = stored.find((s) => s.id === sessionId);
-    const newPinned = !existing?.isPinned;
-
-    try {
-      await api.patch(`/v1/ai-command-center/sessions/${sessionId}/pin`, { isPinned: newPinned });
-    } catch {}
-
-    const updatedList = stored.map((s) =>
-      s.id === sessionId ? { ...s, isPinned: newPinned } : s,
-    );
-    saveStoredSessions(updatedList);
-    return newPinned;
-  },
-
-  /**
-   * Delete session permanently (Fullstack Delete CRUD)
-   */
-  async deleteSession(sessionId: string): Promise<boolean> {
-    try {
-      await api.delete(`/v1/ai-command-center/sessions/${sessionId}`);
-    } catch {}
-
-    const stored = getStoredSessions();
-    const filtered = stored.filter((s) => s.id !== sessionId);
-    saveStoredSessions(filtered);
-
-    if (getActiveSessionId() === sessionId) {
-      const nextId = filtered[0]?.id || null;
-      if (nextId) {
-        setActiveSessionId(nextId);
-      } else {
-        localStorage.removeItem('anticeil_active_ai_session_id');
+    const updated = stored.map((s) => {
+      if (s.id === sessionId) {
+        return {
+          ...s,
+          messages,
+          title: newTitle || s.title,
+          updatedAt: new Date().toISOString(),
+        };
       }
-    }
-
-    return true;
+      return s;
+    });
+    saveStoredSessions(updated);
   },
 
   /**
-   * Clear messages within a session
+   * Clear all messages in a session
    */
   async clearSessionMessages(sessionId: string): Promise<void> {
     try {
-      await api.delete(`/v1/ai-command-center/sessions/${sessionId}/messages`);
+      await api.delete(`/v1/atlas-agent/sessions/${sessionId}/messages`);
     } catch {}
 
     const stored = getStoredSessions();
-    const updatedList = stored.map((s) => (s.id === sessionId ? { ...s, messages: [] } : s));
-    saveStoredSessions(updatedList);
+    const updated = stored.map((s) => {
+      if (s.id === sessionId) {
+        return { ...s, messages: [], updatedAt: new Date().toISOString() };
+      }
+      return s;
+    });
+    saveStoredSessions(updated);
+  },
+
+  /**
+   * Delete an entire session
+   */
+  async deleteSession(sessionId: string): Promise<void> {
+    try {
+      await api.delete(`/v1/atlas-agent/sessions/${sessionId}`);
+    } catch {}
+
+    const stored = getStoredSessions();
+    const updated = stored.filter((s) => s.id !== sessionId);
+    saveStoredSessions(updated);
+
+    const activeId = getActiveSessionId();
+    if (activeId === sessionId) {
+      const nextActive = updated[0]?.id || null;
+      setActiveSessionId(nextActive);
+    }
+  },
+
+  /**
+   * Toggle pin status for a session
+   */
+  async togglePinSession(sessionId: string): Promise<void> {
+    const stored = getStoredSessions();
+    const updated = stored.map((s) => {
+      if (s.id === sessionId) {
+        return { ...s, isPinned: !s.isPinned };
+      }
+      return s;
+    });
+    saveStoredSessions(updated);
+
+    try {
+      const target = updated.find((s) => s.id === sessionId);
+      if (target) {
+        await api.patch(`/v1/atlas-agent/sessions/${sessionId}`, { isPinned: target.isPinned });
+      }
+    } catch {}
   },
 };
+
+export const aiCommandCenterApi = atlasAgentApi;

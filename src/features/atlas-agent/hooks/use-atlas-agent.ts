@@ -5,9 +5,9 @@ import {
   getActiveSessionId,
   setActiveSessionId as storeActiveSessionId,
 } from '../services/ai-storage';
-import { aiCommandCenterApi } from '../api/ai-command-center-api';
+import { atlasAgentApi } from '../api/atlas-agent-api';
 
-export function useAiCommandCenter() {
+export function useAtlasAgent() {
   const [sessions, setSessions] = useState<AiSession[]>(() => {
     // Read cleanly from local storage without any dummy session injection
     return getStoredSessions();
@@ -36,7 +36,7 @@ export function useAiCommandCenter() {
       return;
     }
 
-    aiCommandCenterApi.getSessions().then((fetched) => {
+    atlasAgentApi.getSessions().then((fetched) => {
       if (!isMounted) return;
       if (Array.isArray(fetched)) {
         setSessions(fetched);
@@ -82,7 +82,7 @@ export function useAiCommandCenter() {
   // Fullstack Create Session
   const handleCreateNewSession = useCallback(async (title?: string) => {
     const safeTitle = typeof title === 'string' && title.trim() ? title.trim() : 'Percakapan Baru';
-    const newSession = await aiCommandCenterApi.createSession(safeTitle);
+    const newSession = await atlasAgentApi.createSession(safeTitle);
     setSessions((prev) => [newSession, ...prev.filter((s) => s.id !== newSession.id)]);
     setActiveSessionId(newSession.id);
     storeActiveSessionId(newSession.id);
@@ -91,7 +91,7 @@ export function useAiCommandCenter() {
 
   // Fullstack Update Session Title (Rename)
   const handleRenameSession = useCallback(async (sessionId: string, newTitle: string) => {
-    const updated = await aiCommandCenterApi.updateSessionTitle(sessionId, newTitle);
+    const updated = await atlasAgentApi.updateSessionTitle(sessionId, newTitle);
     if (updated) {
       setSessions((prev) =>
         prev.map((s) => (s.id === sessionId ? { ...s, title: updated.title } : s)),
@@ -102,7 +102,7 @@ export function useAiCommandCenter() {
   // Fullstack Update Messages
   const handleUpdateSessionMessages = useCallback(
     async (sessionId: string, messages: AiMessage[]) => {
-      await aiCommandCenterApi.updateSessionMessages(sessionId, messages);
+      await atlasAgentApi.updateSessionMessages(sessionId, messages);
 
       setSessions((prev) =>
         prev.map((s) => {
@@ -130,7 +130,7 @@ export function useAiCommandCenter() {
 
   // Fullstack Clear Session Messages
   const handleClearSessionMessages = useCallback(async (sessionId: string) => {
-    await aiCommandCenterApi.clearSessionMessages(sessionId);
+    await atlasAgentApi.clearSessionMessages(sessionId);
     setSessions((prev) =>
       prev.map((s) => (s.id === sessionId ? { ...s, messages: [] } : s)),
     );
@@ -139,7 +139,7 @@ export function useAiCommandCenter() {
   // Fullstack Delete Session
   const handleDeleteSession = useCallback(
     async (sessionId: string) => {
-      await aiCommandCenterApi.deleteSession(sessionId);
+      await atlasAgentApi.deleteSession(sessionId);
       setSessions((prev) => {
         const remaining = prev.filter((s) => s.id !== sessionId);
         if (activeSessionId === sessionId) {
@@ -159,9 +159,9 @@ export function useAiCommandCenter() {
 
   // Fullstack Toggle Pin
   const handleTogglePinSession = useCallback(async (sessionId: string) => {
-    const newPinned = await aiCommandCenterApi.togglePinSession(sessionId);
+    await atlasAgentApi.togglePinSession(sessionId);
     setSessions((prev) =>
-      prev.map((s) => (s.id === sessionId ? { ...s, isPinned: newPinned } : s)),
+      prev.map((s) => (s.id === sessionId ? { ...s, isPinned: !s.isPinned } : s)),
     );
   }, []);
 
@@ -179,3 +179,6 @@ export function useAiCommandCenter() {
     setIsGroqSettingsOpen,
   };
 }
+
+// Backward compatibility alias
+export const useAiCommandCenter = useAtlasAgent;

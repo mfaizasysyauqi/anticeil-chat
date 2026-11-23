@@ -74,9 +74,13 @@ export function getActiveSessionId(): string | null {
   return localStorage.getItem(STORAGE_KEY_ACTIVE_SESSION);
 }
 
-export function setActiveSessionId(id: string): void {
+export function setActiveSessionId(id: string | null): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY_ACTIVE_SESSION, id);
+  if (!id) {
+    localStorage.removeItem(STORAGE_KEY_ACTIVE_SESSION);
+  } else {
+    localStorage.setItem(STORAGE_KEY_ACTIVE_SESSION, id);
+  }
 }
 
 export function getStoredGroqConfig(): GroqConfig {

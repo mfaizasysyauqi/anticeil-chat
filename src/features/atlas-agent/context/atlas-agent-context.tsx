@@ -1,8 +1,8 @@
 import React, { createContext, useContext } from 'react';
-import { useAiCommandCenter } from '../hooks/use-ai-command-center';
+import { useAtlasAgent } from '../hooks/use-atlas-agent';
 import type { AiSession, AiMessage } from '../types';
 
-interface AiCommandCenterContextValue {
+export interface AtlasAgentContextValue {
   sessions: AiSession[];
   activeSessionId: string | null;
   setActiveSessionId: (id: string | null) => void;
@@ -16,21 +16,26 @@ interface AiCommandCenterContextValue {
   setIsGroqSettingsOpen: (open: boolean) => void;
 }
 
-const AiCommandCenterContext = createContext<AiCommandCenterContextValue | null>(null);
+const AtlasAgentContext = createContext<AtlasAgentContextValue | null>(null);
 
-export function AiCommandCenterProvider({ children }: { children: React.ReactNode }) {
-  const value = useAiCommandCenter();
+export function AtlasAgentProvider({ children }: { children: React.ReactNode }) {
+  const value = useAtlasAgent();
   return (
-    <AiCommandCenterContext.Provider value={value}>
+    <AtlasAgentContext.Provider value={value}>
       {children}
-    </AiCommandCenterContext.Provider>
+    </AtlasAgentContext.Provider>
   );
 }
 
-export function useAiCommandCenterContext(): AiCommandCenterContextValue {
-  const ctx = useContext(AiCommandCenterContext);
+export function useAtlasAgentContext(): AtlasAgentContextValue {
+  const ctx = useContext(AtlasAgentContext);
   if (!ctx) {
-    throw new Error('useAiCommandCenterContext must be used within AiCommandCenterProvider');
+    throw new Error('useAtlasAgentContext must be used within AtlasAgentProvider');
   }
   return ctx;
 }
+
+// Backward compatibility aliases
+export const AiCommandCenterProvider = AtlasAgentProvider;
+export const useAiCommandCenterContext = useAtlasAgentContext;
+export type { AtlasAgentContextValue as AiCommandCenterContextValue };

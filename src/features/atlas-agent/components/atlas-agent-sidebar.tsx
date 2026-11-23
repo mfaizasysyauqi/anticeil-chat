@@ -18,9 +18,9 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import type { AiSession } from '../types';
-import { useAiCommandCenterContext } from '../context/ai-command-center-context';
+import { useAtlasAgentContext } from '../context/atlas-agent-context';
 
-export interface AiCommandCenterSidebarProps {
+export interface AtlasAgentSidebarProps {
   sessions?: AiSession[];
   activeSessionId?: string | null;
   onSelectSession?: (id: string) => void;
@@ -35,10 +35,10 @@ export interface AiCommandCenterSidebarProps {
   requireAuth?: (action: () => void, title?: string, desc?: string) => void;
 }
 
-export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
+export function AtlasAgentSidebar(props: AtlasAgentSidebarProps) {
   let contextValue: any = null;
   try {
-    contextValue = useAiCommandCenterContext();
+    contextValue = useAtlasAgentContext();
   } catch {}
 
   const sessions = props.sessions || contextValue?.sessions || [];
@@ -57,8 +57,8 @@ export function AiCommandCenterSidebar(props: AiCommandCenterSidebarProps) {
     if (!currentUser && requireAuth) {
       requireAuth(
         () => onCreateNewSession?.(),
-        t('Obrolan Baru AI'),
-        t('Masuk ke Anticeil untuk membuat obrolan baru dengan AI.'),
+        t('Obrolan Baru Atlas'),
+        t('Masuk ke Anticeil untuk membuat obrolan baru dengan Atlas Agent.'),
       );
       return;
     }
@@ -343,3 +343,8 @@ function SessionItem({
     </div>
   );
 }
+
+// Backward compatibility alias
+export const AiCommandCenterSidebar = AtlasAgentSidebar;
+export type { AtlasAgentSidebarProps as AiCommandCenterSidebarProps };
+

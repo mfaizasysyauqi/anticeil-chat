@@ -748,7 +748,7 @@ export function ColonyRail({
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
-              {t('AI Command Center')}
+              {t('Atlas Agent')}
             </TooltipContent>
           </Tooltip>
         </div>

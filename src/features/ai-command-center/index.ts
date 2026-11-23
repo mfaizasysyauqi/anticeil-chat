@@ -1,13 +1,2 @@
-export * from './types';
-export * from './api/ai-command-center-api';
-export * from './services/ai-storage';
-export * from './services/groq-service';
-export * from './hooks/use-ai-command-center';
-export * from './context/ai-command-center-context';
-export * from './components/ai-command-center-sidebar';
-export * from './components/ai-command-center-view';
-export * from './components/artifact-viewer';
-export * from './components/artifact-card';
-export * from './components/ai-prompt-card';
-export * from './components/groq-settings-dialog';
-export * from './utils/artifact-parser';
+// Re-export all Atlas Agent exports for 100% backward compatibility
+export * from '@/features/atlas-agent';

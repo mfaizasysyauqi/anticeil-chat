@@ -1,7 +1,7 @@
 import React from 'react';
 import { HomeChannelsSidebar } from './home-channels-sidebar';
 import { ColonyChannelsSidebar } from './colony-channels-sidebar';
-import { AiCommandCenterSidebar } from '@/features/ai-command-center';
+import { AtlasAgentSidebar } from '@/features/atlas-agent';
 import type {
   Colony,
   ColonyChannel,
@@ -71,7 +71,7 @@ export function ChannelsSidebar(props: ChannelsSidebarProps) {
   return (
     <div className="flex flex-col h-full bg-sidebar select-none flex-1 min-w-0 overflow-hidden">
       {isAiActive ? (
-        <AiCommandCenterSidebar
+        <AtlasAgentSidebar
           onToggleCollapseSidebar={props.onToggleCollapseSidebar}
           currentUser={currentUser}
           requireAuth={requireAuth}

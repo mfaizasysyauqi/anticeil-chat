@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Menu, Trash2, Code2 } from 'lucide-react';
+import { Trash2, Code2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 
-export interface AiCommandCenterHeaderProps {
+export interface AtlasAgentHeaderProps {
   onOpenSidebar?: () => void;
   horizontalPadding?: string;
   activeSessionTitle?: string;
@@ -22,17 +22,17 @@ export interface AiCommandCenterHeaderProps {
 }
 
 /**
- * Clean AI Command Center App Bar Header
- * Minimal, symmetric, and distraction-free.
+ * Clean Atlas Agent App Bar Header
+ * Minimal, symmetric, and distraction-free with Atlas mascot branding.
  */
-export function AiCommandCenterHeader({
+export function AtlasAgentHeader({
   onOpenSidebar,
   horizontalPadding = LAYOUT_PAGE_SPACING.HORIZONTAL,
   onClearSessionMessages,
   hasMessages = false,
   hasActiveArtifact = false,
   onToggleArtifactPanel,
-}: AiCommandCenterHeaderProps) {
+}: AtlasAgentHeaderProps) {
   const { t } = useTranslation();
 
   return (
@@ -42,13 +42,23 @@ export function AiCommandCenterHeader({
         horizontalPadding
       )}
     >
-      {/* Left: Mobile Sidebar Trigger + Title & Icon */}
+      {/* Left: Mobile Sidebar Trigger + Title & Mascot Icon */}
       <div className="flex items-center gap-2 shrink-0">
         <SidebarNavToggle onClick={onOpenSidebar} />
 
         <div className="flex items-center gap-2 shrink-0">
-          <Sparkles className="w-5 h-5 text-muted-foreground" />
-          <span className="text-sm font-bold text-foreground">{t('AI Command Center')}</span>
+          <div className="size-6 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+            <img
+              src="/atlas.png"
+              alt="Atlas Mascot"
+              className="size-full object-contain"
+              onError={(e) => {
+                // Fallback to emoji if image fails to load
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+          </div>
+          <span className="text-sm font-bold text-foreground">{t('Atlas Agent')}</span>
         </div>
       </div>
 
@@ -101,3 +111,7 @@ export function AiCommandCenterHeader({
     </div>
   );
 }
+
+// Backward compatibility alias
+export const AiCommandCenterHeader = AtlasAgentHeader;
+export type { AtlasAgentHeaderProps as AiCommandCenterHeaderProps };

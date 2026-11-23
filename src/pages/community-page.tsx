@@ -1,14 +1,14 @@
 import React from 'react';
 import { ChatPageContent } from '@/chat/components/chat-page-content';
 import { useColonyPageState } from '@/chat/hooks/use-colony-page-state';
-import { AiCommandCenterProvider } from '@/features/ai-command-center';
+import { AtlasAgentProvider } from '@/features/atlas-agent';
 
 export function CommunityPage() {
   const pageProps = useColonyPageState();
   return (
-    <AiCommandCenterProvider>
+    <AtlasAgentProvider>
       <ChatPageContent {...pageProps} />
-    </AiCommandCenterProvider>
+    </AtlasAgentProvider>
   );
 }
 

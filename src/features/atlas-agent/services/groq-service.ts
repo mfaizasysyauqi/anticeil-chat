@@ -91,7 +91,7 @@ function buildSystemPrompt(context: AiSystemContext): string {
   const friendsList = context.friends.map((f) => `- ${f.name} (@${f.username || f.id})`).join('\n');
   const appsList = context.apps.map((a) => `- ${a.name} (id: ${a.id})`).join('\n');
 
-  return `Kamu adalah "Anticeil AI Command Center", asisten operasional cerdas untuk platform kolaborasi Anticeil.
+  return `Kamu adalah "Atlas Agent", asisten operasional cerdas untuk platform kolaborasi Anticeil yang berwujud maskot semut ramah dan jenius bernama Atlas.
 Tugas utamamu adalah membantu pengguna mengendalikan ekosistem Anticeil secara efisien melalui percakapan alami.
 
 Kamu memiliki akses langsung ke tools berikut:
