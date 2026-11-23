@@ -7,10 +7,13 @@ import {
   Store,
   Compass,
   Calendar,
-  CheckSquare,
+  Backpack,
   PhoneCall,
   Bell,
   Mail,
+  Rocket,
+  Volume2,
+  Columns3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -35,8 +38,8 @@ export interface AppTopTitleBarProps {
  * Discord-style Top Global Title Bar
  * Sits at the very top of the window across the entire width.
  * Displays:
- *  - Left: Subtle Anticeil branding / draggable region
- *  - Center: Current active context (Server name or Home page name)
+ *  - Left: Subtle Anticeil branding / draggable region (visible on all screens including mobile)
+ *  - Center: Current active context (100% consistent text & icon matching the sidebar)
  *  - Right: Global Inbox Popover and Help / Docs trigger
  */
 export function AppTopTitleBar({
@@ -51,17 +54,28 @@ export function AppTopTitleBar({
 }: AppTopTitleBarProps) {
   const { t } = useTranslation();
 
-  // Determine current context title and subtle icon
+  // Determine current context title and icon (100% synchronized with sidebar navigation)
   let title = 'Anticeil';
   let IconNode: React.ReactNode = null;
 
   if (activeColony && !isHome) {
-    title = activeColony.name || 'Server';
-    IconNode = (
-      <span className="size-3.5 rounded bg-primary/20 text-primary font-bold text-[9px] flex items-center justify-center shrink-0">
-        {title.charAt(0).toUpperCase()}
-      </span>
-    );
+    if (activeChannel) {
+      title = activeChannel.name;
+      if (activeChannel.type === 'voice') {
+        IconNode = <Volume2 className="size-3.5 text-muted-foreground shrink-0" />;
+      } else if (activeChannel.type === 'kanban') {
+        IconNode = <Columns3 className="size-3.5 text-muted-foreground shrink-0" />;
+      } else {
+        IconNode = <Hash className="size-3.5 text-muted-foreground shrink-0" />;
+      }
+    } else {
+      title = activeColony.name || t('Server');
+      IconNode = (
+        <span className="size-3.5 rounded bg-primary/20 text-primary font-bold text-[9px] flex items-center justify-center shrink-0">
+          {title.charAt(0).toUpperCase()}
+        </span>
+      );
+    }
   } else if (isAiCommandCenterView || homeView === 'ai') {
     title = 'Atlas Agent';
     IconNode = (
@@ -71,20 +85,23 @@ export function AppTopTitleBar({
     title = t('Teman');
     IconNode = <Users className="size-3.5 text-muted-foreground shrink-0" />;
   } else if (homeView === 'apps') {
-    title = t('Aplikasi & Aktivitas');
+    title = t('Aplikasi');
+    IconNode = <Rocket className="size-3.5 text-muted-foreground shrink-0" />;
+  } else if (homeView === 'colonies' || homeView === 'servers') {
+    title = t('Colony');
     IconNode = <Compass className="size-3.5 text-muted-foreground shrink-0" />;
   } else if (homeView === 'shop') {
-    title = t('Shop Anticeil');
+    title = t('Shop');
     IconNode = <Store className="size-3.5 text-muted-foreground shrink-0" />;
   } else if (homeView === 'quests') {
-    title = t('Misi & Hadiah');
-    IconNode = <Sparkles className="size-3.5 text-muted-foreground shrink-0" />;
+    title = t('Quests');
+    IconNode = <Compass className="size-3.5 text-muted-foreground shrink-0" />;
   } else if (homeView === 'calendar') {
     title = t('Kalender');
     IconNode = <Calendar className="size-3.5 text-muted-foreground shrink-0" />;
   } else if (homeView === 'assignments') {
     title = t('Tugas Saya');
-    IconNode = <CheckSquare className="size-3.5 text-muted-foreground shrink-0" />;
+    IconNode = <Backpack className="size-3.5 text-muted-foreground shrink-0" />;
   } else if (homeView === 'calls') {
     title = t('Panggilan');
     IconNode = <PhoneCall className="size-3.5 text-muted-foreground shrink-0" />;
@@ -96,7 +113,21 @@ export function AppTopTitleBar({
     IconNode = <Bell className="size-3.5 text-muted-foreground shrink-0" />;
   } else if (activeChannel) {
     title = activeChannel.name;
-    IconNode = <Hash className="size-3.5 text-muted-foreground shrink-0" />;
+    if (activeChannel.isGroupDm || activeChannel.id?.startsWith('gdm-')) {
+      IconNode = <Users className="size-3.5 text-muted-foreground shrink-0" />;
+    } else if (
+      activeChannel.isDirectMessage ||
+      activeChannel.id?.startsWith('dm-') ||
+      activeChannel.category === 'DIRECT MESSAGES'
+    ) {
+      IconNode = <span className="text-muted-foreground font-bold text-xs shrink-0 select-none">@</span>;
+    } else if (activeChannel.type === 'voice') {
+      IconNode = <Volume2 className="size-3.5 text-muted-foreground shrink-0" />;
+    } else if (activeChannel.type === 'kanban') {
+      IconNode = <Columns3 className="size-3.5 text-muted-foreground shrink-0" />;
+    } else {
+      IconNode = <Hash className="size-3.5 text-muted-foreground shrink-0" />;
+    }
   }
 
   const handleDocsClick = () => {
@@ -117,16 +148,16 @@ export function AppTopTitleBar({
         className
       )}
     >
-      {/* Left: Window draggable spacing / subtle branding */}
-      <div className="flex items-center gap-1.5 w-24 sm:w-48 shrink-0">
-        <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground/60 hidden sm:inline">
+      {/* Left: Window draggable spacing / subtle branding (always visible including on mobile) */}
+      <div className="flex items-center gap-1.5 w-16 sm:w-48 shrink-0">
+        <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground/60 select-none">
           Anticeil
         </span>
       </div>
 
-      {/* Center: Dynamic Active Page / Server Title (Matching Discord) */}
-      <div className="flex-1 flex items-center justify-center min-w-0 px-2">
-        <div className="flex items-center gap-1.5 max-w-full truncate py-0.5 px-2 rounded hover:bg-muted/30 transition-colors">
+      {/* Center: Dynamic Active Page / Server Title (Matching Discord & 100% consistent with Sidebar) */}
+      <div className="flex-1 flex items-center justify-center min-w-0 px-1 sm:px-2">
+        <div className="flex items-center gap-1.5 max-w-full truncate py-0.5 px-1.5 sm:px-2 rounded hover:bg-muted/30 transition-colors">
           {IconNode}
           <span className="text-[11px] font-semibold text-foreground/80 hover:text-foreground tracking-tight truncate">
             {title}
@@ -135,7 +166,7 @@ export function AppTopTitleBar({
       </div>
 
       {/* Right: Global Actions (Inbox Popover & Help / Docs) */}
-      <div className="flex items-center justify-end gap-1 w-24 sm:w-48 shrink-0">
+      <div className="flex items-center justify-end gap-1 w-16 sm:w-48 shrink-0">
         {/* Global Inbox Popover */}
         <InboxPopover
           triggerClassName="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded"
