@@ -109,7 +109,17 @@ export const appsApi = {
 
   async updateApp(appId: string, updates: Partial<VoiceAppDefinition>): Promise<{ success: boolean; app?: any }> {
     try {
-      const res = await api.put(`/v1/community/activities/catalog/${appId}`, updates);
+      const userEmail = (() => {
+        try {
+          return JSON.parse(localStorage.getItem('currentUser') || '{}')?.email;
+        } catch {
+          return '';
+        }
+      })();
+      const res = await api.put(`/v1/community/activities/catalog/${appId}`, {
+        ...updates,
+        userEmail,
+      });
       return { success: true, app: res };
     } catch {
       return { success: false };

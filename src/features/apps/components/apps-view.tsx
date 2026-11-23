@@ -521,6 +521,7 @@ export function AppsView({
         <AppDetailView
           app={selectedDetailApp}
           allApps={appList}
+          currentUser={currentUser}
           onBack={handleBackFromDetail}
           onLaunchStandalone={handleLaunchStandalone}
           onOpenSendToChannel={handleOpenSendToChannel}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   Play,
@@ -48,6 +48,7 @@ import { appsApi } from '../api/apps-api';
 export interface AppDetailViewProps {
   app: VoiceAppDefinition;
   allApps?: VoiceAppDefinition[];
+  currentUser?: any;
   onBack: () => void;
   onLaunchStandalone: (app: VoiceAppDefinition) => void;
   onOpenSendToChannel: (app: VoiceAppDefinition) => void;
@@ -60,6 +61,7 @@ export interface AppDetailViewProps {
 export function AppDetailView({
   app,
   allApps,
+  currentUser,
   onBack,
   onLaunchStandalone,
   onOpenSendToChannel,
@@ -68,6 +70,24 @@ export function AppDetailView({
   horizontalPadding = LAYOUT_PAGE_SPACING.HORIZONTAL,
   verticalPadding = 'py-4 sm:py-6',
 }: AppDetailViewProps) {
+  // Resolve current logged-in user from prop or fallback to localStorage
+  const effectiveUser = useMemo(() => {
+    if (currentUser && currentUser.email) return currentUser;
+    try {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('currentUser');
+        if (stored) return JSON.parse(stored);
+      }
+    } catch {}
+    return null;
+  }, [currentUser]);
+
+  // Wajib login DAN hanya akun anticeil.official@gmail.com
+  const isAuthorizedAdmin = useMemo(() => {
+    if (!effectiveUser || !effectiveUser.email) return false;
+    return effectiveUser.email.toLowerCase().trim() === 'anticeil.official@gmail.com';
+  }, [effectiveUser]);
+
   const [currentApp, setCurrentApp] = useState<VoiceAppDefinition>(app);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
@@ -153,6 +173,11 @@ export function AppDetailView({
   };
 
   const handleSaveEdit = async () => {
+    if (!isAuthorizedAdmin) {
+      toast.error('Akses ditolak: Hanya akun resmi (anticeil.official@gmail.com) yang dapat mengedit metadata aplikasi.');
+      setIsEditDialogOpen(false);
+      return;
+    }
     setIsSaving(true);
     try {
       const langs = editForm.supportedLanguages
@@ -245,10 +270,12 @@ export function AppDetailView({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)} className="gap-2 cursor-pointer text-xs">
-                <Edit3 className="w-3.5 h-3.5 text-primary" />
-                <span>Edit Deskripsi & Info (DB)</span>
-              </DropdownMenuItem>
+              {isAuthorizedAdmin && (
+                <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)} className="gap-2 cursor-pointer text-xs">
+                  <Edit3 className="w-3.5 h-3.5 text-primary" />
+                  <span>Edit Deskripsi & Info (DB)</span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={handleShare} className="gap-2 cursor-pointer text-xs">
                 <Share2 className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>Salin Tautan Aktivitas</span>
@@ -330,16 +357,18 @@ export function AppDetailView({
 
               {/* Action Buttons: Stacked full-width on mobile, inline on tablet & desktop */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full md:w-auto shrink-0 pt-1 md:pt-0">
-                <Button
-                  size="default"
-                  variant="outline"
-                  onClick={() => setIsEditDialogOpen(true)}
-                  className="h-11 sm:h-10 px-3.5 font-semibold text-xs gap-1.5 cursor-pointer bg-card hover:bg-accent border-border text-muted-foreground hover:text-foreground justify-center shrink-0 shadow-xs"
-                  title="Ubah deskripsi dan metadata aplikasi ini di database"
-                >
-                  <Edit3 className="w-3.5 h-3.5 text-primary" />
-                  <span>Edit Info (DB)</span>
-                </Button>
+                {isAuthorizedAdmin && (
+                  <Button
+                    size="default"
+                    variant="outline"
+                    onClick={() => setIsEditDialogOpen(true)}
+                    className="h-11 sm:h-10 px-3.5 font-semibold text-xs gap-1.5 cursor-pointer bg-card hover:bg-accent border-border text-muted-foreground hover:text-foreground justify-center shrink-0 shadow-xs"
+                    title="Ubah deskripsi dan metadata aplikasi ini di database"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-primary" />
+                    <span>Edit Info (DB)</span>
+                  </Button>
+                )}
 
                 <Button
                   size="default"
@@ -703,133 +732,135 @@ export function AppDetailView({
         </div>
       </ScrollArea>
 
-      {/* ── Dialog Edit Detail Aplikasi (Database Realtime) ────────────────── */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-lg bg-card border-border shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-foreground font-bold text-lg">
-              <Edit3 className="w-5 h-5 text-primary" />
-              <span>Edit Detail Aplikasi (Database)</span>
-            </DialogTitle>
-          </DialogHeader>
+      {/* ── Dialog Edit Detail Aplikasi (Database Realtime - Only for Authorized Admin) ── */}
+      {isAuthorizedAdmin && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-lg bg-card border-border shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-foreground font-bold text-lg">
+                <Edit3 className="w-5 h-5 text-primary" />
+                <span>Edit Detail Aplikasi (Database)</span>
+              </DialogTitle>
+            </DialogHeader>
 
-          <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground block">Judul Aplikasi</label>
-              <Input
-                value={editForm.title}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
-                placeholder="Nama aplikasi..."
-                className="bg-background/80"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground block">Pengembang</label>
+                <label className="text-xs font-semibold text-muted-foreground block">Judul Aplikasi</label>
                 <Input
-                  value={editForm.developer}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, developer: e.target.value }))}
-                  placeholder="Nama pengembang..."
+                  value={editForm.title}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="Nama aplikasi..."
                   className="bg-background/80"
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground block">Pengembang</label>
+                  <Input
+                    value={editForm.developer}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, developer: e.target.value }))}
+                    placeholder="Nama pengembang..."
+                    className="bg-background/80"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground block">Jumlah Colony</label>
+                  <Input
+                    value={editForm.serverCount}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, serverCount: e.target.value }))}
+                    placeholder="Contoh: In 787K colonies"
+                    className="bg-background/80"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground block">Kategori</label>
+                  <select
+                    value={editForm.category}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value as any }))}
+                    className="w-full h-9 rounded-md border border-input bg-background/80 px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
+                  >
+                    <option value="entertainment">Hiburan</option>
+                    <option value="game">Game</option>
+                    <option value="productivity">Utilitas & Produktivitas</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground block">Bahasa (Dipisah koma)</label>
+                  <Input
+                    value={editForm.supportedLanguages}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, supportedLanguages: e.target.value }))}
+                    placeholder="English, US, Bahasa Indonesia"
+                    className="bg-background/80"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground block">Jumlah Colony</label>
-                <Input
-                  value={editForm.serverCount}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, serverCount: e.target.value }))}
-                  placeholder="Contoh: In 787K colonies"
-                  className="bg-background/80"
+                <label className="text-xs font-semibold text-muted-foreground block">Deskripsi Singkat</label>
+                <textarea
+                  rows={2}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder="Deskripsi singkat yang tampil di kartu aplikasi..."
+                  className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground resize-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground block">Overview Lengkap (Apa Itu Aplikasi Ini?)</label>
+                <textarea
+                  rows={3}
+                  value={editForm.overviewLong}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, overviewLong: e.target.value }))}
+                  placeholder="Penjelasan detail apa itu aplikasi ini..."
+                  className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground resize-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground block">Cara Menggunakan</label>
+                <textarea
+                  rows={2}
+                  value={editForm.howToPlay}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, howToPlay: e.target.value }))}
+                  placeholder="Panduan cara menggunakan atau bermain..."
+                  className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground resize-none"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground block">Kategori</label>
-                <select
-                  value={editForm.category}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value as any }))}
-                  className="w-full h-9 rounded-md border border-input bg-background/80 px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
-                >
-                  <option value="entertainment">Hiburan</option>
-                  <option value="game">Game</option>
-                  <option value="productivity">Utilitas & Produktivitas</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground block">Bahasa (Dipisah koma)</label>
-                <Input
-                  value={editForm.supportedLanguages}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, supportedLanguages: e.target.value }))}
-                  placeholder="English, US, Bahasa Indonesia"
-                  className="bg-background/80"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground block">Deskripsi Singkat</label>
-              <textarea
-                rows={2}
-                value={editForm.description}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
-                placeholder="Deskripsi singkat yang tampil di kartu aplikasi..."
-                className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground resize-none"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground block">Overview Lengkap (Apa Itu Aplikasi Ini?)</label>
-              <textarea
-                rows={3}
-                value={editForm.overviewLong}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, overviewLong: e.target.value }))}
-                placeholder="Penjelasan detail apa itu aplikasi ini..."
-                className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground resize-none"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground block">Cara Menggunakan</label>
-              <textarea
-                rows={2}
-                value={editForm.howToPlay}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, howToPlay: e.target.value }))}
-                placeholder="Panduan cara menggunakan atau bermain..."
-                className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground resize-none"
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-border/50">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditDialogOpen(false)}
-              disabled={isSaving}
-              className="cursor-pointer"
-            >
-              Batal
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              onClick={handleSaveEdit}
-              disabled={isSaving}
-              className="cursor-pointer gap-2"
-            >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              <span>Simpan ke Database</span>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-border/50">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditDialogOpen(false)}
+                disabled={isSaving}
+                className="cursor-pointer"
+              >
+                Batal
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                onClick={handleSaveEdit}
+                disabled={isSaving}
+                className="cursor-pointer gap-2"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                <span>Simpan ke Database</span>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
