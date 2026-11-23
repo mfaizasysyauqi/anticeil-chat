@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { DIALOG_STYLES } from '@/lib/layout-constants';
@@ -61,12 +62,12 @@ export function ShopItemModal({
         {/* Header Preview Banner with Real Animated Cosmetic in Action */}
         <div className="relative h-44 bg-muted/40 flex items-center justify-center p-6 border-b border-border overflow-hidden">
           {item.category === 'avatar_decoration' ? (
-            <div className="relative size-22 rounded-full bg-card border-2 border-border/70 flex items-center justify-center shadow-2xl z-10">
+            <div className="relative size-22 rounded-full bg-[#1e1f22] border-2 border-border/70 flex items-center justify-center shadow-2xl z-10">
               {currentUser?.avatar ? (
                 <img src={currentUser.avatar} alt="User Avatar" className="size-full rounded-full object-cover" />
               ) : (
-                <div className="size-full rounded-full bg-secondary flex items-center justify-center text-muted-foreground/60 font-black text-2xl select-none">
-                  ❄
+                <div className="size-11 text-muted-foreground/45 flex items-center justify-center select-none">
+                  <AnticeilLogo className="size-full fill-current" />
                 </div>
               )}
               {(item.gifUrl || item.previewIcon) && (
@@ -86,8 +87,8 @@ export function ShopItemModal({
                   className="absolute inset-0 size-full object-cover opacity-85 mix-blend-screen pointer-events-none select-none"
                 />
               )}
-              <div className="size-8 rounded-full bg-secondary border border-border flex items-center justify-center text-xs font-black text-muted-foreground z-10 shrink-0">
-                ❄
+              <div className="size-8 rounded-full bg-[#1e1f22] border border-border flex items-center justify-center p-1.5 text-muted-foreground z-10 shrink-0 select-none">
+                <AnticeilLogo className="size-full fill-current" />
               </div>
               <div className="min-w-0 z-10 space-y-0.5">
                 <div className="text-xs font-bold text-white drop-shadow-md flex items-center gap-2 leading-none">

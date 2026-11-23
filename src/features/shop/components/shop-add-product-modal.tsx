@@ -6,6 +6,7 @@ import {
   Trash2,
   Loader2,
   Check,
+  Sparkles,
 } from 'lucide-react';
 import {
   Dialog,
@@ -17,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { FormDropdown } from '@/components/ui/select';
+import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { DIALOG_STYLES } from '@/lib/layout-constants';
@@ -150,7 +152,9 @@ export function ShopAddProductModal({
 
           <div>
             <label className="text-xs font-semibold text-foreground block mb-1.5">
-              {t('File Animasi GIF / Gambar (Upload ke Cloudflare R2)')}
+              {newProductForm.category === 'avatar_decoration'
+                ? t('File Animasi Bingkai / Avatar Decoration (GIF / PNG)')
+                : t('File Animasi GIF / Gambar (Upload ke Cloudflare R2)')}
             </label>
             <input
               ref={productFileInputRef}
@@ -160,7 +164,81 @@ export function ShopAddProductModal({
               className="hidden"
             />
 
-            {productImagePreview ? (
+            {/* ── Discord-Style Mannequin Avatar Preview for Avatar Decorations ── */}
+            {newProductForm.category === 'avatar_decoration' ? (
+              <div className="rounded-xl border border-border/80 bg-gradient-to-b from-card/80 to-muted/20 p-3.5 flex flex-col items-center justify-center space-y-2.5">
+                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <span>{t('Pratinjau Manekin Avatar (Discord Style)')}</span>
+                </div>
+
+                {/* Circular Mannequin Avatar with Anticeil Logo */}
+                <div
+                  onClick={() => productFileInputRef.current?.click()}
+                  className="relative size-24 sm:size-26 rounded-full bg-[#1e1f22] border-2 border-border/80 flex items-center justify-center shadow-2xl z-10 select-none cursor-pointer group/mannequin transition-transform hover:scale-105"
+                  title={t('Klik untuk upload / ganti file dekorasi avatar')}
+                >
+                  {/* Anticeil Logo Silhouette (mirroring Discord Clyde mannequin) */}
+                  <div className="size-12 text-muted-foreground/45 flex items-center justify-center pointer-events-none select-none transition-colors group-hover/mannequin:text-muted-foreground/70">
+                    <AnticeilLogo className="size-full fill-current" />
+                  </div>
+
+                  {/* Overlaid Animated Decoration / Frame */}
+                  {productImagePreview ? (
+                    <img
+                      src={productImagePreview}
+                      alt="Avatar Decoration Preview"
+                      className="absolute -inset-4 sm:-inset-4.5 size-[calc(100%+32px)] sm:size-[calc(100%+36px)] object-contain pointer-events-none select-none z-20 drop-shadow-[0_0_16px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 duration-200"
+                    />
+                  ) : (
+                    <div className="absolute -inset-2.5 rounded-full border-2 border-dashed border-primary/40 pointer-events-none select-none animate-pulse" />
+                  )}
+                </div>
+
+                <p className="text-[10px] text-muted-foreground text-center max-w-[280px] leading-tight">
+                  {productImagePreview
+                    ? t('Bingkai dekorasi dipasang mengelilingi avatar manekin logo Anticeil.')
+                    : t('Klik lingkaran manekin atau tombol di bawah untuk upload animasi bingkai avatar.')}
+                </p>
+
+                {/* Actions / Upload Bar */}
+                {productImagePreview ? (
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => productFileInputRef.current?.click()}
+                      className="h-7 text-xs gap-1.5 shadow-md cursor-pointer"
+                    >
+                      <UploadCloud className="w-3.5 h-3.5" />
+                      <span>{t('Ganti File')}</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={onRemoveProductImage}
+                      className="h-7 text-xs gap-1.5 shadow-md cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>{t('Hapus')}</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => productFileInputRef.current?.click()}
+                    className="h-7 text-xs gap-1.5 border-dashed border-primary/50 text-primary hover:bg-primary/10 cursor-pointer"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    <span>{t('Pilih File Dekorasi (GIF / PNG)')}</span>
+                  </Button>
+                )}
+              </div>
+            ) : productImagePreview ? (
               <div className="relative group rounded-xl border border-border/80 bg-muted/20 overflow-hidden p-2">
                 <div className="relative w-full h-28 rounded-lg overflow-hidden bg-black/50 flex items-center justify-center p-2">
                   <img
