@@ -55,6 +55,23 @@ export function ShopAddProductModal({
 }: ShopAddProductModalProps) {
   const { t } = useTranslation();
 
+  const currentCategoryValue = (() => {
+    const raw = String(newProductForm.category || '').toLowerCase();
+    if (raw.includes('avatar') || raw.includes('bingkai') || raw.includes('frame') || raw === 'avatar_decoration') {
+      return 'avatar_decoration';
+    }
+    if (raw.includes('nameplate') || raw.includes('namecard') || raw === 'nameplate') {
+      return 'nameplate';
+    }
+    if (raw.includes('effect') || raw.includes('overlay') || raw.includes('efek') || raw === 'profile_effect') {
+      return 'profile_effect';
+    }
+    if (raw.includes('bundle') || raw.includes('bundel') || raw === 'bundle') {
+      return 'bundle';
+    }
+    return 'avatar_decoration';
+  })();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={DIALOG_STYLES.MODAL_STANDARD}>
@@ -80,14 +97,15 @@ export function ShopAddProductModal({
           <div className="grid grid-cols-2 gap-3 items-end">
             <FormDropdown
               label={t('Kategori')}
-              value={newProductForm.category}
+              value={currentCategoryValue}
               onChange={(val) => setNewProductForm({ ...newProductForm, category: val as any })}
               size="sm"
+              contentClassName="z-[350]"
               options={[
-                { value: 'avatar_decoration', label: 'Avatar Decorations' },
-                { value: 'nameplate', label: 'Nameplates' },
-                { value: 'profile_effect', label: 'Profile Effects' },
-                { value: 'bundle', label: 'Bundles' },
+                { value: 'avatar_decoration', label: t('Avatar Decorations') },
+                { value: 'nameplate', label: t('Nameplates') },
+                { value: 'profile_effect', label: t('Profile Effects') },
+                { value: 'bundle', label: t('Bundles') },
               ]}
             />
 

@@ -100,7 +100,7 @@ export function FormDropdown({
 
         <SelectContent
           className={cn(
-            'border-border/80 bg-popover/95 text-popover-foreground shadow-2xl backdrop-blur-md',
+            'border-border/80 bg-popover/95 text-popover-foreground shadow-2xl backdrop-blur-md z-[300]',
             contentClassName
           )}
         >

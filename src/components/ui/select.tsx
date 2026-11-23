@@ -27,6 +27,7 @@ function SelectTrigger({
   className,
   children,
   size = 'default',
+  type = 'button',
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: 'default' | 'sm' | 'xs';
@@ -39,6 +40,7 @@ function SelectTrigger({
 
   return (
     <SelectPrimitive.Trigger
+      type={type}
       data-slot="select-trigger"
       className={cn(
         'group flex w-full items-center justify-between gap-2 rounded-lg border border-border/80 bg-muted/40 hover:bg-muted/70 font-medium text-foreground transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 select-none [&>span]:line-clamp-1',
@@ -66,7 +68,7 @@ function SelectContent({
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          'relative z-[100] max-h-96 min-w-[8rem] overflow-hidden rounded-xl border border-border/90 bg-popover text-popover-foreground shadow-2xl backdrop-blur-md dark:border-border/60 dark:shadow-[0_12px_36px_rgba(0,0,0,0.65)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+          'relative z-[300] max-h-96 min-w-[8rem] overflow-hidden rounded-xl border border-border/90 bg-popover text-popover-foreground shadow-2xl backdrop-blur-md dark:border-border/60 dark:shadow-[0_12px_36px_rgba(0,0,0,0.65)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
           position === 'popper' &&
             'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
           className
