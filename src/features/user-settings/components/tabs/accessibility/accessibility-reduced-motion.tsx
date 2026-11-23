@@ -35,7 +35,7 @@ export function AccessibilityReducedMotion({
   const { t } = useTranslation();
 
   return (
-    <div id="accessibility-reduced-motion" className="scroll-mt-6 space-y-6 pt-6">
+    <div id="accessibility-reduced-motion" className="scroll-mt-[230px] space-y-6 pt-6">
       <div>
         <h2 className="text-xl font-bold text-foreground">{t('Reduced Motion')}</h2>
       </div>

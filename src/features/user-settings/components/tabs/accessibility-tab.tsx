@@ -136,7 +136,7 @@ export function AccessibilityTab({
   return (
     <div className="space-y-8 divide-y divide-border/50 pb-8">
       {/* Top Sticky Interactive Live Chat Message Preview Box */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pt-1 pb-4 -mx-3.5 sm:-mx-4 md:-mx-5 lg:-mx-6 px-3.5 sm:px-4 md:px-5 lg:px-6 border-b border-border/50 shadow-xs">
+      <div className="sticky top-0 z-20 bg-background -mt-3.5 sm:-mt-4 md:-mt-5 pt-3.5 sm:pt-4 md:pt-5 pb-3.5 -mx-3.5 sm:-mx-4 md:-mx-5 lg:-mx-6 px-3.5 sm:px-4 md:px-5 lg:px-6 border-b border-border/70 shadow-xs">
         <AccessibilityPreview
           enableHighContrast={enableHighContrast}
           saturationLevel={saturationLevel}
@@ -152,7 +152,7 @@ export function AccessibilityTab({
       </div>
 
             {/* SUB-SECTION 1: TEXT READABILITY */}
-            <div id="accessibility-text-readability" className="scroll-mt-6 space-y-6 pt-6">
+            <div id="accessibility-text-readability" className="scroll-mt-[230px] space-y-6 pt-6">
               <div>
                 <h2 className="text-xl font-bold text-foreground">{t('Text Readability')}</h2>
               </div>
@@ -222,7 +222,7 @@ export function AccessibilityTab({
             </div>
 
             {/* SUB-SECTION 2: VISUAL DENSITY */}
-            <div id="accessibility-visual-density" className="scroll-mt-6 space-y-6 pt-6">
+            <div id="accessibility-visual-density" className="scroll-mt-[230px] space-y-6 pt-6">
               <div>
                 <h2 className="text-xl font-bold text-foreground">{t('Visual Density')}</h2>
               </div>
@@ -237,9 +237,9 @@ export function AccessibilityTab({
                 </div>
                 <div className="space-y-2">
                   {[
-                    { id: 'compact', title: 'Compact' },
-                    { id: 'default', title: 'Default' },
-                    { id: 'spacious', title: 'Spacious' },
+                    { id: 'compact', title: t('Compact') },
+                    { id: 'default', title: t('Default') },
+                    { id: 'spacious', title: t('Spacious') },
                   ].map((d) => {
                     const isSelected = uiDensity === d.id;
                     return (
@@ -281,8 +281,8 @@ export function AccessibilityTab({
                 </div>
                 <div className="space-y-2">
                   {[
-                    { id: 'default', title: 'Default', desc: 'Beautiful, spacious, and shows user avatars' },
-                    { id: 'compact', title: 'Compact', desc: 'Fits more messages on screen at once, hides avatars' },
+                    { id: 'default', title: t('Default'), desc: t('Beautiful, spacious, and shows user avatars') },
+                    { id: 'compact', title: t('Compact'), desc: t('Fits more messages on screen at once, hides avatars') },
                   ].map((m) => {
                     const isSelected = chatMessageDisplay === m.id;
                     return (
@@ -383,7 +383,7 @@ export function AccessibilityTab({
             </div>
 
             {/* SUB-SECTION 3: COLOR & CONTRAST */}
-            <div id="accessibility-color-contrast" className="scroll-mt-6 space-y-6 pt-6">
+            <div id="accessibility-color-contrast" className="scroll-mt-[230px] space-y-6 pt-6">
               <div>
                 <h2 className="text-xl font-bold text-foreground">{t('Color & Contrast')}</h2>
               </div>
@@ -605,7 +605,7 @@ export function AccessibilityTab({
             />
 
             {/* SUB-SECTION 5: AUDIO & SCREEN READER */}
-            <div id="accessibility-audio-screen-reader" className="scroll-mt-6 space-y-6 pt-6">
+            <div id="accessibility-audio-screen-reader" className="scroll-mt-[230px] space-y-6 pt-6">
               <div>
                 <h2 className="text-xl font-bold text-foreground">{t('Audio & Screen Reader')}</h2>
               </div>

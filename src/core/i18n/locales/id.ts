@@ -3172,4 +3172,9 @@ export const idTranslations: Record<string, string> = {
   'Dark & Moody': 'Gelap & Misterius',
   'Accepted Quests': 'Misi Diterima',
   'Quest Diklaim': 'Misi Diklaim',
+  'what happened to all the beans': 'ada apa dengan semua kacangnya?',
+  "here's a link": 'ini tautannya',
+  'Example Button': 'Contoh Tombol',
+  'Beautiful, spacious, and shows user avatars': 'Indah, lega, dan menampilkan avatar pengguna',
+  'Fits more messages on screen at once, hides avatars': 'Memuat lebih banyak pesan sekaligus di layar, menyembunyikan avatar',
 };
