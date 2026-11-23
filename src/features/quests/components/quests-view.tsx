@@ -23,7 +23,7 @@ import {
 import { uploadMediaToR2 } from '@/lib/upload';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { EmptyState } from '@/components/ui/empty';
+import { QuestsEmptyState } from './quests-empty-state';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { QuestsHeader } from './quests-header';
@@ -1048,21 +1048,15 @@ export function QuestsView({
 
             {/* ── Quests Cards Grid (Discord 1:1 Layout) ── */}
               {filteredQuests.length === 0 ? (
-                <div className="py-16 flex flex-col items-center justify-center text-center space-y-4 rounded-xl border border-dashed border-border/80 p-8">
-                  <div className="size-16 rounded-full bg-muted/40 border border-border/60 flex items-center justify-center text-3xl select-none">
-                    🎯
-                  </div>
-                  <div className="space-y-1 max-w-sm">
-                    <h4 className="text-sm font-bold text-foreground">{t('Belum Ada Quest')}</h4>
-                    <p className="text-xs text-muted-foreground">{t('Database quest kosong atau tidak ada quest yang cocok dengan filter pencarian Anda.')}</p>
-                  </div>
-                  {isAdmin && (
-                    <Button size="sm" onClick={handleOpenCreateQuest} className="gap-1.5 text-xs font-semibold cursor-pointer">
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>{t('Tambah Quest Pertama')}</span>
-                    </Button>
-                  )}
-                </div>
+                <QuestsEmptyState
+                  activeTab="all"
+                  searchQuery={searchQuery}
+                  hasActiveFilters={activeFilterCount > 0 || filterCategory !== 'all'}
+                  isAdmin={isAdmin}
+                  onResetSearch={() => setSearchQuery('')}
+                  onResetFilters={handleResetFilters}
+                  onCreateQuest={handleOpenCreateQuest}
+                />
               ) : (
                 <div className={SURFACE_STYLES.CARD_GRID}>
                   {filteredQuests.map((quest) => renderQuestCard(quest))}
@@ -1075,27 +1069,10 @@ export function QuestsView({
           {activeTab === 'accepted' && (
             <div>
               {acceptedQuests.length === 0 ? (
-                <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
-                  <div className="size-28 rounded-full bg-muted/40 border border-border/60 flex items-center justify-center text-5xl shadow-inner select-none">
-                    🎯
-                  </div>
-                  <div className="space-y-1.5 max-w-sm">
-                    <h3 className="text-base font-bold text-foreground">
-                      {t('Belum Ada Quest yang Diterima')}
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {t('Ambil dan terima quest dari tab All Quests untuk mulai menjalankan misi dan mengumpulkan Dew gratis.')}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setActiveTab('all')}
-                    className="font-semibold text-xs h-8 px-4 cursor-pointer"
-                  >
-                    {t('Lihat Semua Quest')}
-                  </Button>
-                </div>
+                <QuestsEmptyState
+                  activeTab="accepted"
+                  onGoToAll={() => setActiveTab('all')}
+                />
               ) : (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
@@ -1122,28 +1099,10 @@ export function QuestsView({
           {activeTab === 'claimed' && (
           <div>
             {claimedQuests.length === 0 ? (
-              <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
-                {/* Cute Discord-style empty illustration */}
-                <div className="size-28 rounded-full bg-muted/40 border border-border/60 flex items-center justify-center text-5xl shadow-inner select-none">
-                  🧭
-                </div>
-                <div className="space-y-1.5 max-w-sm">
-                  <h3 className="text-base font-bold text-foreground">
-                    {t("You haven't completed any Quests yet!")}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {t('Selesaikan quest di tab All Quests untuk mengumpulkan Dew gratis dan membuka kosmetik profil.')}
-                  </p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setActiveTab('all')}
-                  className="font-semibold text-xs h-8 px-4 cursor-pointer"
-                >
-                  {t('See all Quests')}
-                </Button>
-              </div>
+              <QuestsEmptyState
+                activeTab="claimed"
+                onGoToAll={() => setActiveTab('all')}
+              />
             ) : (
               <div className="space-y-4">
                 <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 pb-2 border-b border-border/50">

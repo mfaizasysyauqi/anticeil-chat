@@ -35,7 +35,7 @@ import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { FilterToggleButton } from '@/components/ui/filter-toggle-button';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
-import { EmptyState } from '@/components/ui/empty';
+import { ShopEmptyState } from './shop-empty-state';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
@@ -1662,7 +1662,7 @@ export function ShopView({
             </div>
           </div>
         {/* ── Reusable Hero Banner (Matches AppsView YouTube Watch Together layout) ── */}
-        {!searchQuery && (activeTab === 'all' || activeTab === 'featured') && heroCollection && (
+        {!searchQuery && (activeTab === 'all' || activeTab === 'featured') && heroCollection && items.length > 0 && (
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-card to-background border border-primary/20 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 shadow-xl">
             <div className="space-y-2 max-w-xl z-10">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary border border-primary/30">
@@ -1691,7 +1691,7 @@ export function ShopView({
         )}
 
         {/* ── Dew Shop Dedicated Hero Banner ── */}
-        {!searchQuery && activeTab === 'dew' && (
+        {!searchQuery && activeTab === 'dew' && items.length > 0 && (
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500/20 via-card to-background border border-cyan-500/30 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 shadow-xl">
             <div className="space-y-2 max-w-xl z-10">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
@@ -1717,7 +1717,7 @@ export function ShopView({
                 }}
                 className="w-full sm:w-auto font-bold h-9 px-4 gap-1.5 cursor-pointer shadow-md bg-cyan-600 hover:bg-cyan-500 text-white justify-center"
               >
-                <span>🎯</span>
+                <Sparkles className="w-3.5 h-3.5" />
                 <span>{t('Dapatkan Dew dari Quests')}</span>
               </Button>
             </div>
@@ -1728,26 +1728,21 @@ export function ShopView({
 
         {/* ── Content by Section: Consistent Header & Cards ── */}
         {filteredItems.length === 0 ? (
-          <EmptyState
-            icon={<ShoppingBag className="w-8 h-8 stroke-[1.8] text-primary/80" />}
-            title={t('Tidak Ada Item Ditemukan')}
-            description={
+          <ShopEmptyState
+            variant={
               searchQuery
-                ? `Tidak ada item yang cocok dengan "${searchQuery}". Coba kata kunci lain.`
-                : 'Belum ada item yang tersedia di kategori ini.'
+                ? 'search'
+                : activeFilterCount > 0
+                ? 'filter'
+                : (activeTab as any)
             }
-            action={
-              searchQuery ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setSearchQuery('')}
-                  className="h-8 px-4 text-xs font-semibold cursor-pointer"
-                >
-                  {t('Reset Pencarian')}
-                </Button>
-              ) : undefined
-            }
+            searchQuery={searchQuery}
+            selectedApp={selectedApp || undefined}
+            hasActiveFilters={activeFilterCount > 0}
+            isAdmin={isAdmin}
+            onResetSearch={() => setSearchQuery('')}
+            onResetFilters={handleResetFilters}
+            onOpenAddProduct={handleOpenCreateProduct}
           />
         ) : (
           <div className="space-y-4">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, X } from 'lucide-react';
+import { ShopEmptyState } from './shop-empty-state';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useTranslation } from '@/core/i18n';
 import type { ShopItem } from '../api/shop-api';
@@ -35,13 +36,7 @@ export function ShopWishlistModal({
 
         <div className="max-h-[350px] overflow-y-auto p-3 space-y-2 custom-scrollbar">
           {wishlist.length === 0 ? (
-            <div className="py-10 text-center text-xs text-muted-foreground space-y-2">
-              <Heart className="w-8 h-8 mx-auto opacity-30 text-pink-500" />
-              <p>{t('Belum ada item di wishlist Anda.')}</p>
-              <p className="text-[11px] text-muted-foreground/70">
-                {t('Klik ikon hati pada item untuk menyimpannya di sini.')}
-              </p>
-            </div>
+            <ShopEmptyState variant="wishlist" compact />
           ) : (
             wishlist.map((item) => (
               <div
