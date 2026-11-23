@@ -46,11 +46,11 @@ export function AtlasAgentHeader({
         <SidebarNavToggle onClick={onOpenSidebar} />
 
         <div className="flex items-center gap-2 shrink-0">
-          <div className="size-6 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+          <div className="size-6 flex items-center justify-center shrink-0">
             <img
               src="/atlas.png"
               alt="Atlas Mascot"
-              className="size-full object-contain"
+              className="size-full object-contain filter drop-shadow-xs"
               onError={(e) => {
                 // Fallback to emoji if image fails to load
                 (e.target as HTMLElement).style.display = 'none';

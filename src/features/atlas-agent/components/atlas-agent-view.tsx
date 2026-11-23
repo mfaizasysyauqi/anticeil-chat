@@ -565,11 +565,11 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
             {messages.length === 0 ? (
               <div className="max-w-2xl mx-auto py-8 sm:py-12 text-center space-y-6">
                 <div className="flex justify-center">
-                  <div className="relative size-20 sm:size-24 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center p-2 shadow-inner group overflow-hidden">
+                  <div className="relative size-24 sm:size-28 flex items-center justify-center p-1 group">
                     <img
                       src="/atlas.png"
                       alt="Atlas Mascot"
-                      className="size-full object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-110"
+                      className="size-full object-contain filter drop-shadow-[0_8px_16px_rgba(37,99,235,0.25)] transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
                 </div>
@@ -604,8 +604,8 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
                     }`}
                   >
                     {msg.role !== 'user' && (
-                      <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                        <Sparkles className="w-4 h-4" />
+                      <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5 p-0.5 overflow-hidden shadow-2xs">
+                        <img src="/atlas.png" alt="Atlas" className="size-full object-contain" />
                       </div>
                     )}
 
@@ -669,8 +669,8 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
 
             {isLoading && (
               <div className="flex gap-3 items-center text-muted-foreground text-xs py-2">
-                <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4 animate-spin" />
+                <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 p-0.5 overflow-hidden">
+                  <img src="/atlas.png" alt="Atlas" className="size-full object-contain animate-bounce" />
                 </div>
                 <div className="flex items-center gap-1.5 bg-card px-3 py-2 rounded-xl border border-border/40">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
