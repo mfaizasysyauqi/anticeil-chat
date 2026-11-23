@@ -6,6 +6,7 @@ export interface CalendarEvent {
   startTime: string; // ISO string (e.g. 2026-10-28T14:00:00)
   endTime?: string;
   colonyId?: string;
+  hubId?: string;
   hubName?: string;
   channelId?: string;
   channelName?: string;

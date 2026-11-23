@@ -99,6 +99,18 @@ export function useAssignments(initialData: AssignmentItem[] = []) {
     return null;
   };
 
+  const handleUpdateAssignment = async (cardId: string, updates: Partial<AssignmentItem>) => {
+    setAssignments((prev) =>
+      prev.map((c) => (c.id === cardId ? { ...c, ...updates } : c))
+    );
+    try {
+      await assignmentsApi.updateAssignment(cardId, updates as any);
+      toast.success('Tugas berhasil diperbarui.');
+    } catch {
+      toast.error('Gagal memperbarui tugas.');
+    }
+  };
+
   const handleDeleteAssignment = async (cardId: string) => {
     setAssignments((prev) => prev.filter((c) => c.id !== cardId));
     try {
@@ -115,6 +127,7 @@ export function useAssignments(initialData: AssignmentItem[] = []) {
     isLoading,
     handleToggleComplete,
     handleCreateAssignment,
+    handleUpdateAssignment,
     handleDeleteAssignment,
     refetch: fetchAssignments,
   };

@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Filter,
   Trash2,
+  Pencil,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import confetti from 'canvas-confetti';
@@ -23,6 +24,13 @@ import { Separator } from '@/components/ui/separator';
 import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -42,6 +50,7 @@ export interface AssignmentsViewProps {
   colonies: Colony[];
   onOpenBoard?: (colonyId: string, channelId: string) => void;
   onToggleComplete?: (assignmentId: string, isCompleted: boolean) => void;
+  onUpdateAssignment?: (assignmentId: string, updates: Partial<AssignmentItem>) => void;
   onDeleteAssignment?: (assignmentId: string) => void;
   onOpenSidebar: () => void;
   horizontalPadding?: string;
@@ -53,6 +62,7 @@ export function AssignmentsView({
   colonies,
   onOpenBoard,
   onToggleComplete,
+  onUpdateAssignment,
   onDeleteAssignment,
   onOpenSidebar,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
@@ -62,7 +72,43 @@ export function AssignmentsView({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedColonyFilter, setSelectedColonyFilter] = useState('all');
 
+  // Edit task dialog state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<AssignmentItem | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPriority, setEditPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [editColumnId, setEditColumnId] = useState<'todo' | 'in_progress' | 'review' | 'done'>('todo');
+  const [editDueDate, setEditDueDate] = useState('');
+
   const now = dayjs();
+
+  const handleOpenEdit = (item: AssignmentItem) => {
+    setEditingTask(item);
+    setEditTitle(item.title);
+    setEditDescription(item.description || '');
+    setEditPriority(item.priority || 'medium');
+    setEditColumnId((item.columnId as any) || 'todo');
+    setEditDueDate(item.dueDate ? dayjs(item.dueDate).format('YYYY-MM-DD') : '');
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTask || !editTitle.trim()) return;
+
+    onUpdateAssignment?.(editingTask.id, {
+      title: editTitle.trim(),
+      description: editDescription.trim(),
+      priority: editPriority,
+      columnId: editColumnId,
+      dueDate: editDueDate || undefined,
+    });
+
+    setIsEditDialogOpen(false);
+    setEditingTask(null);
+    toast.success('Tugas berhasil diperbarui!');
+  };
 
   const filteredList = assignments.filter((item) => {
     // Search
@@ -335,29 +381,43 @@ export function AssignmentsView({
                     </div>
                   </div>
 
-                  {/* Open in Board & Delete Actions */}
+                  {/* Actions: Buka di Papan, Edit, Delete */}
                   <div className="flex items-center gap-1.5 justify-end shrink-0 pl-8 sm:pl-0">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => onOpenBoard?.(item.colonyId, item.channelId)}
-                      className="h-7 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
+                      className="h-8 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
                     >
                       <span>Buka di Papan</span>
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </Button>
+
+                    {onUpdateAssignment && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenEdit(item)}
+                        className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer gap-1.5"
+                        title="Edit Tugas"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Edit</span>
+                      </Button>
+                    )}
 
                     {onDeleteAssignment && (
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="outline"
+                        size="sm"
                         onClick={() => {
                           onDeleteAssignment(item.id);
                         }}
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer shrink-0"
+                        className="h-8 px-2.5 text-xs text-rose-500 hover:text-rose-400 hover:border-rose-500/50 cursor-pointer gap-1.5"
                         title="Hapus tugas"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Hapus</span>
                       </Button>
                     )}
                   </div>
@@ -368,6 +428,110 @@ export function AssignmentsView({
         </div>
         </div>
       </ScrollArea>
+
+      {/* ── Edit Task Dialog ─────────────────────────────────────── */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md bg-card border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold">Edit Tugas</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Perbarui detail tugas papan Kanban ini.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveEdit} className="space-y-3.5 pt-1">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground/80">Judul Tugas</label>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Judul tugas..."
+                className="h-9 text-xs bg-muted/40 border-border"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground/80">Deskripsi</label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Deskripsi tugas opsional..."
+                rows={3}
+                className="w-full rounded-md border border-border bg-muted/40 px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none text-foreground placeholder:text-muted-foreground"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground/80">Status</label>
+                <Select
+                  value={editColumnId}
+                  onValueChange={(val: any) => setEditColumnId(val)}
+                >
+                  <SelectTrigger className="h-9 text-xs bg-muted/40 border-border">
+                    <SelectValue placeholder="Pilih status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todo">To Do</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="review">Review</SelectItem>
+                    <SelectItem value="done">Done</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground/80">Prioritas</label>
+                <Select
+                  value={editPriority}
+                  onValueChange={(val: any) => setEditPriority(val)}
+                >
+                  <SelectTrigger className="h-9 text-xs bg-muted/40 border-border">
+                    <SelectValue placeholder="Pilih prioritas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground/80">Tenggat Waktu</label>
+              <Input
+                type="date"
+                value={editDueDate}
+                onChange={(e) => setEditDueDate(e.target.value)}
+                className="h-9 text-xs bg-muted/40 border-border text-foreground"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditDialogOpen(false)}
+                className="h-8 text-xs cursor-pointer"
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!editTitle.trim()}
+                className="h-8 text-xs font-semibold cursor-pointer"
+              >
+                Simpan Perubahan
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

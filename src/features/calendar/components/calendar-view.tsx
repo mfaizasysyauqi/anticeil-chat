@@ -16,6 +16,7 @@ import {
   Check,
   Pencil,
   Trash2,
+  ExternalLink,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
@@ -59,6 +60,7 @@ export interface CalendarViewProps {
   onCreateEvent?: (event: Omit<CalendarEvent, 'id'>) => void;
   onUpdateEvent?: (id: string, updates: Partial<CalendarEvent>) => void;
   onDeleteEvent?: (id: string) => void;
+  onNavigateToChannel?: (hubId: string, channelId: string) => void;
   horizontalPadding?: string;
   verticalPadding?: string;
 }
@@ -74,6 +76,7 @@ export function CalendarView({
   onCreateEvent,
   onUpdateEvent,
   onDeleteEvent,
+  onNavigateToChannel,
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: CalendarViewProps) {
@@ -643,6 +646,26 @@ export function CalendarView({
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
+                      {ev.channelId && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const targetColonyId = ev.colonyId || ev.hubId;
+                            if (onNavigateToChannel && targetColonyId) {
+                              onNavigateToChannel(targetColonyId, ev.channelId!);
+                            } else if (onJoinChannel) {
+                              onJoinChannel(ev.channelId!);
+                            }
+                          }}
+                          className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 cursor-pointer"
+                          title={t('Buka Saluran')}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                          <span>{t('Buka Saluran')}</span>
+                        </Button>
+                      )}
+
                       {ev.type === 'meeting' && ev.channelId && (
                         <Button
                           size="sm"

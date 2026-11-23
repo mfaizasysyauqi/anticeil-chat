@@ -43,6 +43,7 @@ export interface ChatHomeViewsProps {
   isAssignmentsView: boolean;
   assignments: AssignmentItem[];
   handleToggleComplete: (id: string) => void;
+  handleUpdateAssignment?: (id: string, updates: Partial<AssignmentItem>) => void;
   handleDeleteAssignment?: (id: string) => void;
   isCallsView: boolean;
   callLogs: CallLogItem[];
@@ -101,6 +102,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   isAssignmentsView,
   assignments,
   handleToggleComplete,
+  handleUpdateAssignment,
   handleDeleteAssignment,
   isCallsView,
   callLogs,
@@ -279,6 +281,12 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
           setActiveChannelId(channelId);
           setActiveCallChannelId(channelId);
         }}
+        onNavigateToChannel={(hubId, channelId) => {
+          if (hubId && hubId !== 'anticeil') {
+            setActiveColonyId(hubId);
+          }
+          setActiveChannelId(channelId);
+        }}
         onOpenSidebar={handleOpenNav}
         onCreateEvent={(event) => {
           if (!currentUser && requireAuth) {
@@ -328,6 +336,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
           setActiveChannelId(channelId);
         }}
         onDeleteAssignment={handleDeleteAssignment}
+        onUpdateAssignment={handleUpdateAssignment}
         onToggleComplete={(id) => {
           if (!currentUser && requireAuth) {
             requireAuth(

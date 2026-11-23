@@ -29,7 +29,7 @@ export function useChatSubsystems({
   const [isColonyEventsModalOpen, setIsColonyEventsModalOpen] = useState(false);
 
   // 2. Assignments
-  const { assignments, setAssignments, handleToggleComplete, handleDeleteAssignment } = useAssignments();
+  const { assignments, setAssignments, handleToggleComplete, handleUpdateAssignment, handleDeleteAssignment } = useAssignments();
 
   // 3. Call Logs
   const { calls: callLogs, handleCreateCallLog } = useCallLogs();
@@ -100,6 +100,7 @@ export function useChatSubsystems({
     assignments,
     setAssignments,
     handleToggleComplete,
+    handleUpdateAssignment,
     handleDeleteAssignment,
     callLogs,
     handleCreateCallLog,

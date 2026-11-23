@@ -21,7 +21,15 @@ export const assignmentsApi = {
 
   updateAssignment: async (
     id: string,
-    data: { columnId?: string; completedAt?: string | null },
+    data: {
+      title?: string;
+      description?: string;
+      columnId?: string;
+      priority?: string;
+      dueDate?: string;
+      completedAt?: string | null;
+      isCompleted?: boolean;
+    },
   ): Promise<{ success: boolean; id: string }> => {
     return api.put(`/v1/community/assignments/${id}`, data);
   },

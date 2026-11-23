@@ -23,6 +23,34 @@ export function useCalendarEvents(initialData: CalendarEvent[] = []) {
 
   useEffect(() => {
     fetchEvents();
+
+    // Listen to real-time channel & colony deletion to keep calendar events clean
+    const handleChannelDeleted = (e: any) => {
+      const deletedChannelId = e?.detail?.channelId;
+      if (deletedChannelId) {
+        setEvents((prev) => prev.filter((ev) => ev.channelId !== deletedChannelId));
+      }
+    };
+
+    const handleColonyDeleted = (e: any) => {
+      const deletedColonyId = e?.detail?.colonyId;
+      if (deletedColonyId) {
+        setEvents((prev) =>
+          prev.filter(
+            (ev) =>
+              ev.hubId !== deletedColonyId &&
+              (ev as any).colonyId !== deletedColonyId
+          )
+        );
+      }
+    };
+
+    window.addEventListener('anticeil_channel_deleted', handleChannelDeleted);
+    window.addEventListener('anticeil_colony_deleted', handleColonyDeleted);
+    return () => {
+      window.removeEventListener('anticeil_channel_deleted', handleChannelDeleted);
+      window.removeEventListener('anticeil_colony_deleted', handleColonyDeleted);
+    };
   }, [fetchEvents]);
 
   const handleCreateEvent = async (eventData: Partial<CalendarEvent>) => {

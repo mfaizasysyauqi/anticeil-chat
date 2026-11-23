@@ -438,6 +438,7 @@ export function buildChatPageProps(state: any): ChatPageContentProps {
       isAssignmentsView,
       assignments,
       handleToggleComplete,
+      handleUpdateAssignment: state.handleUpdateAssignment,
       handleDeleteAssignment: state.handleDeleteAssignment,
       isCallsView,
       callLogs,
