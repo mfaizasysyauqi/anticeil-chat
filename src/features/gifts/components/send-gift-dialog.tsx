@@ -27,7 +27,7 @@ export function SendGiftDialog({
       <DialogContent
         size="lg"
         showCloseButton={false}
-        className="overflow-hidden bg-card border-0 sm:border border-border flex flex-col md:flex-col rounded-none sm:rounded-2xl shadow-2xl z-[80] select-none"
+        className="overflow-hidden bg-card border-0 sm:border border-border flex flex-col md:flex-col rounded-none sm:rounded-2xl shadow-2xl z-[80] select-none max-h-[90vh]"
         overlayClassName="z-[80]"
       >
         {/* Header (Template Dialog Besar) */}
@@ -61,7 +61,7 @@ export function SendGiftDialog({
         </div>
 
         {/* Scrollable Body (Template Dialog Besar) */}
-        <div className={cn(LAYOUT_DIALOG_SPACING.BODY_PADDING, 'space-y-5 flex-1 min-h-0 w-full')}>
+        <div className={cn(LAYOUT_DIALOG_SPACING.BODY_PADDING, 'space-y-5 flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar')}>
           {/* Top Intro Banner */}
           <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-r from-primary/10 via-accent/30 to-background border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -89,10 +89,10 @@ export function SendGiftDialog({
                   <div>
                     <h3 className="text-base sm:text-lg font-black tracking-wide text-yellow-400">POLLEN 🌼</h3>
                     <div className="mt-1">
-                      <span className="text-lg font-black text-foreground">IDR 42,714</span>
+                      <span className="text-lg font-black text-foreground">IDR 29,000</span>
                       <span className="text-xs text-muted-foreground">/bulan</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground block mt-0.5">IDR 427,140/tahun</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">IDR 290,000/tahun</span>
                   </div>
                   <div className="size-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-xl shadow-2xs">
                     🌼
@@ -141,10 +141,10 @@ export function SendGiftDialog({
                   <div>
                     <h3 className="text-base sm:text-lg font-black tracking-wide text-amber-400">NECTAR 🍯</h3>
                     <div className="mt-1">
-                      <span className="text-lg font-black text-foreground">IDR 142,714</span>
+                      <span className="text-lg font-black text-foreground">IDR 85,000</span>
                       <span className="text-xs text-muted-foreground">/bulan</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground block mt-0.5">IDR 1,428,428/tahun</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">IDR 850,000/tahun</span>
                   </div>
                   <div className="size-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-pink-500/20 border border-primary/30 flex items-center justify-center text-xl shadow-2xs">
                     🚀

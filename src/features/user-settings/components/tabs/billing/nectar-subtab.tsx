@@ -95,7 +95,7 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
   };
 
   return (
-    <div className="space-y-6 pb-24 relative">
+    <div className="space-y-6 pb-8 relative">
       {/* ── 1. HERO BANNER ── */}
       <div className="rounded-2xl p-5 sm:p-6 bg-linear-to-r from-[#4A32B3] via-[#5865F2] to-[#7946E0] text-white relative overflow-hidden shadow-xl">
         {/* Starry sparkle accents */}
@@ -120,7 +120,7 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
             {t('Unlock a World of Perks with Nectar')}
           </h2>
           <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-medium">
-            {t('Plans start at only IDR 29,000.00/month. Cancel anytime')}
+            {t('Mulai dari IDR 29,000 / bulan. Batalkan kapan saja.')}
           </p>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
@@ -151,65 +151,67 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         </div>
       </div>
 
-      {/* ── 2. THREE TIER CARDS ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
+      {/* ── 2. THREE TIER CARDS (Identical & Consistent with Send Gift Modal) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
         {/* TIER 1: POLLEN (BASIC) */}
-        <div className="rounded-2xl p-4.5 sm:p-5 bg-linear-to-b from-[#0066FE] to-[#004ECC] text-white relative overflow-hidden shadow-xl flex flex-col justify-between min-h-[360px]">
-          <div className="absolute top-4 right-4 size-12 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl shadow-md select-none">
-            🌼
-          </div>
-
-          <div className="space-y-3 relative z-10">
-            <div>
-              <div className="text-lg font-black uppercase tracking-wider flex items-center gap-2">
-                <span>POLLEN</span>
-                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-white/25 border border-white/30">
-                  BASIC
-                </span>
-              </div>
-              <p className="text-[11px] text-white/80 mt-1 leading-snug">
-                {t('Supercharge your chatting and express yourself casually')}
-              </p>
-            </div>
-
-            <div className="pt-1">
-              <div className="text-xl sm:text-2xl font-black">
-                IDR 29,000.00
-              </div>
-              <div className="text-[11px] text-white/80 font-medium">
-                {t('/ month')}
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-2 border-t border-white/20 text-xs">
-              {[
-                t('50MB file sharing limit (5x bigger)'),
-                t('Custom emojis & stickers anywhere'),
-                t('Unlimited Super Reactions'),
-                t('Special Pollen badge on your profile'),
-              ].map((benefit, i) => (
-                <div key={i} className="flex items-center gap-2 text-white/95 text-[11px] sm:text-xs">
-                  <Check className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-                  <span>{benefit}</span>
+        <div className="relative rounded-2xl bg-card border border-border/80 hover:border-yellow-500/50 p-4 sm:p-5 flex flex-col justify-between transition-all group shadow-xs hover:shadow-md">
+          <div className="space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-black tracking-wide text-yellow-400">POLLEN 🌼</h3>
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">
+                    BASIC
+                  </span>
                 </div>
-              ))}
+                <div className="mt-1">
+                  <span className="text-lg sm:text-xl font-black text-foreground">IDR 29,000</span>
+                  <span className="text-xs text-muted-foreground">/bulan</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground block mt-0.5">IDR 290,000/tahun</span>
+              </div>
+              <div className="size-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-xl shadow-2xs shrink-0">
+                🌼
+              </div>
+            </div>
+
+            <div className="w-full h-px bg-border/60" />
+
+            <div className="space-y-2 text-xs text-foreground/80">
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-400 font-black">↑</span>
+                <span>{t('Upload file hingga 50MB')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>😊</span>
+                <span>{t('Custom emoji di mana saja')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>💥</span>
+                <span>{t('Super Reactions tanpa batas')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>🛡️</span>
+                <span>{t('Badge profil spesial Pollen')}</span>
+              </div>
             </div>
           </div>
 
-          <div className="pt-4 relative z-10 flex flex-col gap-1.5">
+          <div className="pt-5 flex flex-col gap-2">
             <Button
               onClick={() => handleSubscribe('nectar_basic')}
               disabled={subscribing !== null}
-              className="w-full bg-white hover:bg-white/90 text-blue-900 font-extrabold text-xs h-9 rounded-xl shadow-md cursor-pointer"
+              className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-xs h-9 rounded-xl shadow-xs transition-all cursor-pointer"
             >
               {subscribing === 'nectar_basic' ? t('Mengaktifkan...') : t('Get Pollen')}
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
+              size="sm"
               onClick={() =>
                 toast.info(t('Pilih penerima untuk Gift Pollen.'))
               }
-              className="w-full hover:bg-white/15 text-white/90 hover:text-white font-semibold text-xs h-7.5 rounded-xl cursor-pointer"
+              className="w-full text-xs font-semibold h-8 rounded-xl border-border text-muted-foreground hover:text-foreground cursor-pointer"
             >
               {t('Gift Pollen')}
             </Button>
@@ -217,69 +219,85 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         </div>
 
         {/* TIER 2: NECTAR (POPULAR) */}
-        <div className="rounded-2xl p-4.5 sm:p-5 bg-linear-to-b from-[#5865F2] via-[#7B3FE4] to-[#B028A7] text-white relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[360px] border border-white/20">
-          <div className="absolute top-4 right-4 size-12 rounded-xl bg-white/15 backdrop-blur-md border border-white/30 flex items-center justify-center text-2xl shadow-lg select-none">
-            🍯
+        <div className="relative rounded-2xl bg-card border-2 border-primary hover:border-primary/90 p-4 sm:p-5 flex flex-col justify-between transition-all group shadow-md hover:shadow-lg">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-pink-500 text-[9px] font-black uppercase tracking-wider text-white shadow-md">
+            POPULAR
           </div>
 
-          <div className="space-y-3 relative z-10">
-            <div>
-              <div className="text-lg font-black uppercase tracking-wider flex items-center gap-2">
-                <span>NECTAR</span>
-                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-purple-950 shadow-xs">
-                  {t('POPULAR')}
-                </span>
-              </div>
-              <p className="text-[11px] text-white/90 mt-1 leading-snug">
-                {t(
-                  'Unleash the ultimate Anticeil experience with full VIP perks',
-                )}
-              </p>
-            </div>
-
-            <div className="pt-1">
-              <div className="text-xl sm:text-2xl font-black">
-                IDR 85,000.00
-              </div>
-              <div className="text-[11px] text-white/80 font-medium">
-                {t('/ month')} •{' '}
-                <span className="text-amber-300 font-bold">
-                  {t('Hemat 16% per tahun')}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-2 border-t border-white/20 text-xs">
-              {[
-                t('500MB upload capacity for clips and documents'),
-                t('HD 4K 60fps streaming & screen sharing'),
-                t('2 Free Colony Boosts + 30% off extra boosts'),
-                t('Custom colony profiles, avatars, banners & bios'),
-                t('Longer messages up to 4,000 characters & 200 server slots'),
-                t('Custom sounds anywhere & animated emoji avatars'),
-              ].map((benefit, i) => (
-                <div key={i} className="flex items-center gap-2 text-white text-[11px] sm:text-xs">
-                  <Check className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                  <span className="font-medium">{benefit}</span>
+          <div className="space-y-4">
+            <div className="flex items-start justify-between pt-1">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-black tracking-wide text-amber-400">NECTAR 🍯</h3>
                 </div>
-              ))}
+                <div className="mt-1">
+                  <span className="text-lg sm:text-xl font-black text-foreground">IDR 85,000</span>
+                  <span className="text-xs text-muted-foreground">/bulan</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground block mt-0.5">
+                  IDR 850,000/tahun • <span className="text-amber-400 font-semibold">{t('Hemat 16% per tahun')}</span>
+                </span>
+              </div>
+              <div className="size-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-pink-500/20 border border-primary/30 flex items-center justify-center text-xl shadow-2xs shrink-0">
+                🚀
+              </div>
+            </div>
+
+            <div className="w-full h-px bg-border/60" />
+
+            <div className="space-y-2 text-xs text-foreground/80">
+              <div className="flex items-center gap-2">
+                <span className="text-primary font-black">↑</span>
+                <span>{t('Kapasitas upload file 1GB')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>😊</span>
+                <span>{t('Custom emoji di mana saja')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>💥</span>
+                <span>{t('Super Reactions tanpa batas')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>🖵</span>
+                <span>{t('Streaming video kualitas HD 4K')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>💎</span>
+                <span>{t('2 Free Colony Boosts')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>👤</span>
+                <span>{t('Custom banner & avatar profil')}</span>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center gap-2.5">
+              <div className="size-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-sm shrink-0">
+                🔮
+              </div>
+              <div>
+                <span className="text-[11px] font-bold text-foreground block">Free Reward Choice</span>
+                <span className="text-[9px] text-muted-foreground">3 pilihan bonus tersedia</span>
+              </div>
             </div>
           </div>
 
-          <div className="pt-4 relative z-10 flex flex-col gap-1.5">
+          <div className="pt-5 flex flex-col gap-2">
             <Button
               onClick={() => handleSubscribe('nectar_boost')}
               disabled={subscribing !== null}
-              className="w-full bg-amber-400 hover:bg-amber-300 text-purple-950 font-black text-xs h-9 rounded-xl shadow-lg cursor-pointer"
+              className="w-full bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-95 text-white font-bold text-xs h-9 rounded-xl shadow-md transition-all cursor-pointer"
             >
               {subscribing === 'nectar_boost' ? t('Mengaktifkan...') : t('Get Nectar')}
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
+              size="sm"
               onClick={() =>
                 toast.info(t('Pilih penerima untuk Gift Nectar Full.'))
               }
-              className="w-full hover:bg-white/15 text-white/90 hover:text-white font-semibold text-xs h-7.5 rounded-xl cursor-pointer"
+              className="w-full text-xs font-semibold h-8 rounded-xl border-border text-muted-foreground hover:text-foreground cursor-pointer"
             >
               {t('Gift Nectar')}
             </Button>
@@ -287,64 +305,84 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         </div>
 
         {/* TIER 3: ROYAL (ENTERPRISE) */}
-        <div className="rounded-2xl p-4.5 sm:p-5 bg-gradient-to-b from-[#2a1705] via-[#1a0f03] to-[#0d0701] border border-amber-500/40 text-white relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[360px]">
-          <div className="absolute top-4 right-4 size-12 rounded-xl bg-amber-500/10 backdrop-blur-md border border-amber-500/30 flex items-center justify-center text-2xl shadow-md select-none">
-            👑
+        <div className="relative rounded-2xl bg-card border border-amber-500/40 hover:border-amber-400 p-4 sm:p-5 flex flex-col justify-between transition-all group shadow-xs hover:shadow-md">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-[9px] font-black uppercase tracking-wider text-black shadow-md flex items-center gap-1">
+            <span>👑</span>
+            <span>ROYAL ENTERPRISE</span>
           </div>
 
-          <div className="space-y-3 relative z-10">
-            <div>
-              <div className="text-lg font-black uppercase tracking-wider flex items-center gap-2 text-amber-400">
-                <span>ROYAL</span>
-                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-500/40 text-amber-300">
-                  ENTERPRISE
-                </span>
-              </div>
-              <p className="text-[11px] text-white/80 mt-1 leading-snug">
-                {t('Sovereign Colony for corporate teams with SSO & Domain Capture')}
-              </p>
-            </div>
-
-            <div className="pt-1">
-              <div className="text-xl sm:text-2xl font-black text-amber-300">
-                IDR 499,000.00
-              </div>
-              <div className="text-[11px] text-white/80 font-medium">
-                {t('/ colony / month')}
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-2 border-t border-amber-500/20 text-xs">
-              {[
-                t('Corporate SSO (Google Workspace, Entra, Okta)'),
-                t('Zero-friction JIT Domain Auto-Provisioning'),
-                t('DNS TXT domain verification & capture'),
-                t('10 Free Colony Boosts & unlimited file upload'),
-                t('365-day audit log retention & export'),
-                t('Dedicated Enterprise SLA & 99.9% uptime'),
-              ].map((benefit, i) => (
-                <div key={i} className="flex items-center gap-2 text-white text-[11px] sm:text-xs">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span className="font-medium">{benefit}</span>
+          <div className="space-y-4">
+            <div className="flex items-start justify-between pt-1">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-black tracking-wide text-amber-400">ROYAL 👑</h3>
                 </div>
-              ))}
+                <div className="mt-1">
+                  <span className="text-lg sm:text-xl font-black text-foreground">IDR 499,000</span>
+                  <span className="text-xs text-muted-foreground">/bulan</span>
+                </div>
+                <span className="text-[10px] text-amber-400/90 font-medium block mt-0.5">Sovereign Colony Tier</span>
+              </div>
+              <div className="size-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-xl shadow-2xs shrink-0">
+                👑
+              </div>
+            </div>
+
+            <div className="w-full h-px bg-border/60" />
+
+            <div className="space-y-2 text-xs text-foreground/80">
+              <div className="flex items-center gap-2">
+                <span className="text-amber-400 font-black">★</span>
+                <span>{t('Corporate SSO & JIT Domain')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-amber-400 font-black">↑</span>
+                <span>{t('Upload file tanpa batas')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>💎</span>
+                <span>{t('10 Free Colony Boosts')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>📋</span>
+                <span>{t('Retensi audit log 365 hari')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>⚡</span>
+                <span>{t('Dedicated SLA & 99.9% uptime')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>👑</span>
+                <span>{t('Badge profil Sovereign Crown')}</span>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-2.5">
+              <div className="size-7 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-sm shrink-0">
+                🏛️
+              </div>
+              <div>
+                <span className="text-[11px] font-bold text-amber-300 block">Sovereign Team Access</span>
+                <span className="text-[9px] text-muted-foreground">Full domain capture & SSO</span>
+              </div>
             </div>
           </div>
 
-          <div className="pt-4 relative z-10 flex flex-col gap-1.5">
+          <div className="pt-5 flex flex-col gap-2">
             <Button
               onClick={() => handleSubscribe('royal_enterprise')}
               disabled={subscribing !== null}
-              className="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-black text-xs h-9 rounded-xl shadow-lg cursor-pointer"
+              className="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:opacity-95 text-black font-black text-xs h-9 rounded-xl shadow-md transition-all cursor-pointer"
             >
               {subscribing === 'royal_enterprise' ? t('Mengaktifkan...') : t('Get Royal Enterprise 👑')}
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
+              size="sm"
               onClick={() =>
                 toast.info(t('Hubungi sales kami untuk custom enterprise contract & invoice.'))
               }
-              className="w-full hover:bg-white/10 text-amber-300/90 hover:text-amber-200 font-semibold text-xs h-7.5 rounded-xl cursor-pointer"
+              className="w-full text-xs font-semibold h-8 rounded-xl border-border text-amber-400 hover:text-amber-300 cursor-pointer"
             >
               {t('Contact Sales')}
             </Button>

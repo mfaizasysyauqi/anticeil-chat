@@ -88,7 +88,7 @@ export const giftsApi = {
   },
 
   createGiftToken: async (
-    giftType: 'nectar_basic' | 'nectar_boost' | 'boost_1m' | 'nectar_1y',
+    giftType: 'nectar_basic' | 'nectar_boost' | 'boost_1m' | 'nectar_1y' | 'royal_enterprise' | 'royal' | 'pollen' | 'nectar',
   ): Promise<{ snapToken: string; redirectUrl?: string; orderId: string; clientKey?: string }> => {
     const res = await api.post<{ snapToken: string; redirectUrl?: string; orderId: string; clientKey?: string }>(
       '/v1/billing/midtrans-token',
@@ -115,11 +115,13 @@ export const giftsApi = {
       localStorage.setItem(GIFTS_STORAGE_KEY, JSON.stringify(updated));
 
       const giftAmount =
-        res.gift.type === 'nectar_1y'
+        res.gift.type === 'royal_enterprise' || res.gift.type === 'royal'
+          ? 499000
+          : res.gift.type === 'nectar_1y'
           ? 850000
           : res.gift.type === 'boost_1m'
           ? 65000
-          : res.gift.type === 'nectar_boost'
+          : res.gift.type === 'nectar_boost' || res.gift.type === 'nectar'
           ? 85000
           : 29000;
 

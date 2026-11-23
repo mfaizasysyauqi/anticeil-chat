@@ -191,7 +191,7 @@ export const subscriptionsApi = {
         : isNectar
         ? 'Langganan Nectar Tier (Bulanan)'
         : 'Langganan Pollen Tier (Bulanan)',
-      amount: isRoyal ? 499000 : isNectar ? 149000 : 49000,
+      amount: isRoyal ? 499000 : isNectar ? 85000 : 29000,
       currency: 'IDR',
       status: 'settlement',
       paymentMethod: 'Midtrans QRIS / GoPay',

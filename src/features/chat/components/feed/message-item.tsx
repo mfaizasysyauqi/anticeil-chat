@@ -514,6 +514,7 @@ export function MessageItem({
                             if (att.type === 'gift') {
                               const isClaimed = claimedGifts[msg.id] || att.giftData?.claimed;
                               const isRoyalGift = att.giftData?.tier === 'royal';
+                              const isNectarGift = att.giftData?.tier === 'nectar' || att.giftData?.tier === 'nitro' || !att.giftData?.tier;
                               return (
                                 <div key={attIdx} className={cn(
                                   "my-2 max-w-sm rounded-2xl shadow-2xl p-4 relative overflow-hidden border",
@@ -541,7 +542,7 @@ export function MessageItem({
                                         {att.name || (isRoyalGift ? 'Anticeil Royal Enterprise Gift' : 'Anticeil Nectar Gift')}
                                       </h4>
                                       <p className="text-[10px] text-[#949ba4] truncate">
-                                        {att.giftData?.price || (isRoyalGift ? 'IDR 499,000' : 'IDR 142,714')} • Hadiah Komunitas
+                                        {att.giftData?.price || (isRoyalGift ? 'IDR 499,000' : isNectarGift ? 'IDR 85,000' : 'IDR 29,000')} • Hadiah Komunitas
                                       </p>
                                     </div>
                                   </div>

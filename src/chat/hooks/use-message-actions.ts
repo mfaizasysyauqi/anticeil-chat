@@ -632,7 +632,7 @@ export function useMessageActions({
       : isNectar
       ? 'Anticeil Nectar (1 Bulan)'
       : 'Anticeil Pollen (1 Bulan)';
-    const giftPrice = isRoyal ? 'IDR 499,000' : isNectar ? 'IDR 142,714' : 'IDR 42,714';
+    const giftPrice = isRoyal ? 'IDR 499,000' : isNectar ? 'IDR 85,000' : 'IDR 29,000';
 
     toast.loading(t('Menghubungkan ke Midtrans Sandbox...'), { id: 'midtrans-gift-init' });
 
