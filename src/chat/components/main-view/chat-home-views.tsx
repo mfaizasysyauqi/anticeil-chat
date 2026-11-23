@@ -267,6 +267,8 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
         events={calendarEvents}
         colonies={colonies}
         channels={channels}
+        currentUser={currentUser}
+        requireAuth={requireAuth}
         onJoinChannel={(channelId) => {
           const targetChannel = channels.find((c) => c.id === channelId);
           if (targetChannel?.colonyId) {
@@ -408,7 +410,7 @@ export const ChatHomeViews: React.FC<ChatHomeViewsProps> = ({
   if (isShopView) {
     return (
       <ShopView
-        currentUser={currentUser || members.find((m) => m.id === 'me')}
+        currentUser={currentUser}
         requireAuth={requireAuth}
         onOpenSidebar={handleOpenNav}
         horizontalPadding={CHANNEL_HORIZONTAL_PADDING}

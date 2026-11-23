@@ -153,6 +153,14 @@ export function QuestsView({
   });
 
   const handleOpenCreateQuest = () => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleOpenCreateQuest(),
+        t('Tambah Quest'),
+        t('Masuk ke Anticeil untuk menambahkan quest baru ke Database.'),
+      );
+      return;
+    }
     setEditingQuest(null);
     setQuestCoverFile(null);
     setQuestCoverPreview('');
@@ -173,6 +181,14 @@ export function QuestsView({
   };
 
   const handleOpenEditQuest = (quest: QuestItem) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleOpenEditQuest(quest),
+        t('Edit Quest'),
+        t('Masuk ke Anticeil untuk mengedit quest di Database.'),
+      );
+      return;
+    }
     setEditingQuest(quest);
     setQuestCoverFile(null);
     setQuestCoverPreview(quest.coverUrl || '');
@@ -275,6 +291,14 @@ export function QuestsView({
 
   const handleDeleteQuest = async (e: React.MouseEvent, questId: string) => {
     e.stopPropagation();
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleDeleteQuest(e, questId),
+        t('Hapus Quest'),
+        t('Masuk ke Anticeil untuk menghapus quest dari Database.'),
+      );
+      return;
+    }
     if (!window.confirm(t('Hapus quest ini dari database?'))) return;
     try {
       const res = await questsApi.deleteQuest(questId);

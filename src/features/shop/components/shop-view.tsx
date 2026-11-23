@@ -253,6 +253,14 @@ export function ShopView({
   });
 
   const handleOpenCreateProduct = () => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleOpenCreateProduct(),
+        t('Tambah Produk'),
+        t('Masuk ke Anticeil untuk menambahkan produk baru ke Database Shop.'),
+      );
+      return;
+    }
     setEditingProduct(null);
     setProductImageFile(null);
     setProductImagePreview('');
@@ -272,6 +280,14 @@ export function ShopView({
   };
 
   const handleOpenEditProduct = (item: ShopItem) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleOpenEditProduct(item),
+        t('Edit Produk'),
+        t('Masuk ke Anticeil untuk mengedit item di Database Shop.'),
+      );
+      return;
+    }
     setEditingProduct(item);
     setProductImageFile(null);
     const existingMedia = item.previewIcon || item.gifUrl || '';
@@ -638,6 +654,14 @@ export function ShopView({
 
   // Equip item to user profile
   const handleEquip = async (item: ShopItem) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleEquip(item),
+        t('Pasang Item'),
+        t('Masuk ke Anticeil untuk memasang item ke profil Anda.'),
+      );
+      return;
+    }
     setIsEquipping(true);
     try {
       const slot =
@@ -745,6 +769,14 @@ export function ShopView({
   // Delete custom product from database
   const handleDeleteProduct = async (e: React.MouseEvent, itemId: string) => {
     e.stopPropagation();
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleDeleteProduct(e, itemId),
+        t('Hapus Produk'),
+        t('Masuk ke Anticeil untuk menghapus item dari Database Shop.'),
+      );
+      return;
+    }
     try {
       const res = await shopApi.deleteItem(itemId);
       if (res.success) {
@@ -754,6 +786,19 @@ export function ShopView({
     } catch {
       toast.error(t('Gagal menghapus produk'));
     }
+  };
+
+  // Open item detail with authentication guard
+  const handleOpenItemDetail = (item: ShopItem) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleOpenItemDetail(item),
+        t('Buka Detail Produk'),
+        t('Masuk ke Anticeil untuk melihat dan membeli item di Shop.'),
+      );
+      return;
+    }
+    setActiveModalItem(item);
   };
 
   // Discord-style 1:1 Right Filter Panel Renderer
@@ -1733,7 +1778,7 @@ export function ShopView({
                 return (
                   <div
                     key={item.id}
-                    onClick={() => setActiveModalItem(item)}
+                    onClick={() => handleOpenItemDetail(item)}
                     className="rounded-xl border border-border bg-card hover:border-primary/50 transition-all flex flex-col justify-between overflow-hidden shadow-xs group cursor-pointer"
                   >
                     {/* Card Header / Artwork Area with Real Animated Cosmetic Preview */}
@@ -1826,7 +1871,7 @@ export function ShopView({
                             variant="default"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setActiveModalItem(item);
+                              handleOpenItemDetail(item);
                             }}
                             className="h-7 px-2.5 sm:px-3 text-xs font-semibold cursor-pointer shadow-xs shrink-0"
                           >
@@ -1911,7 +1956,7 @@ export function ShopView({
         open={isWishlistDrawerOpen}
         onOpenChange={setIsWishlistDrawerOpen}
         wishlist={wishlist}
-        onSelectItem={(item) => setActiveModalItem(item)}
+        onSelectItem={(item) => handleOpenItemDetail(item)}
         onToggleWishlist={handleToggleWishlist}
       />
 

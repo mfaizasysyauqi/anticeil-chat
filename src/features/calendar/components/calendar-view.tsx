@@ -44,6 +44,7 @@ import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACI
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { CalendarEvent, CalendarViewMode, CalendarFilterType } from '../types';
 import type { Colony, ColonyChannel } from '@/chat/chat-types';
+import { useTranslation } from '@/core/i18n';
 import { CalendarMonthGrid } from './calendar-month-grid';
 import { CalendarScheduleDialog } from './calendar-schedule-dialog';
 
@@ -51,6 +52,8 @@ export interface CalendarViewProps {
   events: CalendarEvent[];
   colonies: Colony[];
   channels: ColonyChannel[];
+  currentUser?: any;
+  requireAuth?: (action: () => void, title?: string, desc?: string) => void;
   onJoinChannel?: (channelId: string) => void;
   onOpenSidebar: () => void;
   onCreateEvent?: (event: Omit<CalendarEvent, 'id'>) => void;
@@ -64,6 +67,8 @@ export function CalendarView({
   events: initialEvents,
   colonies,
   channels,
+  currentUser,
+  requireAuth,
   onJoinChannel,
   onOpenSidebar,
   onCreateEvent,
@@ -72,6 +77,7 @@ export function CalendarView({
   horizontalPadding = CHANNEL_HORIZONTAL_PADDING,
   verticalPadding = CHANNEL_VERTICAL_PADDING,
 }: CalendarViewProps) {
+  const { t } = useTranslation();
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
@@ -87,7 +93,27 @@ export function CalendarView({
   const [editDate, setEditDate] = useState('');
   const [editTime, setEditTime] = useState('14:00');
 
+  const handleOpenSchedule = () => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => setIsScheduleOpen(true),
+        t('Jadwalkan Meeting'),
+        t('Masuk ke Anticeil untuk membuat dan menjadwalkan agenda meeting.'),
+      );
+      return;
+    }
+    setIsScheduleOpen(true);
+  };
+
   const handleOpenEdit = (ev: CalendarEvent) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleOpenEdit(ev),
+        t('Edit Agenda'),
+        t('Masuk ke Anticeil untuk mengubah acara kalender.'),
+      );
+      return;
+    }
     setEditingEvent(ev);
     setEditTitle(ev.title || '');
     setEditDescription(ev.description || '');
@@ -101,6 +127,14 @@ export function CalendarView({
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingEvent || !editTitle.trim()) return;
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleSaveEdit(e),
+        t('Ubah Agenda'),
+        t('Masuk ke Anticeil untuk mengubah acara kalender.'),
+      );
+      return;
+    }
     onUpdateEvent?.(editingEvent.id, {
       title: editTitle.trim(),
       description: editDescription.trim() || undefined,
@@ -112,9 +146,29 @@ export function CalendarView({
   };
 
   const handleDelete = (id: string, title: string) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => handleDelete(id, title),
+        t('Hapus Agenda'),
+        t('Masuk ke Anticeil untuk mengelola dan menghapus agenda kalender.'),
+      );
+      return;
+    }
     if (window.confirm(`Hapus agenda "${title}"?`)) {
       onDeleteEvent?.(id);
     }
+  };
+
+  const handleJoinVoiceChannel = (channelId: string) => {
+    if (!currentUser && requireAuth) {
+      requireAuth(
+        () => onJoinChannel?.(channelId),
+        t('Gabung Saluran'),
+        t('Masuk ke Anticeil untuk bergabung ke panggilan saluran.'),
+      );
+      return;
+    }
+    onJoinChannel?.(channelId);
   };
 
 
@@ -342,7 +396,7 @@ export function CalendarView({
 
           {/* Primary Theme Action Button: Jadwalkan Meeting placed at FAR RIGHT */}
           <TopBarActionButton
-            onClick={() => setIsScheduleOpen(true)}
+            onClick={handleOpenSchedule}
             icon={<Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
             label="Jadwalkan Meeting"
             shortLabel="Meeting"
@@ -447,7 +501,7 @@ export function CalendarView({
                           {ev.type === 'meeting' && ev.channelId && (
                             <Button
                               size="sm"
-                              onClick={() => onJoinChannel?.(ev.channelId!)}
+                              onClick={() => handleJoinVoiceChannel(ev.channelId!)}
                               className="h-7 px-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 cursor-pointer shadow-xs"
                             >
                               Gabung Call
@@ -592,7 +646,7 @@ export function CalendarView({
                       {ev.type === 'meeting' && ev.channelId && (
                         <Button
                           size="sm"
-                          onClick={() => onJoinChannel?.(ev.channelId!)}
+                          onClick={() => handleJoinVoiceChannel(ev.channelId!)}
                           className="h-8 px-3 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 cursor-pointer shadow-xs"
                         >
                           <Video className="w-3.5 h-3.5 mr-1.5" />
