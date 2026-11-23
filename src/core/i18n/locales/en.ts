@@ -418,6 +418,8 @@ export const enTranslations: Record<string, string> = {
   'Berlangganan Nectar untuk mendapatkan 2 slot boost gratis.': 'Berlangganan Nectar untuk mendapatkan 2 slot boost gratis.',
   'Bersihkan Percakapan': 'Bersihkan Percakapan',
   'Bersihkan Percakapan Sesi Ini': 'Bersihkan Percakapan Sesi Ini',
+  'Hapus Percakapan': 'Delete Conversation',
+  'Hapus Percakapan Ini': 'Delete This Conversation',
   'Bertahan setelah minggu pertama': 'Bertahan setelah minggu pertama',
   'Besar': 'Large',
   'Bigger 500MB Uploads': 'Bigger 500MB Uploads',

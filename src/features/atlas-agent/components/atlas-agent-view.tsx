@@ -70,6 +70,7 @@ export interface AtlasAgentViewProps {
   onCreateNewSession?: (title?: string) => Promise<AiSession> | AiSession;
   onUpdateSessionMessages?: (sessionId: string, messages: AiMessage[]) => void;
   onClearSessionMessages?: (sessionId: string) => void;
+  onDeleteSession?: (sessionId: string) => void;
   colonies: any[];
   channels: any[];
   members: any[];
@@ -105,6 +106,7 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
   const onCreateNewSession = props.onCreateNewSession || contextValue?.handleCreateNewSession;
   const onUpdateSessionMessages = props.onUpdateSessionMessages || contextValue?.handleUpdateSessionMessages || (() => {});
   const onClearSessionMessages = props.onClearSessionMessages || contextValue?.handleClearSessionMessages || (() => {});
+  const onDeleteSession = props.onDeleteSession || contextValue?.handleDeleteSession || (() => {});
 
   const {
     colonies,
@@ -240,6 +242,10 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
   const messages = activeSession?.messages || [];
 
   const [activeArtifact, setActiveArtifact] = useState<AiArtifact | null>(null);
+
+  useEffect(() => {
+    setActiveArtifact(null);
+  }, [activeSessionId]);
 
   // Find latest artifact in current session for quick header toggle
   const latestArtifact = React.useMemo(() => {
@@ -536,6 +542,7 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
       <AtlasAgentHeader
         onOpenSidebar={onOpenSidebar}
         horizontalPadding={horizontalPadding}
+        onDeleteSession={activeSession ? () => onDeleteSession(activeSession.id) : undefined}
         onClearSessionMessages={activeSession ? () => onClearSessionMessages(activeSession.id) : undefined}
         hasMessages={messages.length > 0}
         hasActiveArtifact={Boolean(activeArtifact || latestArtifact)}

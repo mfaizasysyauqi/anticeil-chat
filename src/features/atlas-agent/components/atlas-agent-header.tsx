@@ -14,6 +14,7 @@ export interface AtlasAgentHeaderProps {
   modelName?: string;
   onOpenGroqSettings?: () => void;
   onClearSessionMessages?: () => void;
+  onDeleteSession?: () => void;
   onCreateNewSession?: () => void;
   hasMessages?: boolean;
   hasActiveArtifact?: boolean;
@@ -28,11 +29,15 @@ export function AtlasAgentHeader({
   onOpenSidebar,
   horizontalPadding = LAYOUT_PAGE_SPACING.HORIZONTAL,
   onClearSessionMessages,
+  onDeleteSession,
   hasMessages = false,
   hasActiveArtifact = false,
   onToggleArtifactPanel,
 }: AtlasAgentHeaderProps) {
   const { t } = useTranslation();
+
+  const handleDelete = onDeleteSession || onClearSessionMessages;
+  const canDelete = Boolean(onDeleteSession || (hasMessages && onClearSessionMessages));
 
   return (
     <div
@@ -84,22 +89,22 @@ export function AtlasAgentHeader({
           </Tooltip>
         )}
 
-        {/* Clear Conversation Button */}
-        {hasMessages && onClearSessionMessages && (
+        {/* Delete / Clear Conversation Button */}
+        {canDelete && handleDelete && (
           <Tooltip delayDuration={150}>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon-xs"
-                onClick={onClearSessionMessages}
+                onClick={handleDelete}
                 className="h-8 w-8 text-muted-foreground hover:text-red-400 hover:bg-accent/50 cursor-pointer"
-                title={t('Bersihkan Percakapan Sesi Ini')}
+                title={t('Hapus Percakapan Ini')}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={6} className="font-semibold text-xs">
-              {t('Bersihkan Percakapan')}
+              {t('Hapus Percakapan')}
             </TooltipContent>
           </Tooltip>
         )}
