@@ -1,11 +1,11 @@
 import React from 'react';
 import {
-  Video,
   Palette,
   Crown,
-  Gamepad2,
-  Sparkles,
+  ScreenShare,
 } from 'lucide-react';
+import { YouTubeIcon, TradingViewIcon } from '@/features/voice/data/voice-activities';
+import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 
 // Discord-style 1:1 Filter Definitions
 export const ITEM_TYPE_OPTIONS = [
@@ -43,10 +43,58 @@ export const THEME_OPTIONS = [
 
 // Discord-style App Shops dropdown items (Anticeil Native Ecosystem)
 export const APP_SHOPS_ITEMS = [
-  { id: 'app_watch_together', name: 'YouTube Watch Together', icon: Video, tag: 'Video', query: 'watch together' },
-  { id: 'app_jamspace', name: 'Jamspace Whiteboard', icon: Palette, tag: 'Board', query: 'whiteboard' },
-  { id: 'app_chess', name: 'Anticeil Chess', icon: Crown, tag: 'Game', query: 'chess' },
-  { id: 'app_wordle', name: 'Wordle Daily Party', icon: Gamepad2, tag: 'Game', query: 'wordle' },
-  { id: 'app_trivia', name: 'Cyber Trivia Battle', icon: Gamepad2, tag: 'Game', query: 'trivia' },
-  { id: 'app_cyber_core', name: 'Anticeil Cyber Core', icon: Sparkles, tag: 'Official', query: 'cyber' },
+  {
+    id: 'app_watch_together',
+    name: 'YouTube Watch Together',
+    icon: YouTubeIcon,
+    tag: 'Video',
+    tagColor: 'bg-red-500/15 text-red-400 border-red-500/25',
+    iconBg: 'bg-red-500/10 border-red-500/20 text-[#ff0000]',
+    query: 'watch',
+  },
+  {
+    id: 'app_jamspace',
+    name: 'Jamspace Whiteboard',
+    icon: Palette,
+    tag: 'Board',
+    tagColor: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
+    iconBg: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
+    query: 'whiteboard',
+  },
+  {
+    id: 'app_tradingview',
+    name: 'TradingView Charts',
+    icon: TradingViewIcon,
+    tag: 'Charts',
+    tagColor: 'bg-sky-500/15 text-sky-400 border-sky-500/25',
+    iconBg: 'bg-[#1e222d] border-sky-500/30 text-[#2962ff]',
+    query: 'tradingview',
+  },
+  {
+    id: 'app_chess',
+    name: 'Anticeil Chess',
+    icon: Crown,
+    tag: 'Game',
+    tagColor: 'bg-amber-500/15 text-amber-400 border-amber-500/25',
+    iconBg: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+    query: 'chess',
+  },
+  {
+    id: 'app_screenshare',
+    name: 'Share Screen',
+    icon: ScreenShare,
+    tag: 'Utilitas',
+    tagColor: 'bg-violet-500/15 text-violet-400 border-violet-500/25',
+    iconBg: 'bg-violet-500/10 border-violet-500/20 text-violet-400',
+    query: 'screenshare',
+  },
+  {
+    id: 'app_anticeil_flow',
+    name: 'Anticeil Flow',
+    icon: AnticeilLogo,
+    tag: 'Official',
+    tagColor: 'bg-primary/15 text-primary border-primary/25',
+    iconBg: 'bg-primary/10 border-primary/20 text-primary',
+    query: 'flow',
+  },
 ];

@@ -456,7 +456,8 @@ export function ShopView({
     } else if (activeTab === 'featured') {
       list = list.filter((i) => i.featured);
     } else if (activeTab === 'app_shops' && selectedApp) {
-      const q = selectedApp.toLowerCase();
+      const targetApp = APP_SHOPS_ITEMS.find((a) => a.name === selectedApp);
+      const q = (targetApp?.query || selectedApp).toLowerCase();
       list = list.filter(
         (i) =>
           i.collection?.toLowerCase().includes(q) ||
@@ -1297,7 +1298,7 @@ export function ShopView({
                   />
                 </TopBarTabButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-60 bg-card/95 backdrop-blur-md border-border text-foreground z-[160] p-1.5 space-y-1 shadow-2xl">
+              <DropdownMenuContent align="start" className="w-72 sm:w-80 bg-card/95 backdrop-blur-md border-border text-foreground z-[160] p-1.5 space-y-1 shadow-2xl">
                 <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">
                   {t('Aplikasi & Aktivitas Anticeil')}
                 </DropdownMenuLabel>
@@ -1311,13 +1312,13 @@ export function ShopView({
                     }}
                     className="flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md cursor-pointer hover:bg-muted font-medium transition-colors"
                   >
-                    <div className="size-6 rounded-md bg-muted/60 border border-border/80 flex items-center justify-center text-xs shrink-0 shadow-xs">
-                      <app.icon className="w-3.5 h-3.5 text-foreground" />
+                    <div className={cn('size-6 rounded-md border flex items-center justify-center text-xs shrink-0 shadow-xs p-1', app.iconBg)}>
+                      <app.icon className="w-3.5 h-3.5 shrink-0" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="truncate text-xs font-semibold text-foreground">{app.name}</div>
                     </div>
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
+                    <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0', app.tagColor)}>
                       {app.tag}
                     </span>
                   </DropdownMenuItem>
@@ -1518,13 +1519,13 @@ export function ShopView({
                             }}
                             className="flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md cursor-pointer hover:bg-muted font-medium transition-colors"
                           >
-                            <div className="size-6 rounded-md bg-muted/60 border border-border/80 flex items-center justify-center text-xs shrink-0 shadow-xs">
-                              <app.icon className="w-3.5 h-3.5 text-foreground" />
+                            <div className={cn('size-6 rounded-md border flex items-center justify-center text-xs shrink-0 shadow-xs p-1', app.iconBg)}>
+                              <app.icon className="w-3.5 h-3.5 shrink-0" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="truncate text-xs font-semibold text-foreground">{app.name}</div>
                             </div>
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30 shrink-0">
+                            <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0', app.tagColor)}>
                               {app.tag}
                             </span>
                           </DropdownMenuItem>
