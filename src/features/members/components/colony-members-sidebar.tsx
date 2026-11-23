@@ -71,7 +71,7 @@ export function ColonyMembersSidebar({
       </div>
 
       {/* Members List: SCROLLABLE DAFTAR ANGGOTA */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 custom-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 custom-scrollbar">
         {displayMembers.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-4 text-center py-8">
             <Users className="w-8 h-8 text-muted-foreground/30 mb-2" />

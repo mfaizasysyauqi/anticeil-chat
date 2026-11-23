@@ -123,7 +123,7 @@ export function GroupDmMembersSidebar({
       </div>
 
       {/* Members List */}
-      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-1 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1 custom-scrollbar">
         {groupMembers.map((member) => {
           const isMe = currentUser?.id && member.id === currentUser.id;
           const owner = isOwner(member.id);

@@ -276,7 +276,7 @@ export function ColonyChannelsSidebar({
       {/* Scroll Area with Context Menu */}
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 pb-16 custom-scrollbar flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 pb-16 custom-scrollbar flex flex-col">
             {/* Server Events & Boost Entry */}
             {activeColony && (
               <div className="space-y-0.5 mb-3">

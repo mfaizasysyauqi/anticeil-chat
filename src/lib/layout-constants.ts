@@ -56,6 +56,12 @@ export const LAYOUT_PAGE_SPACING = {
     'px-2 py-2 flex-1 min-h-0 overflow-y-auto max-lg:scrollbar-none custom-scrollbar',
 
   /**
+   * Symmetrical Sidebar & Bottom Dock Padding:
+   * Aligned with mini rail horizontal and vertical rhythm (px-2 py-2 = 8px)
+   */
+  SIDEBAR_PADDING: 'px-2 py-2',
+
+  /**
    * Universal App Bar header height (48px)
    */
   APP_BAR_HEIGHT: 'h-12',
