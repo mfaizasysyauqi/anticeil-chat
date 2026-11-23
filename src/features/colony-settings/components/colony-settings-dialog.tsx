@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Ban } from 'lucide-react';
+import { Trash2, Ban, LogOut } from 'lucide-react';
 import { TwoPaneSettingsDialog, SettingsNavGroup } from '@/components/ui/two-pane-settings-dialog';
 import { buildColonyNavGroups } from './colony-settings-nav';
 import {
@@ -88,6 +88,7 @@ interface ColonySettingsDialogProps {
   initialSection?: ColonySettingsSection;
   onUpdateColony: (colonyId: string, updates: Partial<Colony>) => Promise<void>;
   onDeleteHub: (hub: Colony) => void;
+  onLeaveHub?: (hub: Colony) => void;
   onOpenWebhooks?: () => void;
   onUpdateMembers?: (updater: (prev: ColonyMember[]) => ColonyMember[]) => void;
   onNavigateToApps?: () => void;
@@ -103,6 +104,7 @@ export function ColonySettingsDialog({
   initialSection = 'profile',
   onUpdateColony,
   onDeleteHub,
+  onLeaveHub,
   onOpenWebhooks,
   onUpdateMembers,
   onNavigateToApps,
@@ -192,8 +194,18 @@ export function ColonySettingsDialog({
 
   if (!isOpen || !activeColony) return null;
 
+  const isOwner = Boolean(
+    activeColony?.role === 'owner' ||
+    (currentUser?.id && activeColony?.ownerId && String(activeColony.ownerId) === String(currentUser.id)) ||
+    currentUser?.role === 'owner' ||
+    currentUser?.platformRole === 'ADMIN'
+  );
+  const isAdmin = Boolean(isOwner || activeColony?.role === 'admin' || currentUser?.role === 'admin');
+  const isOwnerOrAdmin = isOwner || isAdmin;
+
   const colonyGroups = buildColonyNavGroups({
     activeColonyName: activeColony?.name,
+    isOwnerOrAdmin,
     t,
   });
 
@@ -230,17 +242,31 @@ export function ColonySettingsDialog({
           </div>
         }
         footerAction={
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              onDeleteHub(activeColony);
-            }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left"
-          >
-            <Trash2 className="h-4 w-4 shrink-0" />
-            <span>{t('Hapus Colony')}</span>
-          </button>
+          isOwnerOrAdmin ? (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onDeleteHub(activeColony);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left"
+            >
+              <Trash2 className="h-4 w-4 shrink-0" />
+              <span>{t('Hapus Colony')}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                if (activeColony) onLeaveHub?.(activeColony);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-left"
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              <span>{t('Tinggalkan Colony')}</span>
+            </button>
+          )
         }
       >
         <div className="w-full space-y-6">
@@ -485,7 +511,7 @@ export function ColonySettingsDialog({
               )}
 
               {/* 16. DELETE SERVER */}
-              {(serverSettingsSection === 'delete-server' || serverSettingsSection === 'delete') && (
+              {isOwnerOrAdmin && (serverSettingsSection === 'delete-server' || serverSettingsSection === 'delete') && (
                 <DeleteColonyTab
                   activeColony={activeColony}
                   onDeleteHub={onDeleteHub}

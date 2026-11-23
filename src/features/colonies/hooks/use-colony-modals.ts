@@ -330,6 +330,37 @@ export function useColonyModals({
     toast.success(t('Server berhasil dihapus!'));
   };
 
+  const [colonyToLeave, setColonyToLeave] = useState<Colony | null>(null);
+
+  // Leave Colony Confirm
+  const handleLeaveHubConfirm = async () => {
+    if (!colonyToLeave) return;
+    if (colonyToLeave.id === 'anticeil') {
+      toast.error(t('Server default tidak dapat ditinggalkan.'));
+      setColonyToLeave(null);
+      return;
+    }
+
+    try {
+      await colonyApi.leaveColony(colonyToLeave.id);
+    } catch (err) {
+      console.warn('API leaveColony error', err);
+    }
+
+    const updatedHubs = colonies.filter((h) => h.id !== colonyToLeave.id);
+    setColonies(updatedHubs);
+    saveStoredColonies(updatedHubs);
+
+    setChannels((prev) => prev.filter((c) => c.colonyId !== colonyToLeave.id));
+    setActiveColonyId('anticeil');
+
+    const firstDm = channels.find((c) => c.category === 'DIRECT MESSAGES');
+    setActiveChannelId(firstDm?.id || '');
+
+    setColonyToLeave(null);
+    toast.success(t('Berhasil keluar dari Colony.'));
+  };
+
   // Invite by Username / User Selection (Sends pending server invitation, no auto-join)
   const handleInviteByUsername = async (
     targetOrEvent?: React.FormEvent | string,
@@ -413,6 +444,11 @@ export function useColonyModals({
     colonyToDelete,
     setColonyToDelete,
     handleDeleteHubConfirm,
+
+    // Leave
+    colonyToLeave,
+    setColonyToLeave,
+    handleLeaveHubConfirm,
 
     // Invite
     isInviteOpen,

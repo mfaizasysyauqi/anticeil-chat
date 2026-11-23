@@ -55,6 +55,8 @@ export interface ColonyChannelsSidebarProps {
   onUpdateCategory?: (categoryId: string, name: string) => void;
   categories?: ColonyCategory[];
   onOpenCreateColony?: () => void;
+  onOpenDeleteColony?: (colony: Colony) => void;
+  onLeaveColony?: (colony: Colony) => void;
   onOpenEditChannel: (channel: ColonyChannel) => void;
   onUpdateColonyIcon?: (file: File) => Promise<void> | void;
   onMoveChannelCategory?: (channelId: string, categoryId?: string, categoryName?: string) => Promise<void> | void;
@@ -87,6 +89,8 @@ export function ColonyChannelsSidebar({
   onOpenServerSettings,
   onOpenCreateChannel,
   onOpenCreateColony,
+  onOpenDeleteColony,
+  onLeaveColony,
   onOpenCreateCategory,
   onDeleteCategory,
   onUpdateCategory,
@@ -257,11 +261,14 @@ export function ColonyChannelsSidebar({
       {/* Colony Header */}
       <SidebarColonyHeader
         activeColony={activeColony}
+        currentUser={currentUser}
         onUpdateColonyIcon={onUpdateColonyIcon}
         onOpenServerSettings={onOpenServerSettings}
         onOpenCreateChannel={onOpenCreateChannel}
         onOpenCreateCategory={onOpenCreateCategory}
         onOpenCreateColony={onOpenCreateColony}
+        onOpenDeleteColony={onOpenDeleteColony}
+        onLeaveColony={onLeaveColony}
         onToggleCollapseSidebar={onToggleCollapseSidebar}
         t={t}
       />

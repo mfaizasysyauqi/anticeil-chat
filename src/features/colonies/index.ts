@@ -3,6 +3,7 @@ export * from './components/colony-icon';
 export * from './components/create-or-join-colony-dialog';
 export * from './components/edit-colony-dialog';
 export * from './components/delete-colony-dialog';
+export * from './components/leave-colony-dialog';
 export * from './components/colony-invite-dialog';
 export * from './components/colonies-view';
 export * from './hooks/use-colony-modals';

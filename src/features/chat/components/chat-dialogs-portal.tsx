@@ -8,6 +8,7 @@ import {
   CreateOrJoinColonyDialog,
   EditColonyDialog,
   DeleteColonyDialog,
+  LeaveColonyDialog,
   ColonyInviteDialog,
   type useColonyModals,
 } from '@/features/colonies';
@@ -275,6 +276,7 @@ export function ChatDialogsPortal({
         channels={channels}
         onUpdateColony={onUpdateColony}
         onDeleteHub={(hub) => colonyModals.setColonyToDelete(hub)}
+        onLeaveHub={(hub) => colonyModals.setColonyToLeave(hub)}
         onOpenWebhooks={() => channelModals.setIsWebhookDialogOpen(true)}
         onUpdateMembers={setMembers}
         onNavigateToApps={onNavigateToApps}
@@ -297,6 +299,14 @@ export function ChatDialogsPortal({
         serverToDelete={colonyModals.colonyToDelete}
         onClose={() => colonyModals.setColonyToDelete(null)}
         onDeleteConfirm={colonyModals.handleDeleteHubConfirm}
+        t={t}
+      />
+
+      {/* Leave Colony Dialog */}
+      <LeaveColonyDialog
+        colonyToLeave={colonyModals.colonyToLeave}
+        onClose={() => colonyModals.setColonyToLeave(null)}
+        onLeaveConfirm={colonyModals.handleLeaveHubConfirm}
         t={t}
       />
 

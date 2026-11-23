@@ -134,10 +134,10 @@ export function HomeChannelsSidebar({
                   : 'text-muted-foreground group-hover:text-foreground',
               )}
             />
-            <span className="flex-1 font-medium">{t('Aplikasi & Aktivitas')}</span>
+            <span className="flex-1 font-medium">{t('Aplikasi')}</span>
           </button>
 
-          {/* 2. Colony & Komunitas (Workspace / Discovery) */}
+          {/* 2. Colony (Workspace / Discovery) */}
           <button
             onClick={() => {
               setActiveChannelId('');
@@ -159,7 +159,7 @@ export function HomeChannelsSidebar({
                   : 'text-muted-foreground group-hover:text-foreground',
               )}
             />
-            <span className="flex-1 font-medium">{t('Colony & Komunitas')}</span>
+            <span className="flex-1 font-medium">{t('Colony')}</span>
           </button>
 
           {/* 3. Notifikasi (Global Activity Feed) */}

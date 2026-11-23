@@ -14,6 +14,8 @@ import {
   ExternalLink,
   FolderPlus,
   PanelLeftClose,
+  Trash2,
+  LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -31,26 +33,41 @@ import type { ColonySettingsSection } from '@/features/colony-settings';
 
 export interface SidebarColonyHeaderProps {
   activeColony: Colony | null;
+  currentUser?: any;
   onUpdateColonyIcon?: (file: File) => Promise<void> | void;
   onOpenServerSettings: (section?: ColonySettingsSection) => void;
   onOpenCreateChannel: (category: string, type?: any) => void;
   onOpenCreateCategory?: () => void;
   onOpenCreateColony?: () => void;
+  onOpenDeleteColony?: (colony: Colony) => void;
+  onLeaveColony?: (colony: Colony) => void;
   onToggleCollapseSidebar?: () => void;
   t: (key: string, params?: Record<string, any>) => string;
 }
 
 export const SidebarColonyHeader: React.FC<SidebarColonyHeaderProps> = ({
   activeColony,
+  currentUser,
   onUpdateColonyIcon,
   onOpenServerSettings,
   onOpenCreateChannel,
   onOpenCreateCategory,
   onOpenCreateColony,
+  onOpenDeleteColony,
+  onLeaveColony,
   onToggleCollapseSidebar,
   t,
 }) => {
   const serverIconQuickInputRef = useRef<HTMLInputElement>(null);
+
+  const isOwner = Boolean(
+    activeColony?.role === 'owner' ||
+    (currentUser?.id && activeColony?.ownerId && String(activeColony.ownerId) === String(currentUser.id)) ||
+    currentUser?.role === 'owner' ||
+    currentUser?.platformRole === 'ADMIN'
+  );
+  const isAdmin = Boolean(isOwner || activeColony?.role === 'admin' || currentUser?.role === 'admin');
+  const isOwnerOrAdmin = isOwner || isAdmin;
 
   return (
     <div className="h-12 border-b border-sidebar-border px-2 flex items-center justify-between gap-1 font-semibold shadow-2xs shrink-0 bg-sidebar z-10">
@@ -179,6 +196,27 @@ export const SidebarColonyHeader: React.FC<SidebarColonyHeaderProps> = ({
                 <ExternalLink className="w-4 h-4 mr-2" /> {t('Jelajahi Marketplace')}
               </Link>
             </DropdownMenuItem>
+
+            {activeColony && activeColony.id !== 'anticeil' && (
+              <>
+                <DropdownMenuSeparator />
+                {isOwnerOrAdmin ? (
+                  <DropdownMenuItem
+                    onClick={() => (onOpenDeleteColony ? onOpenDeleteColony(activeColony) : onOpenServerSettings('delete'))}
+                    className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" /> {t('Hapus Colony')}
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    onClick={() => onLeaveColony?.(activeColony)}
+                    className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" /> {t('Tinggalkan Colony')}
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

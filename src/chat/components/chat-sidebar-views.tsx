@@ -206,6 +206,9 @@ export interface ChannelsSidebarWrapperProps {
   setColonies: React.Dispatch<React.SetStateAction<Colony[]>>;
   setColonyToEdit: (c: any) => void;
   setColonyToDelete: (c: any) => void;
+  setColonyToLeave?: (c: any) => void;
+  onOpenDeleteColony?: (c: any) => void;
+  onLeaveColony?: (c: any) => void;
   setIsCallPiP: (pip: boolean) => void;
   selectedActivityAppId: string | null;
   onItemClick?: () => void;
@@ -257,6 +260,9 @@ export const ChannelsSidebarWrapper: React.FC<ChannelsSidebarWrapperProps> = ({
   setColonies,
   setColonyToEdit,
   setColonyToDelete,
+  setColonyToLeave,
+  onOpenDeleteColony,
+  onLeaveColony,
   setIsCallPiP,
   selectedActivityAppId,
   onItemClick,
@@ -376,7 +382,8 @@ export const ChannelsSidebarWrapper: React.FC<ChannelsSidebarWrapperProps> = ({
         reader.readAsDataURL(file);
       }}
       onOpenEditColony={() => setColonyToEdit(activeColony)}
-      onOpenDeleteColony={() => setColonyToDelete(activeColony)}
+      onOpenDeleteColony={onOpenDeleteColony || (() => setColonyToDelete(activeColony))}
+      onLeaveColony={onLeaveColony || (() => setColonyToLeave?.(activeColony))}
       setIsCallPiP={setIsCallPiP}
       selectedActivityAppId={selectedActivityAppId}
       userBottomDock={null}

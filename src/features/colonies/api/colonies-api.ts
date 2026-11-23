@@ -189,6 +189,24 @@ export const coloniesApi = {
     return { success: true, id };
   },
 
+  async leaveColony(id: string): Promise<{ success: boolean; id: string }> {
+    try {
+      const user = getCurrentAuthUser();
+      await api.post(`/v1/colony/colonies/${id}/leave`, { userId: user?.id });
+    } catch (err) {
+      console.warn('Failed to leave colony on server', err);
+    }
+    const stored = loadStoredColonies();
+    saveStoredColonies(stored.filter((h) => h.id !== id));
+    this.recordAudit(id, 'COLONY_LEFT', 'Member', id);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('anticeil_colonies_changed'));
+      window.dispatchEvent(new Event('anticeil_channels_changed'));
+      window.dispatchEvent(new CustomEvent('anticeil_switch_colony', { detail: 'anticeil' }));
+    }
+    return { success: true, id };
+  },
+
   async boostColony(id: string): Promise<{ success: boolean; boostsCount: number; boostTier: number }> {
     try {
       const res = await api.post<{ success: boolean; boostsCount: number; boostTier: number }>(
@@ -1240,6 +1258,7 @@ export const coloniesApi = {
   boostHub(id: string) { return this.boostColony(id); },
   createHub(payload: any) { return this.createColony(payload); },
   deleteHub(id: string) { return this.deleteColony(id); },
+  leaveHub(id: string) { return this.leaveColony(id); },
 };
 
 export const colonyApi = coloniesApi;

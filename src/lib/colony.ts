@@ -249,8 +249,22 @@ export function getStorageKeyColonies(): string {
           localStorage.getItem('currentUser')
         : null;
     const user = rawUser ? JSON.parse(rawUser) : null;
-    if (user?.id) {
-      return `anticeil_colony_colonies_v3_${user.id}`;
+    let userId = user?.id;
+    if (!userId && typeof window !== 'undefined') {
+      const auth = localStorage.getItem('token') || localStorage.getItem('ap_token');
+      if (auth) {
+        const tokenStr = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
+        const parts = tokenStr.split('.');
+        if (parts.length === 3) {
+          try {
+            const p = JSON.parse(atob(parts[1]));
+            userId = p?.id || p?.sub;
+          } catch {}
+        }
+      }
+    }
+    if (userId) {
+      return `anticeil_colony_colonies_v3_${userId}`;
     }
   } catch {}
   return STORAGE_KEY_COLONIES;
