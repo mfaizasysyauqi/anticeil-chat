@@ -1621,7 +1621,8 @@ export function ShopView({
           {/* Top Catalog Toolbar: Sort by + Hide/Show Filters toggle (Discord 1:1) */}
           <div className="flex items-center justify-between min-h-7 gap-2 sm:gap-3 pb-2 border-b border-border/50">
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
-              <span className={cn(TEXT_STYLES.SECTION_MUTED, 'text-xs')}>
+              <ShoppingBag className="w-4 h-4 text-primary shrink-0" />
+              <span className={cn(TEXT_STYLES.SECTION_MUTED, 'truncate max-w-[110px] sm:max-w-none text-xs')}>
                 {t('Katalog')}
               </span>
               <span className={TEXT_STYLES.COUNTER_LABEL}>
