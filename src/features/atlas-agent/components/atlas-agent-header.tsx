@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Code2 } from 'lucide-react';
+import { Trash2, Code2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -28,6 +28,7 @@ export interface AtlasAgentHeaderProps {
 export function AtlasAgentHeader({
   onOpenSidebar,
   horizontalPadding = LAYOUT_PAGE_SPACING.HORIZONTAL,
+  activeSessionTitle,
   onClearSessionMessages,
   onDeleteSession,
   hasMessages = false,
@@ -38,6 +39,7 @@ export function AtlasAgentHeader({
 
   const handleDelete = onDeleteSession || onClearSessionMessages;
   const canDelete = Boolean(onDeleteSession || (hasMessages && onClearSessionMessages));
+  const displayTitle = activeSessionTitle || t('Percakapan Baru');
 
   return (
     <div
@@ -46,23 +48,18 @@ export function AtlasAgentHeader({
         horizontalPadding
       )}
     >
-      {/* Left: Mobile Sidebar Trigger + Title & Mascot Icon */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Left: Mobile Sidebar Trigger + Conversation Title */}
+      <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
         <SidebarNavToggle onClick={onOpenSidebar} />
 
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="size-6 flex items-center justify-center shrink-0">
-            <img
-              src="/atlas-head.png"
-              alt="Atlas Mascot"
-              className="size-full object-contain filter drop-shadow-xs"
-              onError={(e) => {
-                // Fallback to emoji if image fails to load
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
-          </div>
-          <span className="text-sm font-bold text-foreground">{t('Atlas Agent')}</span>
+        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+          <MessageSquare className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span
+            className="text-sm font-semibold text-foreground truncate min-w-0 block"
+            title={displayTitle}
+          >
+            {displayTitle}
+          </span>
         </div>
       </div>
 

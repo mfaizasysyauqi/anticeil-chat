@@ -542,6 +542,7 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
       <AtlasAgentHeader
         onOpenSidebar={onOpenSidebar}
         horizontalPadding={horizontalPadding}
+        activeSessionTitle={activeSession?.title}
         onDeleteSession={activeSession ? () => onDeleteSession(activeSession.id) : undefined}
         onClearSessionMessages={activeSession ? () => onClearSessionMessages(activeSession.id) : undefined}
         hasMessages={messages.length > 0}
