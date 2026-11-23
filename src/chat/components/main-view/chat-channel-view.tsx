@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { NavigateFunction } from 'react-router-dom';
 import { MessageSquare, X, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -526,6 +526,42 @@ export function ChatChannelView({
     </>
   );
 
+  const dmPeerDisplayName = useMemo(() => {
+    if (!activeChannel) return undefined;
+    const isDm = Boolean(
+      activeChannel.category === 'DIRECT MESSAGES' ||
+      activeChannel.isDirectMessage ||
+      activeChannel.id?.startsWith('dm-'),
+    );
+    if (!isDm) return undefined;
+    const isGeneric =
+      !activeChannel.name ||
+      activeChannel.name.toLowerCase() === 'direct message' ||
+      activeChannel.name.toLowerCase() === 'pesan langsung' ||
+      activeChannel.name === currentUser?.name;
+    if (!isGeneric) {
+      return activeChannel.name;
+    }
+    const myId = currentUser?.id ? String(currentUser.id) : '';
+    const targetUserId =
+      activeChannel.dmUserId && String(activeChannel.dmUserId) !== myId
+        ? String(activeChannel.dmUserId)
+        : activeChannel.id?.startsWith('dm-')
+          ? activeChannel.id.slice(3).split('-').find((p: string) => p !== myId && p !== 'chat')
+          : undefined;
+    if (targetUserId) {
+      const foundFriend = friends?.allFriends?.find(
+        (f: any) => String(f.id) === targetUserId && String(f.id) !== myId,
+      );
+      if (foundFriend?.name) return foundFriend.name;
+      const foundMember = displayMembers?.find(
+        (m: any) => String(m.id) === targetUserId && String(m.id) !== myId,
+      );
+      if (foundMember?.name) return foundMember.name;
+    }
+    return undefined;
+  }, [activeChannel, currentUser, friends?.allFriends, displayMembers]);
+
   const isCallOrActivityActive = Boolean(
     activeChannel &&
       (activeCallChannelId === activeChannel.id ||
@@ -540,6 +576,7 @@ export function ChatChannelView({
       {!isCallOrActivityActive && activeChannel?.type !== 'stage' && (
         <ChannelTopHeaderBar
           activeChannel={activeChannel}
+          channelDisplayName={dmPeerDisplayName}
           channelPaddingClass={CHANNEL_HORIZONTAL_PADDING}
           isHome={isHome}
           onOpenMobileChannels={onOpenSidebar || (() => setIsMobileChannelsOpen(true))}
@@ -697,12 +734,29 @@ export function ChatChannelView({
                   const mins = Math.floor(elapsedSec / 60);
                   const secs = elapsedSec % 60;
                   const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                  const isDmChannel = Boolean(activeChannel.dmUserId);
-                  const dmFriend = isDmChannel ? friends.allFriends?.find((f: any) => f.id === activeChannel.dmUserId) : null;
+                  const isDmChannel = Boolean(
+                    activeChannel.category === 'DIRECT MESSAGES' ||
+                    activeChannel.isDirectMessage ||
+                    activeChannel.dmUserId ||
+                    activeChannel.id.startsWith('dm-'),
+                  );
+                  const myId = currentUser?.id ? String(currentUser.id) : '';
+                  const targetUserId =
+                    activeChannel.dmUserId && String(activeChannel.dmUserId) !== myId
+                      ? String(activeChannel.dmUserId)
+                      : activeChannel.id?.startsWith('dm-')
+                        ? activeChannel.id.slice(3).split('-').find((p: string) => p !== myId && p !== 'chat')
+                        : undefined;
+                  const dmFriend = isDmChannel && targetUserId
+                    ? friends.allFriends?.find((f: any) => String(f.id) === targetUserId && String(f.id) !== myId)
+                    : null;
+                  const myAvatar = currentUser?.imageUrl || currentUser?.avatar || null;
+                  const peerAvatar = dmFriend?.avatar || dmFriend?.imageUrl || null;
+                  const safePeerAvatar = peerAvatar && peerAvatar !== myAvatar ? peerAvatar : null;
                   handleCreateCallLog?.({
-                    peerId: activeChannel.dmUserId || activeChannel.id,
-                    peerName: isDmChannel ? (dmFriend?.name || activeChannel.name) : activeChannel.name,
-                    peerAvatar: isDmChannel ? (dmFriend?.avatar || dmFriend?.imageUrl || null) : (activeColony?.iconUrl || null),
+                    peerId: targetUserId || activeChannel.id,
+                    peerName: isDmChannel ? (dmFriend?.name || (activeChannel.name !== 'Direct Message' ? activeChannel.name : 'Teman')) : activeChannel.name,
+                    peerAvatar: isDmChannel ? safePeerAvatar : (activeColony?.iconUrl || null),
                     colonyId: isDmChannel ? undefined : activeColony?.id,
                     hubName: isDmChannel ? undefined : activeColony?.name,
                     hubIcon: isDmChannel ? undefined : (activeColony?.iconUrl || null),

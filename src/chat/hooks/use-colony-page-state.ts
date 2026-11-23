@@ -179,6 +179,7 @@ export function useColonyPageState(): ChatPageContentProps {
     setColonies,
     activeColonyId,
     setActiveColonyId,
+    currentUser,
   });
 
   // ── 7. Initial Data Loader Hook ────────────────────────────────────

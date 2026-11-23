@@ -12,6 +12,7 @@ export interface UseColonySocketOptions {
   setColonies?: React.Dispatch<React.SetStateAction<Colony[]>>;
   activeColonyId?: string;
   setActiveColonyId?: (id: string) => void;
+  currentUser?: any;
 }
 
 export function useColonySocket({
@@ -24,6 +25,7 @@ export function useColonySocket({
   setColonies,
   activeColonyId,
   setActiveColonyId,
+  currentUser,
 }: UseColonySocketOptions) {
   useEffect(() => {
     if (!socket) return;
@@ -47,7 +49,14 @@ export function useColonySocket({
           setClosedDmId(newMsg.channelId, false);
           setChannels((prev) => {
             if (prev.some((c) => c.id === newMsg.channelId)) return prev;
-            const dmName = newMsg.senderName || 'Direct Message';
+            const parts = newMsg.channelId.slice(3).split('-').filter(Boolean);
+            const myId = currentUser?.id ? String(currentUser.id) : '';
+            const peerUserId =
+              parts.find((p) => p !== myId && p !== 'chat') ||
+              (String(newMsg.senderId) !== myId ? String(newMsg.senderId) : parts[0]);
+            const isFromPeer = String(newMsg.senderId) !== myId;
+            const dmName = (isFromPeer ? newMsg.senderName : null) || 'Direct Message';
+            const dmAvatar = isFromPeer ? newMsg.senderAvatar : undefined;
             const newDm: ColonyChannel = {
               id: newMsg.channelId,
               name: dmName,
@@ -55,7 +64,9 @@ export function useColonySocket({
               category: 'DIRECT MESSAGES',
               colonyId: 'anticeil',
               isDirectMessage: true,
-              dmUserId: newMsg.senderId,
+              dmUserId: peerUserId,
+              avatar: dmAvatar,
+              recipientAvatar: dmAvatar,
               type: 'text',
             };
             const updated = [newDm, ...prev];

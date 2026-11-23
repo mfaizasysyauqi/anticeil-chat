@@ -177,46 +177,89 @@ export function MessagesFeed({
   // Removed friends optimistic state
   const [removedFriendIds, setRemovedFriendIds] = React.useState<Set<string>>(new Set());
 
+  // Helper to determine if an entity is the current logged-in user
+  const isSelf = React.useCallback(
+    (user: any): boolean => {
+      if (!user || !currentUser) return false;
+      const myId = currentUser.id ? String(currentUser.id) : '';
+      const myEmail = (currentUser.email || '').toLowerCase().trim();
+      const myName = (
+        currentUser.name ||
+        `${currentUser.firstName || ''} ${currentUser.lastName || ''}`
+      )
+        .toLowerCase()
+        .trim();
+      const myUsername = (currentUser.username || '').toLowerCase().trim();
+
+      const uid = user.id ? String(user.id) : '';
+      const uemail = (user.email || '').toLowerCase().trim();
+      const uname = (user.name || user.displayName || user.firstName || '')
+        .toLowerCase()
+        .trim();
+      const uusername = (user.username || '').toLowerCase().trim();
+
+      if (myId && uid && myId === uid) return true;
+      if (myEmail && uemail && myEmail === uemail) return true;
+      if (myUsername && uusername && myUsername === uusername) return true;
+      if (myName && uname && myName === uname) return true;
+      return false;
+    },
+    [currentUser],
+  );
+
   // Resolve DM peer friend info
   const dmFriend = React.useMemo(() => {
     if (!isDm || !activeChannel) return null;
 
-    let otherUserId = activeChannel.dmUserId || null;
+    let otherUserId: string | null = null;
+    if (activeChannel.dmUserId && !isSelf({ id: activeChannel.dmUserId })) {
+      otherUserId = String(activeChannel.dmUserId);
+    }
     if (!otherUserId && activeChannel.id?.startsWith('dm-')) {
       const parts = activeChannel.id.slice(3).split('-').filter(Boolean);
-      otherUserId = parts.find((p: string) => p !== currentUser?.id) || parts[0] || null;
+      const peerPart = parts.find((p: string) => !isSelf({ id: p }) && p !== 'chat');
+      if (peerPart) otherUserId = peerPart;
     }
 
     const cleanChannelName = (activeChannel.name || '').replace(/^[@#]\s*/, '').trim();
+    const isGenericChannelName =
+      !cleanChannelName ||
+      cleanChannelName.toLowerCase() === 'direct message' ||
+      cleanChannelName.toLowerCase() === 'pesan langsung' ||
+      isSelf({ name: cleanChannelName });
 
-    const foundFriend = friends?.allFriends?.find(
-      (f: any) =>
-        (otherUserId && f.id === otherUserId) ||
-        (cleanChannelName &&
-          (f.name?.toLowerCase() === cleanChannelName.toLowerCase() ||
-            f.username?.toLowerCase() === cleanChannelName.toLowerCase() ||
-            cleanChannelName.toLowerCase().includes((f.name || '').toLowerCase())))
-    );
-
-    const foundMember = members?.find(
-      (m: any) => {
-        if (currentUser?.id && m.id === currentUser.id) return false;
-        return (
-          (otherUserId && m.id === otherUserId) ||
-          (cleanChannelName &&
-            (m.name?.toLowerCase() === cleanChannelName.toLowerCase() ||
-              m.username?.toLowerCase() === cleanChannelName.toLowerCase() ||
-              cleanChannelName.toLowerCase().includes((m.name || '').toLowerCase())))
-        );
+    const foundFriend = friends?.allFriends?.find((f: any) => {
+      if (isSelf(f)) return false;
+      if (otherUserId && String(f.id) === otherUserId) return true;
+      if (!isGenericChannelName) {
+        const fName = (f.name || '').toLowerCase();
+        const fUser = (f.username || '').toLowerCase();
+        const cName = cleanChannelName.toLowerCase();
+        return fName === cName || fUser === cName;
       }
-    );
+      return false;
+    });
+
+    const foundMember = members?.find((m: any) => {
+      if (isSelf(m)) return false;
+      if (otherUserId && String(m.id) === otherUserId) return true;
+      if (!isGenericChannelName) {
+        const mName = (m.name || '').toLowerCase();
+        const mUser = (m.username || '').toLowerCase();
+        const cName = cleanChannelName.toLowerCase();
+        return mName === cName || mUser === cName;
+      }
+      return false;
+    });
 
     // Look for peer sender info from messages in this DM
     const peerMessage = filteredMessages.find(
-      (m: any) => (!currentUser?.id || m.senderId !== currentUser.id) && (m.senderAvatar || m.senderName)
+      (m: any) =>
+        !isSelf({ id: m.senderId, name: m.senderName, username: (m as any).senderUsername }) &&
+        (m.senderAvatar || m.senderName),
     );
 
-    // Check localStorage cached message avatars
+    // Check localStorage cached message avatars for peer
     let cachedMessageAvatar: string | undefined;
     try {
       if (typeof window !== 'undefined') {
@@ -227,13 +270,16 @@ export function MessagesFeed({
           if (Array.isArray(channelMsgs)) {
             for (let i = channelMsgs.length - 1; i >= 0; i--) {
               const msg = channelMsgs[i];
-              if (msg?.senderAvatar && (!currentUser?.id || msg.senderId !== currentUser.id)) {
+              if (
+                msg?.senderAvatar &&
+                !isSelf({ id: msg.senderId, name: msg.senderName, username: msg.senderUsername })
+              ) {
                 cachedMessageAvatar = msg.senderAvatar;
                 break;
               }
             }
           }
-          if (!cachedMessageAvatar && cleanChannelName) {
+          if (!cachedMessageAvatar && !isGenericChannelName) {
             const searchLower = cleanChannelName.toLowerCase();
             for (const list of Object.values(msgsMap) as any[]) {
               if (!Array.isArray(list)) continue;
@@ -242,6 +288,7 @@ export function MessagesFeed({
                 if (
                   msg?.senderAvatar &&
                   msg.senderName &&
+                  !isSelf({ id: msg.senderId, name: msg.senderName, username: msg.senderUsername }) &&
                   (msg.senderName.toLowerCase() === searchLower ||
                     msg.senderName.toLowerCase().startsWith(searchLower) ||
                     searchLower.startsWith(msg.senderName.toLowerCase()))
@@ -257,42 +304,67 @@ export function MessagesFeed({
       }
     } catch {}
 
-    const displayName =
-      foundFriend?.name ||
-      foundMember?.name ||
-      peerMessage?.senderName ||
-      cleanChannelName ||
-      'Pengguna Anticeil';
+    const myAvatar = currentUser?.imageUrl || currentUser?.avatar || null;
+    const candidateAvatars = [
+      foundFriend?.avatar,
+      foundFriend?.imageUrl,
+      foundMember?.avatar,
+      foundMember?.imageUrl,
+      peerMessage?.senderAvatar,
+      cachedMessageAvatar,
+      (activeChannel as any).recipientAvatar,
+      (activeChannel as any).dmUserAvatar,
+      activeChannel.avatar,
+      (activeChannel as any).iconUrl,
+      (activeChannel as any).imageUrl,
+    ].filter(Boolean);
+
+    // Filter out current user's avatar so peer never uses current user's avatar
+    const resolvedAvatar =
+      candidateAvatars.find((av) => !myAvatar || av !== myAvatar) || null;
+
+    const candidateNames = [
+      foundFriend?.name,
+      foundMember?.name,
+      peerMessage?.senderName,
+      !isGenericChannelName ? cleanChannelName : null,
+    ].filter(Boolean);
+
+    const resolvedDisplayName =
+      candidateNames.find((n) => !isSelf({ name: n })) ||
+      (!isGenericChannelName ? cleanChannelName : 'Direct Message');
 
     const username =
       foundFriend?.username ||
       foundMember?.username ||
-      (displayName !== cleanChannelName ? cleanChannelName : null) ||
-      displayName.toLowerCase().replace(/[^a-z0-9_]/g, '');
+      (peerMessage as any)?.senderUsername ||
+      (resolvedDisplayName !== cleanChannelName ? cleanChannelName : null) ||
+      resolvedDisplayName.toLowerCase().replace(/[^a-z0-9_]/g, '');
 
-    const avatar =
-      foundFriend?.avatar ||
-      foundFriend?.imageUrl ||
-      foundMember?.avatar ||
-      foundMember?.imageUrl ||
-      peerMessage?.senderAvatar ||
-      cachedMessageAvatar ||
-      activeChannel.avatar ||
-      (activeChannel as any).recipientAvatar ||
-      (activeChannel as any).dmUserAvatar ||
-      (activeChannel as any).iconUrl ||
-      (activeChannel as any).imageUrl ||
-      null;
-
-    const id = foundFriend?.id || foundMember?.id || otherUserId || activeChannel.id;
+    const resolvedId =
+      (foundFriend?.id && !isSelf(foundFriend) ? foundFriend.id : null) ||
+      (foundMember?.id && !isSelf(foundMember) ? foundMember.id : null) ||
+      otherUserId ||
+      activeChannel.id;
 
     return {
-      id,
-      name: displayName,
-      username: username && username.toLowerCase() !== displayName.toLowerCase() ? username : (foundFriend?.username || username),
-      avatar,
+      id: resolvedId,
+      name: resolvedDisplayName,
+      username:
+        username && username.toLowerCase() !== resolvedDisplayName.toLowerCase()
+          ? username
+          : foundFriend?.username || username,
+      avatar: resolvedAvatar,
     };
-  }, [isDm, activeChannel, friends?.allFriends, members, filteredMessages, currentUser?.id]);
+  }, [
+    isDm,
+    activeChannel,
+    friends?.allFriends,
+    members,
+    filteredMessages,
+    currentUser,
+    isSelf,
+  ]);
 
   // Check if target is a friend
   const isFriend = Boolean(

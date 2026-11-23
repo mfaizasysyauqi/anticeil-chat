@@ -32,6 +32,7 @@ import type { ColonyChannel, ColonyMessage } from '@/chat/chat-types';
 
 export interface ChannelTopHeaderBarProps {
   activeChannel: ColonyChannel | null;
+  channelDisplayName?: string;
   channelPaddingClass?: string;
   isHome?: boolean;
   onOpenMobileChannels: () => void;
@@ -75,6 +76,7 @@ export interface ChannelTopHeaderBarProps {
 
 export function ChannelTopHeaderBar({
   activeChannel,
+  channelDisplayName,
   channelPaddingClass = CHANNEL_HORIZONTAL_PADDING,
   isHome = false,
   onOpenMobileChannels,
@@ -153,9 +155,9 @@ export function ChannelTopHeaderBar({
         >
           <span
             className="text-sm font-semibold text-foreground truncate min-w-0 block"
-            title={activeChannel ? activeChannel.name : t('Belum ada channel')}
+            title={channelDisplayName || (activeChannel ? activeChannel.name : t('Belum ada channel'))}
           >
-            {activeChannel ? activeChannel.name : t('Belum ada channel')}
+            {channelDisplayName || (activeChannel ? activeChannel.name : t('Belum ada channel'))}
           </span>
           {activeChannel?.isGroupDm && activeChannel?.dmUserIds && activeChannel.dmUserIds.length > 0 && (
             <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold shrink-0 whitespace-nowrap">
@@ -346,7 +348,7 @@ export function ChannelTopHeaderBar({
         <ResponsiveSearchBar
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder={activeChannel?.name ? `Search ${activeChannel.name}` : 'Search'}
+          placeholder={channelDisplayName || activeChannel?.name ? `Search ${channelDisplayName || activeChannel?.name}` : 'Search'}
           inputWidth="w-32 sm:w-40 md:w-48 transition-all duration-200 focus-within:w-56"
         />
       </div>

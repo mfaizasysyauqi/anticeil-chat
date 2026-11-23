@@ -479,31 +479,60 @@ export function HomeChannelsSidebar({
               {validDms.map((dm) => {
                 const isActiveDm = activeChannelId === dm.id;
                 const isGroup = Boolean(dm.isGroupDm || dm.id.startsWith('gdm-'));
+
+                const isSelf = (user: any): boolean => {
+                  if (!user || !currentUser) return false;
+                  const myId = currentUser.id ? String(currentUser.id) : '';
+                  const myEmail = (currentUser.email || '').toLowerCase().trim();
+                  const myName = (
+                    currentUser.name ||
+                    `${currentUser.firstName || ''} ${currentUser.lastName || ''}`
+                  )
+                    .toLowerCase()
+                    .trim();
+                  const myUsername = (currentUser.username || '').toLowerCase().trim();
+
+                  const uid = user.id ? String(user.id) : '';
+                  const uemail = (user.email || '').toLowerCase().trim();
+                  const uname = (user.name || user.displayName || user.firstName || '')
+                    .toLowerCase()
+                    .trim();
+                  const uusername = (user.username || '').toLowerCase().trim();
+
+                  if (myId && uid && myId === uid) return true;
+                  if (myEmail && uemail && myEmail === uemail) return true;
+                  if (myUsername && uusername && myUsername === uusername) return true;
+                  if (myName && uname && myName === uname) return true;
+                  return false;
+                };
+
+                let otherUserId: string | null = null;
+                if (dm.dmUserId && !isSelf({ id: dm.dmUserId })) {
+                  otherUserId = String(dm.dmUserId);
+                }
+                if (!otherUserId && dm.id?.startsWith('dm-')) {
+                  const parts = dm.id.slice(3).split('-').filter(Boolean);
+                  const peerPart = parts.find((p: string) => !isSelf({ id: p }) && p !== 'chat');
+                  if (peerPart) otherUserId = peerPart;
+                }
+
+                const isGenericDmName =
+                  !dm.name ||
+                  dm.name.toLowerCase() === 'direct message' ||
+                  dm.name.toLowerCase() === 'pesan langsung' ||
+                  isSelf({ name: dm.name });
+
                 const member = isGroup
                   ? null
                   : members.find((m) => {
-                      const isSelf =
-                        (currentUser?.id && m.id === currentUser.id) ||
-                        (currentUser?.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase()) ||
-                        (currentUser?.name && m.name && m.name.toLowerCase() === currentUser.name.toLowerCase());
-                      if (isSelf) return false;
-
-                      // 1. Match by DM name (primary identifier of DM partner)
-                      if (m.name && dm.name && (
-                        m.name.toLowerCase() === dm.name.toLowerCase() ||
-                        m.name.toLowerCase().startsWith(dm.name.toLowerCase()) ||
-                        dm.name.toLowerCase().startsWith(m.name.toLowerCase())
-                      )) return true;
-                      if (m.username && dm.name && (
-                        m.username.toLowerCase() === dm.name.toLowerCase() ||
-                        m.username.toLowerCase().startsWith(dm.name.toLowerCase()) ||
-                        dm.name.toLowerCase().startsWith(m.username.toLowerCase())
-                      )) return true;
-
-                      // 2. Match by DM user ID
-                      if (dm.dmUserId && m.id === dm.dmUserId) return true;
-                      if (m.id && `dm-${m.id}` === dm.id) return true;
-                      if (m.id && dm.id.includes(m.id)) return true;
+                      if (isSelf(m)) return false;
+                      if (otherUserId && String(m.id) === otherUserId) return true;
+                      if (!isGenericDmName && dm.name) {
+                        const mName = (m.name || '').toLowerCase();
+                        const mUser = (m.username || '').toLowerCase();
+                        const dName = dm.name.toLowerCase();
+                        return mName === dName || mUser === dName;
+                      }
                       return false;
                     });
 
@@ -518,23 +547,29 @@ export function HomeChannelsSidebar({
                       if (Array.isArray(channelMsgs)) {
                         for (let i = channelMsgs.length - 1; i >= 0; i--) {
                           const msg = channelMsgs[i];
-                          if (msg?.senderAvatar && (!currentUser?.id || msg.senderId !== currentUser.id)) {
+                          if (
+                            msg?.senderAvatar &&
+                            !isSelf({ id: msg.senderId, name: msg.senderName, username: msg.senderUsername })
+                          ) {
                             cachedMessageAvatar = msg.senderAvatar;
                             break;
                           }
                         }
                       }
-                      if (!cachedMessageAvatar && dm.name) {
+                      if (!cachedMessageAvatar && !isGenericDmName && dm.name) {
                         const searchName = dm.name.toLowerCase().trim();
                         for (const list of Object.values(msgsMap) as any[]) {
                           if (!Array.isArray(list)) continue;
                           for (let i = list.length - 1; i >= 0; i--) {
                             const msg = list[i];
-                            if (msg?.senderAvatar && msg.senderName && (
-                              msg.senderName.toLowerCase() === searchName ||
-                              msg.senderName.toLowerCase().startsWith(searchName) ||
-                              searchName.startsWith(msg.senderName.toLowerCase())
-                            )) {
+                            if (
+                              msg?.senderAvatar &&
+                              msg.senderName &&
+                              !isSelf({ id: msg.senderId, name: msg.senderName, username: msg.senderUsername }) &&
+                              (msg.senderName.toLowerCase() === searchName ||
+                                msg.senderName.toLowerCase().startsWith(searchName) ||
+                                searchName.startsWith(msg.senderName.toLowerCase()))
+                            ) {
                               cachedMessageAvatar = msg.senderAvatar;
                               break;
                             }
@@ -546,18 +581,20 @@ export function HomeChannelsSidebar({
                   }
                 } catch {}
 
+                const myAvatar = currentUser?.imageUrl || currentUser?.avatar || null;
+                const candidateAvatars = [
+                  member?.avatar,
+                  (member as any)?.imageUrl,
+                  (dm as any).recipientAvatar,
+                  (dm as any).avatar,
+                  (dm as any).imageUrl,
+                  (dm as any).dmUserAvatar,
+                  (dm as any).icon,
+                  cachedMessageAvatar,
+                ].filter(Boolean);
+
                 const resolvedImageUrl =
-                  member?.avatar ||
-                  (member as any)?.imageUrl ||
-                  (dm as any).recipientAvatar ||
-                  (dm as any).avatar ||
-                  (dm as any).imageUrl ||
-                  (dm as any).dmUserAvatar ||
-                  (dm as any).icon ||
-                  cachedMessageAvatar ||
-                  (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name)
-                    ? currentUser.imageUrl || currentUser.avatar
-                    : undefined);
+                  candidateAvatars.find((av) => !myAvatar || av !== myAvatar) || undefined;
 
                 return (
                   <div
@@ -582,8 +619,8 @@ export function HomeChannelsSidebar({
                         name={member?.name || member?.username || dm.name || 'Pengguna'}
                         imageUrl={resolvedImageUrl}
                         size={20}
-                        status={member?.status || (dm as any).status || (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name) ? 'online' : undefined)}
-                        showStatus={Boolean(member?.status || (dm as any).status || (currentUser && (dm.dmUserId === currentUser.id || dm.name === currentUser.name)))}
+                        status={member?.status || (dm as any).status || (!isSelf(dm) ? 'online' : undefined)}
+                        showStatus={Boolean(member?.status || (dm as any).status || !isSelf(dm))}
                       />
                     )}
                     <span className="truncate flex-1">{isGroup ? dm.name : (member?.name || member?.username || dm.name)}</span>

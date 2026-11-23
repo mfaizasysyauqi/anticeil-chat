@@ -341,18 +341,24 @@ export function useChatMembers({
 
   const activeDmUserId = useMemo(() => {
     if (!activeChannel) return undefined;
-    if (activeChannel.dmUserId) return activeChannel.dmUserId;
+    const myId = currentUser?.id ? String(currentUser.id) : '';
+    if (activeChannel.dmUserId && String(activeChannel.dmUserId) !== myId) {
+      return String(activeChannel.dmUserId);
+    }
     if (activeChannel.id?.startsWith('dm-')) {
       const parts = activeChannel.id.slice(3).split('-').filter(Boolean);
-      return parts.find((p) => p !== currentUser?.id) || parts[0];
+      return parts.find((p) => String(p) !== myId && p !== 'chat');
     }
     return undefined;
   }, [activeChannel, currentUser?.id]);
 
   const activeDmMember = useMemo(() => {
     if (!activeDmUserId) return undefined;
-    return allKnownMembers.find((m) => m.id === activeDmUserId);
-  }, [activeDmUserId, allKnownMembers]);
+    const myId = currentUser?.id ? String(currentUser.id) : '';
+    return allKnownMembers.find(
+      (m) => String(m.id) === String(activeDmUserId) && String(m.id) !== myId,
+    );
+  }, [activeDmUserId, allKnownMembers, currentUser?.id]);
 
   return {
     currentUserName,
