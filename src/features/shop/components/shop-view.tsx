@@ -252,6 +252,8 @@ export function ShopView({
     featured: true,
   });
 
+  const isAdmin = currentUser?.email?.toLowerCase() === 'anticeil.official@gmail.com';
+
   const handleOpenCreateProduct = () => {
     if (!currentUser && requireAuth) {
       requireAuth(
@@ -259,6 +261,10 @@ export function ShopView({
         t('Tambah Produk'),
         t('Masuk ke Anticeil untuk menambahkan produk baru ke Database Shop.'),
       );
+      return;
+    }
+    if (!isAdmin) {
+      toast.error(t('Hanya akun admin yang dapat menambahkan produk'));
       return;
     }
     setEditingProduct(null);
@@ -286,6 +292,10 @@ export function ShopView({
         t('Edit Produk'),
         t('Masuk ke Anticeil untuk mengedit item di Database Shop.'),
       );
+      return;
+    }
+    if (!isAdmin) {
+      toast.error(t('Hanya akun admin yang dapat mengedit produk'));
       return;
     }
     setEditingProduct(item);
@@ -775,6 +785,10 @@ export function ShopView({
         t('Hapus Produk'),
         t('Masuk ke Anticeil untuk menghapus item dari Database Shop.'),
       );
+      return;
+    }
+    if (!isAdmin) {
+      toast.error(t('Hanya akun admin yang dapat menghapus produk'));
       return;
     }
     try {
@@ -1636,15 +1650,17 @@ export function ShopView({
               />
 
               {/* Tambah Item button - to the right of filter button, matching Quests */}
-              <Button
-                size="sm"
-                onClick={handleOpenCreateProduct}
-                className={cn(BUTTON_STYLES.TOOLBAR_ACTION, 'px-2 sm:px-3 h-7')}
-                title={t('Tambah Produk Baru ke Database Shop')}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{t('Tambah Item')}</span>
-              </Button>
+              {isAdmin && (
+                <Button
+                  size="sm"
+                  onClick={handleOpenCreateProduct}
+                  className={cn(BUTTON_STYLES.TOOLBAR_ACTION, 'px-2 sm:px-3 h-7')}
+                  title={t('Tambah Produk Baru ke Database Shop')}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{t('Tambah Item')}</span>
+                </Button>
+              )}
             </div>
           </div>
         {/* ── Reusable Hero Banner (Matches AppsView YouTube Watch Together layout) ── */}
@@ -1801,27 +1817,29 @@ export function ShopView({
                       </button>
 
                       {/* Edit & Delete buttons on card hover */}
-                      <div className="absolute bottom-2.5 right-2.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenEditProduct(item);
-                          }}
-                          className="size-6 rounded-md bg-background/80 hover:bg-background border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs"
-                          title={t('Edit Item ini')}
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteProduct(e, item.id)}
-                          className="size-6 rounded-md bg-background/90 hover:bg-red-600 border border-border/80 hover:border-red-600 text-red-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs backdrop-blur-md"
-                          title={t('Hapus Item ini dari Database Shop')}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
+                      {isAdmin && (
+                        <div className="absolute bottom-2.5 right-2.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditProduct(item);
+                            }}
+                            className="size-6 rounded-md bg-background/80 hover:bg-background border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                            title={t('Edit Item ini')}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteProduct(e, item.id)}
+                            className="size-6 rounded-md bg-background/90 hover:bg-red-600 border border-border/80 hover:border-red-600 text-red-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs backdrop-blur-md"
+                            title={t('Hapus Item ini dari Database Shop')}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
 
                       {/* Dedicated Cosmetic Artwork Renderer */}
                       {renderCardArtwork(item)}

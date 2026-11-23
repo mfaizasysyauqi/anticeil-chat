@@ -78,6 +78,7 @@ export function QuestsView({
   requireAuth,
 }: QuestsViewProps) {
   const { t } = useTranslation();
+  const isAdmin = currentUser?.email?.toLowerCase() === 'anticeil.official@gmail.com';
   const [activeTab, setActiveTab] = useState<'all' | 'accepted' | 'claimed'>('all');
   const [quests, setQuests] = useState<QuestItem[]>([]);
   const [claimedQuests, setClaimedQuests] = useState<QuestItem[]>([]);
@@ -161,6 +162,10 @@ export function QuestsView({
       );
       return;
     }
+    if (!isAdmin) {
+      toast.error(t('Hanya akun admin yang dapat menambahkan quest'));
+      return;
+    }
     setEditingQuest(null);
     setQuestCoverFile(null);
     setQuestCoverPreview('');
@@ -187,6 +192,10 @@ export function QuestsView({
         t('Edit Quest'),
         t('Masuk ke Anticeil untuk mengedit quest di Database.'),
       );
+      return;
+    }
+    if (!isAdmin) {
+      toast.error(t('Hanya akun admin yang dapat mengedit quest'));
       return;
     }
     setEditingQuest(quest);
@@ -297,6 +306,10 @@ export function QuestsView({
         t('Hapus Quest'),
         t('Masuk ke Anticeil untuk menghapus quest dari Database.'),
       );
+      return;
+    }
+    if (!isAdmin) {
+      toast.error(t('Hanya akun admin yang dapat menghapus quest'));
       return;
     }
     if (!window.confirm(t('Hapus quest ini dari database?'))) return;
@@ -535,27 +548,29 @@ export function QuestsView({
           )}
 
           {/* Edit & Delete Buttons (Fullstack CRUD) */}
-          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenEditQuest(quest);
-              }}
-              className="size-6 sm:size-7 rounded-md bg-background/80 hover:bg-background border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs backdrop-blur-md"
-              title={t('Edit Quest')}
-            >
-              <Pencil className="w-3 h-3" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => handleDeleteQuest(e, quest.id)}
-              className="size-6 sm:size-7 rounded-md bg-background/90 hover:bg-red-600 border border-border/80 hover:border-red-600 text-red-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm hover:shadow-red-950/40 backdrop-blur-md"
-              title={t('Hapus Quest')}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          {isAdmin && (
+            <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenEditQuest(quest);
+                }}
+                className="size-6 sm:size-7 rounded-md bg-background/80 hover:bg-background border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs backdrop-blur-md"
+                title={t('Edit Quest')}
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handleDeleteQuest(e, quest.id)}
+                className="size-6 sm:size-7 rounded-md bg-background/90 hover:bg-red-600 border border-border/80 hover:border-red-600 text-red-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm hover:shadow-red-950/40 backdrop-blur-md"
+                title={t('Hapus Quest')}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           <span className="absolute bottom-2.5 left-2.5 text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wider truncate max-w-[70%]">
             {quest.promoter}
@@ -856,15 +871,17 @@ export function QuestsView({
                 />
 
                 {/* Create Quest Button (Fullstack CRUD) - Placed at the far right after Filters */}
-                <Button
-                  size="sm"
-                  onClick={handleOpenCreateQuest}
-                  className={cn(BUTTON_STYLES.TOOLBAR_ACTION, 'px-2 sm:px-3 h-7')}
-                  title={t('Tambah Quest Baru ke Database')}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{t('Tambah Quest')}</span>
-                </Button>
+                {isAdmin && (
+                  <Button
+                    size="sm"
+                    onClick={handleOpenCreateQuest}
+                    className={cn(BUTTON_STYLES.TOOLBAR_ACTION, 'px-2 sm:px-3 h-7')}
+                    title={t('Tambah Quest Baru ke Database')}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{t('Tambah Quest')}</span>
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -931,26 +948,28 @@ export function QuestsView({
                     </Button>
                   )}
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleOpenEditQuest(heroQuest)}
-                      className="h-10 sm:h-11 px-3 text-xs font-semibold gap-1 cursor-pointer bg-card/60 backdrop-blur-xs"
-                      title={t('Edit Quest')}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => handleDeleteQuest(e, heroQuest.id)}
-                      className="h-10 sm:h-11 px-3 text-xs font-semibold gap-1 cursor-pointer bg-card/80 hover:bg-red-600 border border-border/70 hover:border-red-600 text-red-400 hover:text-white backdrop-blur-xs transition-colors shadow-xs"
-                      title={t('Hapus Quest')}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenEditQuest(heroQuest)}
+                        className="h-10 sm:h-11 px-3 text-xs font-semibold gap-1 cursor-pointer bg-card/60 backdrop-blur-xs"
+                        title={t('Edit Quest')}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => handleDeleteQuest(e, heroQuest.id)}
+                        className="h-10 sm:h-11 px-3 text-xs font-semibold gap-1 cursor-pointer bg-card/80 hover:bg-red-600 border border-border/70 hover:border-red-600 text-red-400 hover:text-white backdrop-blur-xs transition-colors shadow-xs"
+                        title={t('Hapus Quest')}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-radial from-primary/10 via-transparent to-transparent pointer-events-none" />
@@ -1036,10 +1055,12 @@ export function QuestsView({
                     <h4 className="text-sm font-bold text-foreground">{t('Belum Ada Quest')}</h4>
                     <p className="text-xs text-muted-foreground">{t('Database quest kosong atau tidak ada quest yang cocok dengan filter pencarian Anda.')}</p>
                   </div>
-                  <Button size="sm" onClick={handleOpenCreateQuest} className="gap-1.5 text-xs font-semibold cursor-pointer">
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{t('Tambah Quest Pertama')}</span>
-                  </Button>
+                  {isAdmin && (
+                    <Button size="sm" onClick={handleOpenCreateQuest} className="gap-1.5 text-xs font-semibold cursor-pointer">
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{t('Tambah Quest Pertama')}</span>
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className={SURFACE_STYLES.CARD_GRID}>

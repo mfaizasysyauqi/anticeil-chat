@@ -291,32 +291,36 @@ export function ShopItemModal({
                     />
                   </Button>
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenEditProduct(item);
-                    }}
-                    className="h-9 px-3 cursor-pointer shrink-0 text-muted-foreground hover:text-foreground"
-                    title={t('Edit Item')}
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
+                  {currentUser?.email?.toLowerCase() === 'anticeil.official@gmail.com' && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenEditProduct(item);
+                        }}
+                        className="h-9 px-3 cursor-pointer shrink-0 text-muted-foreground hover:text-foreground"
+                        title={t('Edit Item')}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteProduct(e, item.id);
-                      onClose();
-                    }}
-                    className="h-9 px-3 cursor-pointer text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 border border-border/80 bg-background/80 shrink-0 transition-colors"
-                    title={t('Hapus Item')}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteProduct(e, item.id);
+                          onClose();
+                        }}
+                        className="h-9 px-3 cursor-pointer text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 border border-border/80 bg-background/80 shrink-0 transition-colors"
+                        title={t('Hapus Item')}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </>
+                  )}
                 </div>
 
                 {canUseDew && (balance.dew ?? balance.orbs ?? 0) < (item.priceDew ?? item.priceOrbs ?? 0) && (
