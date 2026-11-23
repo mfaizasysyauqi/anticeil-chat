@@ -19,6 +19,7 @@ import {
   X,
   ChevronDown,
   Check,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyIconBadge } from '@/components/ui/empty';
@@ -56,6 +57,13 @@ import {
 import { useTranslation } from '@/core/i18n';
 import { executeGroqCommand } from '../services/groq-service';
 import { GroqSettingsDialog } from './groq-settings-dialog';
+import { AiCreditsDialog } from './ai-credits-dialog';
+import {
+  getAiCreditsStatus,
+  consumeAiCredit,
+  openUpgradeSubscription,
+  type AiCreditsStatus,
+} from '../services/ai-credits-service';
 import { AtlasAgentHeader } from './atlas-agent-header';
 import { AiMarkdown } from './ai-markdown';
 import { ArtifactViewer } from './artifact-viewer';
@@ -265,6 +273,20 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
   const groqConfig = getStoredGroqConfig();
   const [selectedModel, setSelectedModel] = useState<string>(() => groqConfig.model || DEFAULT_GROQ_MODEL);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [creditsStatus, setCreditsStatus] = useState<AiCreditsStatus>(() => getAiCreditsStatus());
+  const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const handleCreditsUpdate = () => {
+      setCreditsStatus(getAiCreditsStatus());
+    };
+    window.addEventListener('anticeil_ai_credits_updated', handleCreditsUpdate);
+    window.addEventListener('storage', handleCreditsUpdate);
+    return () => {
+      window.removeEventListener('anticeil_ai_credits_updated', handleCreditsUpdate);
+      window.removeEventListener('storage', handleCreditsUpdate);
+    };
+  }, []);
 
   const handleSelectModel = (modelId: string) => {
     setSelectedModel(modelId);
@@ -344,6 +366,14 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
     const rawText = (promptToSend || inputPrompt).trim();
     if ((!rawText && attachedFiles.length === 0) || isLoading) return;
 
+    // Check AI credits limit before sending
+    const currentCredits = getAiCreditsStatus();
+    if (!currentCredits.canSend) {
+      setIsCreditsDialogOpen(true);
+      toast.error(t('Kredit AI harian Anda telah habis. Tingkatkan paket untuk melanjutkan.'));
+      return;
+    }
+
     let targetSession = activeSession;
     if (!targetSession && onCreateNewSession) {
       targetSession = await onCreateNewSession(rawText.slice(0, 36) || 'Berkas Lampiran');
@@ -384,6 +414,10 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
     const updatedMessages = [...currentMsgs, userMessage];
     onUpdateSessionMessages(targetSession.id, updatedMessages);
     setIsLoading(true);
+
+    // Consume 1 AI Credit upon sending user message
+    consumeAiCredit(1);
+    setCreditsStatus(getAiCreditsStatus());
 
     try {
       const currentConfig = {
@@ -787,8 +821,40 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
                 rows={1}
               />
 
-              {/* Right Controls: Model Selector + Send Button */}
+              {/* Right Controls: Credits Badge + Model Selector + Send Button */}
               <div className="flex items-center gap-1.5 shrink-0 pr-0.5 mb-0.5">
+                {/* AI Credits Badge (Click to open upgrade plan) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!creditsStatus.isUnlimited && creditsStatus.remainingToday <= 5) {
+                      setIsCreditsDialogOpen(true);
+                    } else {
+                      openUpgradeSubscription();
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full border transition-colors cursor-pointer select-none",
+                    creditsStatus.isUnlimited
+                      ? "bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20"
+                      : creditsStatus.remainingToday === 0
+                      ? "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 animate-pulse"
+                      : creditsStatus.remainingToday <= 5
+                      ? "bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20"
+                      : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
+                  )}
+                  title={
+                    creditsStatus.isUnlimited
+                      ? t('Kredit AI Tanpa Batas (Royal Enterprise)')
+                      : `${t('Sisa Kredit AI Hari Ini')}: ${creditsStatus.remainingToday}/${creditsStatus.dailyLimit} (${creditsStatus.planName}) - ${t('Klik untuk upgrade paket')}`
+                  }
+                >
+                  <Zap className="w-3 h-3 shrink-0" />
+                  <span className="font-mono text-[10px] sm:text-[11px]">
+                    {creditsStatus.isUnlimited ? 'Unlimited' : `${creditsStatus.remainingToday}/${creditsStatus.dailyLimit}`}
+                  </span>
+                </button>
+
                 {/* Gemini-style Model Selector Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -908,6 +974,13 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
   <GroqSettingsDialog
     isOpen={isSettingsOpen}
     onClose={() => setIsSettingsOpen(false)}
+  />
+
+  {/* AI Credits Exhausted / Upgrade Modal */}
+  <AiCreditsDialog
+    open={isCreditsDialogOpen}
+    onOpenChange={setIsCreditsDialogOpen}
+    status={creditsStatus}
   />
 </div>
   );

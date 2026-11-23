@@ -11,4 +11,6 @@ export * from './components/artifact-viewer';
 export * from './components/artifact-card';
 export * from './components/ai-prompt-card';
 export * from './components/groq-settings-dialog';
+export * from './components/ai-credits-dialog';
+export * from './services/ai-credits-service';
 export * from './utils/artifact-parser';

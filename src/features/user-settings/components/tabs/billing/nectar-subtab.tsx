@@ -203,6 +203,10 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
                 <span>🛡️</span>
                 <span>{t('Badge profil spesial Pollen')}</span>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-400 font-bold">⚡</span>
+                <span className="font-semibold text-yellow-300">{t('100 Kredit AI Atlas / hari')}</span>
+              </div>
             </div>
           </div>
 
@@ -278,6 +282,10 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
               <div className="flex items-center gap-2">
                 <span>👤</span>
                 <span>{t('Custom banner & avatar profil')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-primary font-bold">⚡</span>
+                <span className="font-semibold text-primary">{t('500 Kredit AI Atlas / hari & Model Pro')}</span>
               </div>
             </div>
 
@@ -363,6 +371,10 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
               <div className="flex items-center gap-2">
                 <span>👑</span>
                 <span>{t('Badge profil Sovereign Crown')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-amber-400 font-bold">⚡</span>
+                <span className="font-semibold text-amber-300">{t('Kredit AI Atlas Tanpa Batas (Unlimited)')}</span>
               </div>
             </div>
 
