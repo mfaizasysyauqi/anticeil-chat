@@ -191,7 +191,7 @@ export function ShopAddProductModal({
               <div className="rounded-xl border border-border/80 bg-gradient-to-b from-card/80 to-muted/20 p-3.5 flex flex-col items-center justify-center space-y-2.5">
                 <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  <span>{t('Pratinjau Manekin Avatar (Discord Style)')}</span>
+                  <span>{t('Pratinjau Manekin Avatar')}</span>
                 </div>
 
                 {/* Circular Mannequin Avatar with Anticeil Logo */}
@@ -265,7 +265,7 @@ export function ShopAddProductModal({
               <div className="rounded-xl border border-border/80 bg-gradient-to-b from-card/80 to-muted/20 p-3.5 flex flex-col items-center justify-center space-y-3">
                 <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  <span>{t('Pratinjau Manekin Nameplate (Discord Style)')}</span>
+                  <span>{t('Pratinjau Manekin Nameplate')}</span>
                 </div>
 
                 {/* Nameplate Strip Container (identical to Discord nameplate mannequin) */}
@@ -349,7 +349,7 @@ export function ShopAddProductModal({
               <div className="rounded-xl border border-border/80 bg-gradient-to-b from-card/80 to-muted/20 p-3.5 flex flex-col items-center justify-center space-y-3">
                 <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  <span>{t('Pratinjau Manekin Efek Profil (Discord Style)')}</span>
+                  <span>{t('Pratinjau Manekin Efek Profil')}</span>
                 </div>
 
                 {/* Profile Card Mockup Container (Identical to Discord Profile Effect Mannequin) */}
