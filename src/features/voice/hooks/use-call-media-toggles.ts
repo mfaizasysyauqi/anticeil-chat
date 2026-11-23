@@ -17,6 +17,7 @@ export interface UseCallMediaTogglesProps {
   peerConnections: React.MutableRefObject<Record<string, RTCPeerConnection>>;
   channel: ColonyChannel;
   socket: Socket | null;
+  participants?: Array<{ hasVideo?: boolean; isScreenSharing?: boolean }>;
 }
 
 export function useCallMediaToggles({
@@ -33,6 +34,7 @@ export function useCallMediaToggles({
   peerConnections,
   channel,
   socket,
+  participants = [],
 }: UseCallMediaTogglesProps) {
   const handleToggleMute = () => {
     if (!localStream) return;
@@ -48,6 +50,13 @@ export function useCallMediaToggles({
   };
 
   const handleToggleVideo = async () => {
+    // Discord Hard-Cap Parity: Maximum 25 concurrent active cameras
+    const activeRemoteCameras = (participants || []).filter((p) => p.hasVideo).length;
+    if (activeRemoteCameras >= 25 && isVideoOff) {
+      toast.error('Batas kapasitas kamera saluran tercapai (Maksimal 25 kamera aktif).');
+      return;
+    }
+
     if (!localStream) {
       try {
         const camStream = await navigator.mediaDevices.getUserMedia({
@@ -151,6 +160,13 @@ export function useCallMediaToggles({
   };
 
   const handleToggleScreenShare = async () => {
+    // Discord Hard-Cap Parity: Maximum 50 screen share streams/viewers
+    const activeRemoteShares = (participants || []).filter((p) => p.isScreenSharing).length;
+    if (!isScreenSharing && activeRemoteShares >= 50) {
+      toast.error('Batas berbagi layar tercapai (Maksimal 50 penonton/stream aktif).');
+      return;
+    }
+
     if (isScreenSharing) {
       if (screenStream) {
         screenStream.getTracks().forEach((track) => track.stop());

@@ -370,6 +370,35 @@ export function StageView({
     return speakers.filter((s) => s.isSpeaking).length;
   }, [speakers]);
 
+  // Discord Stage Quota Parity:
+  // Free: 1,000 listeners (50 with video)
+  // Lvl 2: 5,000 listeners (150 with video)
+  // Lvl 3: 10,000 listeners (300 with video)
+  const boostTier = activeColony?.boostTier || 0;
+  const isVideoActiveOnStage = speakers.some((s) => s.isCameraOn) || isAnyoneScreenSharing;
+  const maxStageAudience =
+    boostTier >= 3
+      ? isVideoActiveOnStage
+        ? 300
+        : 10000
+      : boostTier >= 2
+      ? isVideoActiveOnStage
+        ? 150
+        : 5000
+      : isVideoActiveOnStage
+      ? 50
+      : 1000;
+
+  const handleStageToggleVideo = () => {
+    // Discord Hard-Cap Parity: Max 5 active speakers with video in a Stage
+    const currentVideoSpeakers = speakers.filter((s) => s.isCameraOn && !s.isLocal).length;
+    if (isVideoOff && currentVideoSpeakers >= 5) {
+      toast.error(t('Batas pembicara video di Stage tercapai (Maksimal 5 pembicara dengan video)'));
+      return;
+    }
+    handleToggleVideo();
+  };
+
   // Ambient Music Lifecycle
   useEffect(() => {
     if (isMusicPlaying) {
@@ -504,9 +533,9 @@ export function StageView({
                     : '0 is speaking'}
                 </span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 font-mono">
                 <Users className="w-3.5 h-3.5 text-muted-foreground/60" />
-                <span>{`${audience.length} in audience`}</span>
+                <span>{`${audience.length}/${maxStageAudience} in audience`}</span>
               </div>
             </div>
           </div>
@@ -845,7 +874,7 @@ export function StageView({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    onClick={handleToggleVideo}
+                    onClick={handleStageToggleVideo}
                     className={cn(
                       VOICE_BOTTOM_BAR_STYLES.BUTTON_TOGGLE,
                       isVideoOff ? 'text-red-500 hover:bg-red-500/10' : 'text-foreground hover:bg-muted/60',

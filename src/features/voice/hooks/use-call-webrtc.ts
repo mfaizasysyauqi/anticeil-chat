@@ -614,6 +614,7 @@ export function useCallWebRTC({
     peerConnections,
     channel,
     socket,
+    participants,
   });
 
   // Activity Socket Sync Events

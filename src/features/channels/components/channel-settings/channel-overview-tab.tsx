@@ -47,6 +47,11 @@ export interface ChannelOverviewTabProps {
   setIsAnnouncement?: (val: boolean) => void;
   defaultAutoArchiveDuration?: number;
   setDefaultAutoArchiveDuration?: (val: number) => void;
+  userLimit?: number;
+  setUserLimit?: (val: number) => void;
+  bitrate?: number;
+  setBitrate?: (val: number) => void;
+  boostTier?: number;
 }
 
 const SLOWMODE_OPTIONS = [
@@ -92,8 +97,14 @@ export function ChannelOverviewTab({
   setIsAnnouncement,
   defaultAutoArchiveDuration = 4320,
   setDefaultAutoArchiveDuration,
+  userLimit = 0,
+  setUserLimit,
+  bitrate = 64000,
+  setBitrate,
+  boostTier = 0,
 }: ChannelOverviewTabProps) {
   const { t } = useTranslation();
+  const maxBitrateKbps = boostTier >= 3 ? 384 : boostTier >= 2 ? 256 : boostTier >= 1 ? 128 : 96;
 
   const insertMarkdown = (prefix: string, suffix: string = prefix) => {
     const textarea = document.getElementById('channel-topic-textarea') as HTMLTextAreaElement | null;
@@ -308,6 +319,78 @@ export function ChannelOverviewTab({
           </span>
         </div>
       </div>
+
+      {/* ── Voice Channel Settings: BITRATE & USER LIMIT (Discord 1:1 Parity) ── */}
+      {channelType === 'voice' && (
+        <div className="space-y-6 pt-4 border-t border-border">
+          {/* 1. Bitrate Slider */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                {t('Bitrate')}
+              </label>
+              <span className="text-xs font-bold text-foreground font-mono">
+                {Math.round((bitrate || 64000) / 1000)}kbps
+              </span>
+            </div>
+            <div className="space-y-1">
+              <input
+                type="range"
+                min={8}
+                max={maxBitrateKbps}
+                step={8}
+                value={Math.round((bitrate || 64000) / 1000)}
+                onChange={(e) => setBitrate?.(Number(e.target.value) * 1000)}
+                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+                <span>8kbps</span>
+                <span>{maxBitrateKbps}kbps</span>
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              {t(
+                '8kbps - {{max}}kbps. Audio di atas 96kbps membutuhkan Colony Boost Level 1 (128kbps), Level 2 (256kbps), atau Level 3 (384kbps).',
+                { max: `${maxBitrateKbps}kbps` }
+              )}
+            </p>
+          </div>
+
+          {/* 2. User Limit Slider */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                {t('User Limit')}
+              </label>
+              <span className="text-xs font-bold text-foreground">
+                {userLimit === 0
+                  ? t('Tidak Terbatas (No Limit)')
+                  : t('{{count}} Pengguna', { count: userLimit })}
+              </span>
+            </div>
+            <div className="space-y-1">
+              <input
+                type="range"
+                min={0}
+                max={99}
+                step={1}
+                value={userLimit || 0}
+                onChange={(e) => setUserLimit?.(Number(e.target.value))}
+                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>{t('Tidak Terbatas')}</span>
+                <span>99 {t('Pengguna')}</span>
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              {t(
+                'Membatasi jumlah pengguna yang dapat terhubung ke saluran suara ini secara bersamaan. Pengguna dengan hak Administrator dapat melewati batas ini.'
+              )}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── 3. Slowmode ──────────────────────────────────────────────── */}
       <div className="space-y-2 pt-2 border-t border-border">

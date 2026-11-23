@@ -12,6 +12,7 @@ import {
   Podcast,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { ColonyChannel } from '@/chat/chat-types';
 
 export interface SidebarChannelItemProps {
@@ -117,39 +118,61 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
   };
 
   if (ch.type === 'voice') {
+    const callCount = activeCallCounts[ch.id] || 0;
+    const isLimitSet = typeof ch.userLimit === 'number' && ch.userLimit > 0;
+    const isFull = isLimitSet && callCount >= (ch.userLimit || 0);
+
+    const handleVoiceClick = () => {
+      if (isFull && activeCallChannelId !== ch.id) {
+        toast.error(
+          t('Saluran suara ini sudah penuh ({{current}}/{{limit}})', {
+            current: callCount,
+            limit: ch.userLimit,
+          }),
+        );
+        return;
+      }
+
+      if (!currentUser && requireAuth) {
+        requireAuth(
+          () => {
+            setActiveChannelId(ch.id);
+            setActiveCallChannelId(ch.id);
+            setIsCallPiP(false);
+            onItemClick?.();
+          },
+          t('Gabung Panggilan Suara'),
+          t('Masuk ke Anticeil untuk bergabung ke saluran suara atau panggilan.'),
+        );
+        return;
+      }
+      setActiveChannelId(ch.id);
+      setActiveCallChannelId(ch.id);
+      setIsCallPiP(false);
+      onItemClick?.();
+    };
+
     return (
       <div
         key={ch.id}
-        onClick={() => {
-          if (!currentUser && requireAuth) {
-            requireAuth(
-              () => {
-                setActiveChannelId(ch.id);
-                setActiveCallChannelId(ch.id);
-                setIsCallPiP(false);
-                onItemClick?.();
-              },
-              t('Gabung Panggilan Suara'),
-              t('Masuk ke Anticeil untuk bergabung ke saluran suara atau panggilan.'),
-            );
-            return;
-          }
-          setActiveChannelId(ch.id);
-          setActiveCallChannelId(ch.id);
-          setIsCallPiP(false);
-          onItemClick?.();
-        }}
+        onClick={handleVoiceClick}
         className={cn(
           'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
           isActiveCh
             ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
+            : isFull
+            ? 'text-muted-foreground/60 hover:bg-sidebar-accent/50 hover:text-muted-foreground'
             : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
         )}
       >
         <Volume2
           className={cn(
             'w-4 h-4 shrink-0 transition-colors',
-            isActiveCh ? 'text-primary' : 'text-muted-foreground/70 group-hover:text-foreground',
+            isActiveCh
+              ? 'text-primary'
+              : isFull
+              ? 'text-muted-foreground/40'
+              : 'text-muted-foreground/70 group-hover:text-foreground',
           )}
         />
         <span className="truncate flex-1">{ch.name}</span>
@@ -158,12 +181,36 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
             <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
           </span>
         )}
-        {activeCallCounts[ch.id] && activeCallCounts[ch.id] > 0 ? (
+
+        {/* User Limit & Active Call Badge (Discord 1:1 Parity) */}
+        {isLimitSet ? (
+          <span
+            className={cn(
+              'px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 shrink-0 font-mono transition-colors',
+              isFull
+                ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                : callCount > 0
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                : 'bg-muted text-muted-foreground/70 border border-border/40',
+            )}
+            title={isFull ? t('Saluran suara penuh') : t('Kapasitas peserta saluran suara')}
+          >
+            {isFull ? (
+              <Lock className="w-2.5 h-2.5 text-red-400" />
+            ) : callCount > 0 ? (
+              <Radio className="w-2.5 h-2.5 animate-pulse" />
+            ) : null}
+            <span>
+              {callCount}/{ch.userLimit}
+            </span>
+          </span>
+        ) : callCount > 0 ? (
           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 flex items-center gap-1 shrink-0 animate-pulse">
             <Radio className="w-2.5 h-2.5" />
-            {activeCallCounts[ch.id]}
+            {callCount}
           </span>
         ) : null}
+
         {renderActionButtons()}
       </div>
     );

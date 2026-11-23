@@ -59,6 +59,8 @@ export type ColonyChannel = {
   isAnnouncement?: boolean;
   defaultAutoArchiveDuration?: number;
   topic?: string;
+  userLimit?: number; // 0 = unlimited / no limit, 1-99 for voice channel
+  bitrate?: number; // bitrate in bps (e.g. 64000, 96000, 128000, 256000, 384000)
 };
 
 export function resolveChannelType(channel?: Partial<ColonyChannel> | null): ColonyChannelType {

@@ -73,6 +73,8 @@ export function ChannelSettingsDialog({
   const [contentVisibility, setContentVisibility] = useState<'default' | 'spoiler' | 'nsfw'>('default');
   const [isAnnouncement, setIsAnnouncement] = useState(false);
   const [defaultAutoArchiveDuration, setDefaultAutoArchiveDuration] = useState(4320); // 3 Days
+  const [userLimit, setUserLimit] = useState(0);
+  const [bitrate, setBitrate] = useState(64000);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasCopiedInvite, setHasCopiedInvite] = useState(false);
 
@@ -86,6 +88,8 @@ export function ChannelSettingsDialog({
     contentVisibility: channel ? (channel.contentVisibility || 'default') : ('default' as 'default' | 'spoiler' | 'nsfw'),
     isAnnouncement: channel ? Boolean(channel.isAnnouncement) : false,
     defaultAutoArchiveDuration: channel?.defaultAutoArchiveDuration ?? 4320,
+    userLimit: channel?.userLimit ?? 0,
+    bitrate: channel?.bitrate ?? 64000,
   }));
 
   // Sync state when channel changes or dialog opens
@@ -101,6 +105,8 @@ export function ChannelSettingsDialog({
         contentVisibility: channel.contentVisibility || 'default',
         isAnnouncement: Boolean(channel.isAnnouncement),
         defaultAutoArchiveDuration: channel.defaultAutoArchiveDuration ?? 4320,
+        userLimit: channel.userLimit ?? 0,
+        bitrate: channel.bitrate ?? 64000,
       };
       setName(initial.name);
       setChannelType(initial.channelType);
@@ -110,6 +116,8 @@ export function ChannelSettingsDialog({
       setContentVisibility(initial.contentVisibility);
       setIsAnnouncement(initial.isAnnouncement);
       setDefaultAutoArchiveDuration(initial.defaultAutoArchiveDuration);
+      setUserLimit(initial.userLimit);
+      setBitrate(initial.bitrate);
       setBaseline(initial);
       setActiveTab('overview');
     }
@@ -123,7 +131,9 @@ export function ChannelSettingsDialog({
     slowmode !== baseline.slowmode ||
     contentVisibility !== baseline.contentVisibility ||
     isAnnouncement !== baseline.isAnnouncement ||
-    defaultAutoArchiveDuration !== baseline.defaultAutoArchiveDuration;
+    defaultAutoArchiveDuration !== baseline.defaultAutoArchiveDuration ||
+    userLimit !== baseline.userLimit ||
+    bitrate !== baseline.bitrate;
 
   const handleReset = () => {
     setName(baseline.name);
@@ -134,6 +144,8 @@ export function ChannelSettingsDialog({
     setContentVisibility(baseline.contentVisibility);
     setIsAnnouncement(baseline.isAnnouncement);
     setDefaultAutoArchiveDuration(baseline.defaultAutoArchiveDuration);
+    setUserLimit(baseline.userLimit);
+    setBitrate(baseline.bitrate);
   };
 
   const handleSave = async () => {
@@ -156,6 +168,8 @@ export function ChannelSettingsDialog({
         contentVisibility,
         isAnnouncement,
         defaultAutoArchiveDuration,
+        userLimit,
+        bitrate,
       };
 
       await onUpdateChannel(channel.id, {
@@ -168,6 +182,8 @@ export function ChannelSettingsDialog({
         categoryName: selectedCat ? selectedCat.name : undefined,
         isAnnouncement: newSaved.isAnnouncement,
         defaultAutoArchiveDuration: newSaved.defaultAutoArchiveDuration,
+        userLimit: newSaved.userLimit,
+        bitrate: newSaved.bitrate,
       });
 
       setName(finalName);
@@ -319,6 +335,11 @@ export function ChannelSettingsDialog({
             setIsAnnouncement={setIsAnnouncement}
             defaultAutoArchiveDuration={defaultAutoArchiveDuration}
             setDefaultAutoArchiveDuration={setDefaultAutoArchiveDuration}
+            userLimit={userLimit}
+            setUserLimit={setUserLimit}
+            bitrate={bitrate}
+            setBitrate={setBitrate}
+            boostTier={activeColony?.boostTier || 0}
           />
         )}
 
