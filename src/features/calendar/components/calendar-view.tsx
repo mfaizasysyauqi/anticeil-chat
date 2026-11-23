@@ -408,7 +408,7 @@ export function CalendarView({
       >
         <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding, 'flex-1 flex flex-col min-h-0')}>
         {viewMode === 'month' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 lg:h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5 sm:gap-3 flex-1 min-h-0 lg:h-full">
             {/* Calendar Month Grid (Left 2 cols) */}
             <CalendarMonthGrid
               days={days}

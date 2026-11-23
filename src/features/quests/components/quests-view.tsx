@@ -46,6 +46,7 @@ import {
   BUTTON_STYLES,
   DIALOG_STYLES,
   SURFACE_STYLES,
+  PageSectionHeader,
 } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -811,74 +812,66 @@ export function QuestsView({
 
       {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-6', verticalPadding)}>
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, LAYOUT_PAGE_SPACING.SECTION_SPACING, verticalPadding)}>
         {activeTab === 'all' && (
           <>
-            {/* ── Top Quests Toolbar: Available Quests count + Sort + Filter + Tambah Quest (100% Consistent with ShopView & FriendsView) ── */}
-            <div className="flex items-center justify-between min-h-7 gap-2 sm:gap-3 pb-2 border-b border-border/50">
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
-                <Flame className="w-4 h-4 text-primary shrink-0" />
-                <span className={cn(TEXT_STYLES.SECTION_MUTED, 'truncate max-w-[110px] sm:max-w-none text-xs')}>
-                  {t('Available Quests')}
-                </span>
-                <span className={TEXT_STYLES.COUNTER_LABEL}>
-                  ({filteredQuests.length})
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                {/* Sort dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className={cn(BUTTON_STYLES.TOOLBAR_BORDERED, 'w-auto px-2.5 sm:px-3 whitespace-nowrap shrink-0')}
-                    >
-                      <span>
-                        {sortBy === 'suggested'
-                          ? t('Suggested')
-                          : sortBy === 'reward_desc'
-                          ? t('Hadiah Tertinggi')
-                          : t('Nama (A-Z)')}
-                      </span>
-                      <ChevronDown className="w-3.5 h-3.5 opacity-70 shrink-0" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40 bg-card border-border z-[150] text-foreground">
-                    <DropdownMenuItem onClick={() => setSortBy('suggested')} className="text-xs cursor-pointer">
-                      {t('Suggested')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortBy('reward_desc')} className="text-xs cursor-pointer">
-                      {t('Hadiah Tertinggi')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortBy('alphabetical')} className="text-xs cursor-pointer">
-                      {t('Nama (A-Z)')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                {/* Filter Sheet Trigger (100% Symmetrical layout on all screen sizes) */}
-                <FilterToggleButton
-                  isOpen={isFilterDrawerOpen}
-                  label={t('Filter')}
-                  activeCount={activeFilterCount}
-                  onClick={() => setIsFilterDrawerOpen(true)}
-                />
-
-                {/* Create Quest Button (Fullstack CRUD) - Placed at the far right after Filters */}
-                {isAdmin && (
-                  <Button
-                    size="sm"
-                    onClick={handleOpenCreateQuest}
-                    className={cn(BUTTON_STYLES.TOOLBAR_ACTION, 'px-2 sm:px-3 h-7')}
-                    title={t('Tambah Quest Baru ke Database')}
+            {/* ── Top Quests Toolbar: Available Quests count + Sort + Filter + Tambah Quest ── */}
+            <PageSectionHeader
+              icon={Flame}
+              title={t('Available Quests')}
+              count={filteredQuests.length}
+            >
+              {/* Sort dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(BUTTON_STYLES.TOOLBAR_BORDERED, 'w-auto px-2.5 sm:px-3 whitespace-nowrap shrink-0')}
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">{t('Tambah Quest')}</span>
-                  </Button>
-                )}
-              </div>
-            </div>
+                    <span>
+                      {sortBy === 'suggested'
+                        ? t('Suggested')
+                        : sortBy === 'reward_desc'
+                        ? t('Hadiah Tertinggi')
+                        : t('Nama (A-Z)')}
+                    </span>
+                    <ChevronDown className="w-3.5 h-3.5 opacity-70 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40 bg-card border-border z-[150] text-foreground">
+                  <DropdownMenuItem onClick={() => setSortBy('suggested')} className="text-xs cursor-pointer">
+                    {t('Suggested')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy('reward_desc')} className="text-xs cursor-pointer">
+                    {t('Hadiah Tertinggi')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy('alphabetical')} className="text-xs cursor-pointer">
+                    {t('Nama (A-Z)')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Filter Sheet Trigger (100% Symmetrical layout on all screen sizes) */}
+              <FilterToggleButton
+                isOpen={isFilterDrawerOpen}
+                label={t('Filter')}
+                activeCount={activeFilterCount}
+                onClick={() => setIsFilterDrawerOpen(true)}
+              />
+
+              {/* Create Quest Button (Fullstack CRUD) - Placed at the far right after Filters */}
+              {isAdmin && (
+                <Button
+                  size="sm"
+                  onClick={handleOpenCreateQuest}
+                  className={cn(BUTTON_STYLES.TOOLBAR_ACTION, 'px-2 sm:px-3 h-7')}
+                  title={t('Tambah Quest Baru ke Database')}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{t('Tambah Quest')}</span>
+                </Button>
+              )}
+            </PageSectionHeader>
 
             {/* ── Featured Hero Quest Banner (Discord 1:1) ── */}
             {heroQuest && (
@@ -999,18 +992,12 @@ export function QuestsView({
                   onGoToAll={() => setActiveTab('all')}
                 />
               ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between min-h-7 gap-3 pb-2 border-b border-border/50">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-primary shrink-0" />
-                      <span className={TEXT_STYLES.SECTION_MUTED}>
-                        {t('Quest Diterima')}
-                      </span>
-                      <span className={TEXT_STYLES.COUNTER_LABEL}>
-                        ({acceptedQuests.length})
-                      </span>
-                    </div>
-                  </div>
+                <div className="space-y-3">
+                  <PageSectionHeader
+                    icon={Clock}
+                    title={t('Quest Diterima')}
+                    count={acceptedQuests.length}
+                  />
 
                   <div className={SURFACE_STYLES.CARD_GRID}>
                     {acceptedQuests.map((quest) => renderQuestCard(quest))}
@@ -1029,16 +1016,17 @@ export function QuestsView({
                 onGoToAll={() => setActiveTab('all')}
               />
             ) : (
-              <div className="space-y-4">
-                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 pb-2 border-b border-border/50">
-                  <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                    {t('Riwayat Quest yang Telah Selesai')} ({claimedQuests.length})
-                  </h3>
+              <div className="space-y-3">
+                <PageSectionHeader
+                  icon={Award}
+                  title={t('Riwayat Quest yang Telah Selesai')}
+                  count={claimedQuests.length}
+                >
                   <div className="text-xs font-bold text-cyan-400 flex items-center gap-1 shrink-0">
                     <span>💧 {t('Total')}:</span>
                     <span>+{claimedQuests.reduce((acc, q) => acc + q.rewardDew, 0)} Dew</span>
                   </div>
-                </div>
+                </PageSectionHeader>
 
                 <div className={SURFACE_STYLES.CARD_GRID}>
                   {claimedQuests.map((quest) => (

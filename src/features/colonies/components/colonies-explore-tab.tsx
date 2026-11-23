@@ -18,6 +18,7 @@ import { ColonyCard } from './colony-card';
 import type { Colony } from '@/chat/chat-types';
 import { cn } from '@/lib/utils';
 import { SURFACE_STYLES } from '@/lib/design-tokens';
+import { PageSectionHeader } from '@/components/ui/page-section-header';
 
 export interface ColoniesExploreTabProps {
   filteredExplore: Colony[];
@@ -142,11 +143,11 @@ export function ColoniesExploreTab({
           </TabsList>
         </Tabs>
 
-        <div className="flex items-center justify-between pb-1 border-b border-border/50">
-          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-            {t('Daftar Direktori Komunitas')} ({categorizedList.length})
-          </h2>
-        </div>
+        <PageSectionHeader
+          icon={Compass}
+          title={t('Daftar Direktori Komunitas')}
+          count={categorizedList.length}
+        />
       </div>
 
       {/* ── 4. Grid of Discoverable Colony Cards (Reusable ColonyCard) ── */}

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty';
 import { useTranslation } from '@/core/i18n';
+import { PageSectionHeader } from '@/components/ui/page-section-header';
 import { FriendItem } from './friend-item';
 import type { FriendMember, FriendsTab } from '../types';
 
@@ -47,9 +48,12 @@ export function FriendsList({
         )}
       </div>
 
-      <div className="text-[11px] font-bold text-muted-foreground/80 tracking-wider uppercase mb-3">
-        {friendsTab === 'online' ? t('Online') : t('Semua Teman')} — {filteredFriends.length}
-      </div>
+      <PageSectionHeader
+        icon={Users}
+        title={friendsTab === 'online' ? t('Online') : t('Semua Teman')}
+        count={filteredFriends.length}
+        className="mb-3"
+      />
 
       {filteredFriends.length === 0 ? (
         <EmptyState

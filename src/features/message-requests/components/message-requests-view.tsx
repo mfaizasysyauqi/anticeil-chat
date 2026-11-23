@@ -5,7 +5,7 @@ import { SidebarNavToggle } from '@/components/ui/sidebar-nav-toggle';
 import { InboxPopover } from '@/features/inbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING } from '@/lib/layout-constants';
+import { CHANNEL_HORIZONTAL_PADDING, CHANNEL_VERTICAL_PADDING, LAYOUT_PAGE_SPACING, PageSectionHeader } from '@/lib/layout-constants';
 import { useTranslation } from '@/core/i18n';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import type { MessageRequestItem, MessageRequestsTab } from '../types';
@@ -104,9 +104,12 @@ export function MessageRequestsView({
       <ScrollArea className="flex-1 min-h-0">
         <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, verticalPadding)}>
         {/* Section Header Count */}
-        <div className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-4">
-          {`${currentTabConfig.headerTitle} — ${currentTabConfig.count}`}
-        </div>
+        <PageSectionHeader
+          icon={Mail}
+          title={currentTabConfig.headerTitle}
+          count={currentTabConfig.count}
+          className="mb-3"
+        />
 
         {/* Requests List */}
         {currentList.length === 0 ? (

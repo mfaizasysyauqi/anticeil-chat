@@ -36,6 +36,7 @@ import {
   BUTTON_STYLES,
   DIALOG_STYLES,
   SURFACE_STYLES,
+  PageSectionHeader,
 } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -379,14 +380,14 @@ export function ColoniesView({
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-6', verticalPadding)}>
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, LAYOUT_PAGE_SPACING.SECTION_SPACING, verticalPadding)}>
         {activeTab === 'joined' ? (
-          <div className="space-y-4 w-full">
-            <div className="flex items-center justify-between pb-1 border-b border-border/50">
-              <h2 className={TEXT_STYLES.SECTION_MUTED}>
-                Daftar Komunitas yang Anda Ikuti ({filteredMyColonies.length})
-              </h2>
-            </div>
+          <div className="space-y-3 w-full">
+            <PageSectionHeader
+              icon={Users}
+              title={t('Daftar Komunitas yang Anda Ikuti')}
+              count={filteredMyColonies.length}
+            />
 
             {filteredMyColonies.length === 0 ? (
               <EmptyState
@@ -430,12 +431,12 @@ export function ColoniesView({
           </div>
         ) : activeTab === 'pending' ? (
           /* Pending Server Invitations Tab */
-          <div className="space-y-4 w-full">
-            <div className="flex items-center justify-between pb-1 border-b border-border/50">
-              <h2 className={TEXT_STYLES.SECTION_MUTED}>
-                {t('Undangan Colony Tertunda')} ({filteredPendingInvites.length})
-              </h2>
-            </div>
+          <div className="space-y-3 w-full">
+            <PageSectionHeader
+              icon={Inbox}
+              title={t('Undangan Colony Tertunda')}
+              count={filteredPendingInvites.length}
+            />
 
             {filteredPendingInvites.length === 0 ? (
               <EmptyState

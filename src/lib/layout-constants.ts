@@ -67,6 +67,17 @@ export const LAYOUT_PAGE_SPACING = {
   APP_BAR_HEIGHT: 'h-12',
 
   /**
+   * Standard section vertical spacing inside scrollable page bodies
+   * Keeps sections harmonious and prevents excessive gaps
+   */
+  SECTION_SPACING: 'space-y-3.5',
+
+  /**
+   * Standard grid gap for cards and item collections
+   */
+  CONTENT_GRID_GAP: 'gap-2.5 sm:gap-3',
+
+  /**
    * Standard single-line App Bar container
    */
   APP_BAR_CONTAINER:
@@ -139,3 +150,4 @@ export const LAYOUT_DIALOG_SPACING = {
 
 export * from '@/core/constants/layout';
 export * from './design-tokens';
+export { PageSectionHeader, type PageSectionHeaderProps } from '@/components/ui/page-section-header';

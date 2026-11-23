@@ -72,6 +72,7 @@ import {
   BUTTON_STYLES,
   DIALOG_STYLES,
   SURFACE_STYLES,
+  PageSectionHeader,
 } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -1604,55 +1605,48 @@ export function ShopView({
 
       {/* ── 2. Main Scrollable Body (100% Symmetrical with AppsView, CallsView, ColoniesView) ── */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-6', verticalPadding)}>
-          {/* Top Catalog Toolbar: Sort by + Hide/Show Filters toggle (Discord 1:1) */}
-          <div className="flex items-center justify-between min-h-7 gap-2 sm:gap-3 pb-2 border-b border-border/50">
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
-              <ShoppingBag className="w-4 h-4 text-primary shrink-0" />
-              <span className={cn(TEXT_STYLES.SECTION_MUTED, 'truncate max-w-[110px] sm:max-w-none text-xs')}>
-                {t('Katalog')}
-              </span>
-              <span className={TEXT_STYLES.COUNTER_LABEL}>
-                ({filteredItems.length} {t('item')})
-              </span>
-            </div>
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, LAYOUT_PAGE_SPACING.SECTION_SPACING, verticalPadding)}>
+          {/* Top Catalog Toolbar: PageSectionHeader */}
+          <PageSectionHeader
+            icon={ShoppingBag}
+            title={t('Katalog')}
+            count={filteredItems.length}
+            countLabel={t('item')}
+          >
+            {/* Sort dropdown */}
+            <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
+              <SelectTrigger size="xs" className="w-auto min-w-[7.5rem] px-2.5 sm:px-3 h-7 text-xs bg-muted/40 border-border/60 gap-1.5 whitespace-nowrap shrink-0">
+                <SelectValue placeholder={t('Recently Added')} />
+              </SelectTrigger>
+              <SelectContent align="end" className="w-auto min-w-[var(--radix-select-trigger-width)] bg-card border-border z-[160]">
+                <SelectItem value="recent">{t('Recently Added')}</SelectItem>
+                <SelectItem value="price_asc">{t('Price: Low to High')}</SelectItem>
+                <SelectItem value="price_desc">{t('Price: High to Low')}</SelectItem>
+                <SelectItem value="name_asc">{t('Name (A-Z)')}</SelectItem>
+              </SelectContent>
+            </Select>
 
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Sort dropdown */}
-              <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
-                <SelectTrigger size="xs" className="w-auto min-w-[7.5rem] px-2.5 sm:px-3 h-7 text-xs bg-muted/40 border-border/60 gap-1.5 whitespace-nowrap shrink-0">
-                  <SelectValue placeholder={t('Recently Added')} />
-                </SelectTrigger>
-                <SelectContent align="end" className="w-auto min-w-[var(--radix-select-trigger-width)] bg-card border-border z-[160]">
-                  <SelectItem value="recent">{t('Recently Added')}</SelectItem>
-                  <SelectItem value="price_asc">{t('Price: Low to High')}</SelectItem>
-                  <SelectItem value="price_desc">{t('Price: High to Low')}</SelectItem>
-                  <SelectItem value="name_asc">{t('Name (A-Z)')}</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Filter Sheet Trigger (100% Symmetrical layout on all screen sizes) */}
+            <FilterToggleButton
+              isOpen={isFilterDrawerOpen}
+              label={t('Filter')}
+              activeCount={activeFilterCount}
+              onClick={() => setIsFilterDrawerOpen(true)}
+            />
 
-              {/* Filter Sheet Trigger (100% Symmetrical layout on all screen sizes) */}
-              <FilterToggleButton
-                isOpen={isFilterDrawerOpen}
-                label={t('Filter')}
-                activeCount={activeFilterCount}
-                onClick={() => setIsFilterDrawerOpen(true)}
-              />
-
-              {/* Tambah Item button - to the right of filter button, matching Quests */}
-              {isAdmin && (
-                <Button
-                  size="sm"
-                  onClick={handleOpenCreateProduct}
-                  className={cn(BUTTON_STYLES.TOOLBAR_ACTION, 'px-2 sm:px-3 h-7')}
-                  title={t('Tambah Produk Baru ke Database Shop')}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{t('Tambah Item')}</span>
-                </Button>
-              )}
-            </div>
-          </div>
+            {/* Tambah Item button - to the right of filter button, matching Quests */}
+            {isAdmin && (
+              <Button
+                size="sm"
+                onClick={handleOpenCreateProduct}
+                className={cn(BUTTON_STYLES.TOOLBAR_ACTION, 'px-2 sm:px-3 h-7')}
+                title={t('Tambah Produk Baru ke Database Shop')}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t('Tambah Item')}</span>
+              </Button>
+            )}
+          </PageSectionHeader>
         {/* ── Reusable Hero Banner (Matches AppsView YouTube Watch Together layout) ── */}
         {!searchQuery && (activeTab === 'all' || activeTab === 'featured') && heroCollection && items.length > 0 && (
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-card to-background border border-primary/20 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 shadow-xl">

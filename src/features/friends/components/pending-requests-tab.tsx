@@ -4,6 +4,7 @@ import { CommunityAvatar } from '@/chat/chat-avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { EmptyState } from '@/components/ui/empty';
 import { useTranslation } from '@/core/i18n';
+import { PageSectionHeader } from '@/components/ui/page-section-header';
 import type { FriendRequest } from '../types';
 
 interface PendingRequestsTabProps {
@@ -23,9 +24,12 @@ export function PendingRequestsTab({
 
   return (
     <div className="w-full">
-      <div className="text-[11px] font-bold text-muted-foreground/80 tracking-wider uppercase mb-3">
-        {t('Tertunda')} — {friendRequests.length}
-      </div>
+      <PageSectionHeader
+        icon={Inbox}
+        title={t('Tertunda')}
+        count={friendRequests.length}
+        className="mb-3"
+      />
 
       {friendRequests.length === 0 ? (
         <EmptyState

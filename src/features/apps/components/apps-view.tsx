@@ -26,6 +26,7 @@ import {
   BUTTON_STYLES,
   DIALOG_STYLES,
   SURFACE_STYLES,
+  PageSectionHeader,
 } from '@/lib/layout-constants';
 import { cn } from '@/lib/utils';
 import { ANTICEIL_APPS, type VoiceAppDefinition } from '@/features/voice/data/voice-activities';
@@ -581,7 +582,7 @@ export function AppsView({
 
       {/* ── Main Scroll Area ──────────────────────────────────────── */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, 'space-y-8', verticalPadding)}>
+        <div className={cn(LAYOUT_PAGE_SPACING.BODY_HORIZONTAL, LAYOUT_PAGE_SPACING.SECTION_SPACING, verticalPadding)}>
         {/* Featured Hero Banner: Discord style with landscape artwork backdrop */}
         {!searchQuery && activeCategory === 'all' && (
           <div
@@ -643,21 +644,13 @@ export function AppsView({
 
         {/* ── Aplikasi yang Digunakan Sebelumnya (Recent Apps Strip matching Image 1) ── */}
         {!searchQuery && activeCategory === 'all' && recentApps.length > 0 && (
-          <div className="space-y-3.5 pt-1">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1.5 border-b border-border/50">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-primary shrink-0" />
-                <h3 className={TEXT_STYLES.SECTION_TITLE}>
-                  {t('Aplikasi yang Digunakan Sebelumnya')}
-                </h3>
-                <span className={TEXT_STYLES.COUNTER_LABEL}>
-                  ({recentApps.length})
-                </span>
-              </div>
-              <span className="text-[11px] text-muted-foreground">
-                {t('Diurutkan dari yang paling baru dibuka')}
-              </span>
-            </div>
+          <div className="space-y-3 pt-1">
+            <PageSectionHeader
+              icon={Clock}
+              title={t('Aplikasi yang Digunakan Sebelumnya')}
+              count={recentApps.length}
+              description={t('Diurutkan dari yang paling baru dibuka')}
+            />
 
             {/* Horizontal Row of Squircle Icon Buttons (100% Match to User Screenshot) */}
             <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1 touch-pan-x">
@@ -749,22 +742,14 @@ export function AppsView({
             if (sectionApps.length === 0) return null;
 
             return (
-              <div key={section.id} className="space-y-3.5">
-                {/* Section Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1.5 border-b border-border/50">
-                  <div className="flex items-center gap-2">
-                    <SectionIcon className="w-4 h-4 text-primary shrink-0" />
-                    <h3 className={TEXT_STYLES.SECTION_TITLE}>
-                      {t(section.title)}
-                    </h3>
-                    <span className={TEXT_STYLES.COUNTER_LABEL}>
-                      ({sectionApps.length})
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    {t(section.description)}
-                  </p>
-                </div>
+              <div key={section.id} className="space-y-3">
+                {/* Standardized Section Header */}
+                <PageSectionHeader
+                  icon={SectionIcon}
+                  title={t(section.title)}
+                  count={sectionApps.length}
+                  description={t(section.description)}
+                />
 
                 {/* Grid: 4 columns in desktop (xl:grid-cols-4), 2 in tablet and mobile (grid-cols-2) */}
                 <div className={SURFACE_STYLES.CARD_GRID}>
