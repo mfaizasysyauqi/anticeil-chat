@@ -1,5 +1,5 @@
 import React from 'react';
-import { ColonyRail } from '@/features/colonies';
+import { MiniRail } from '@/features/colonies';
 import { ChannelsSidebar, GroupDmMembersSidebar } from '@/features/channels';
 import { UserBottomDock, DmUserProfileSidebar } from '@/features/profile';
 import { FriendsView } from '@/features/friends';
@@ -10,7 +10,7 @@ import { colonyApi } from '../chat-api';
 import { saveStoredColonies } from '../chat-defaults';
 import type { Colony, ColonyChannel } from '../chat-types';
 
-export interface ColonyRailWrapperProps {
+export interface MiniRailWrapperProps {
   colonies: Colony[];
   activeColonyId: string;
   unreadCounts: Record<string, number | string>;
@@ -41,7 +41,9 @@ export interface ColonyRailWrapperProps {
   t: (key: string, params?: Record<string, any>) => string;
 }
 
-export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
+export type ColonyRailWrapperProps = MiniRailWrapperProps;
+
+export const MiniRailWrapper: React.FC<MiniRailWrapperProps> = ({
   colonies,
   activeColonyId,
   unreadCounts,
@@ -72,7 +74,7 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
   t,
 }) => {
   return (
-    <ColonyRail
+    <MiniRail
       currentUser={currentUser}
       servers={colonies}
       activeServerId={activeColonyId}
@@ -162,6 +164,8 @@ export const ColonyRailWrapper: React.FC<ColonyRailWrapperProps> = ({
     />
   );
 };
+
+export const ColonyRailWrapper = MiniRailWrapper;
 
 export interface ChannelsSidebarWrapperProps {
   currentUser: any;

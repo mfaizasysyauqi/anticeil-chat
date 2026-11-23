@@ -1,4 +1,4 @@
-export * from './components/colony-rail';
+export * from './components/mini-rail';
 export * from './components/colony-icon';
 export * from './components/create-or-join-colony-dialog';
 export * from './components/edit-colony-dialog';
@@ -10,7 +10,7 @@ export * from './hooks/use-colony-modals';
 export * from './api/colonies-api';
 
 // Backward compatibility aliases during transition
-export { ColonyRail as ServerRail } from './components/colony-rail';
+export { MiniRail, MiniRail as ColonyRail, MiniRail as ServerRail } from './components/mini-rail';
 export { ColonyIcon as ServerIcon } from './components/colony-icon';
 export { CreateOrJoinColonyDialog as CreateOrJoinServerDialog } from './components/create-or-join-colony-dialog';
 export { EditColonyDialog as EditServerDialog } from './components/edit-colony-dialog';

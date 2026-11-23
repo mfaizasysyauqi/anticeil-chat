@@ -6,6 +6,8 @@ import { ChatContentContainer, type ChatContentContainerProps } from './chat-con
 import { ChatModalsCoordinator, type ChatModalsCoordinatorProps } from './chat-modals-coordinator';
 import { AppTopTitleBar } from './app-top-title-bar';
 import {
+  MiniRailWrapper,
+  type MiniRailWrapperProps,
   ColonyRailWrapper,
   type ColonyRailWrapperProps,
   ChannelsSidebarWrapper,
@@ -62,7 +64,7 @@ export const ChatPageContent: React.FC<ChatPageContentProps> = ({
   modalProps,
   t,
 }) => {
-  const renderDiscordHubRail = () => <ColonyRailWrapper {...railProps} />;
+  const renderDiscordHubRail = () => <MiniRailWrapper {...railProps} />;
 
   const renderChannelsSidebarContent = (onItemClick?: () => void) => (
     <ChannelsSidebarWrapper {...channelsSidebarProps} onItemClick={onItemClick} />

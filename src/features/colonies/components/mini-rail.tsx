@@ -18,7 +18,7 @@ export interface RailFolder {
   expanded?: boolean;
 }
 
-export interface ColonyRailProps {
+export interface MiniRailProps {
   currentUser?: any;
   servers?: Colony[];
   colonies?: Colony[];
@@ -46,6 +46,9 @@ export interface ColonyRailProps {
   isSidebarCollapsed?: boolean;
   onToggleCollapseSidebar?: () => void;
 }
+
+export type ColonyRailProps = MiniRailProps;
+export type ServerRailProps = MiniRailProps;
 
 function formatUnreadBadge(count: number | string | undefined): string | null {
   if (count === undefined || count === null || count === 0 || count === '0' || count === '') return null;
@@ -100,7 +103,7 @@ function sumFriendUnread(counts: Record<string, number | string> | undefined, fr
   return formatUnreadBadge(total);
 }
 
-export function ColonyRail({
+export function MiniRail({
   currentUser,
   servers,
   colonies,
@@ -1047,8 +1050,6 @@ export function ColonyRail({
   );
 }
 
-// Backward-compatible alias
-
-// Backward-compatible alias
-export const ServerRail = ColonyRail;
-export type ServerRailProps = ColonyRailProps;
+// Backward-compatible aliases
+export const ColonyRail = MiniRail;
+export const ServerRail = MiniRail;
