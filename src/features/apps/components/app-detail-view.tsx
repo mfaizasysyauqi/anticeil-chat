@@ -228,11 +228,16 @@ export function AppDetailView({
           ) : (
             <div
               className={cn(
-                'w-6 h-6 rounded-md flex items-center justify-center text-white shrink-0 shadow-xs',
-                currentApp.iconBg || 'bg-primary'
+                'size-6 rounded-md flex items-center justify-center shrink-0 shadow-xs p-1',
+                currentApp.id === 'tradingview'
+                  ? 'bg-[#1e222d] border border-sky-500/30 text-[#2962ff]'
+                  : (currentApp.iconBg || 'bg-primary'),
+                currentApp.id === 'tradingview'
+                  ? 'text-[#2962ff]'
+                  : (currentApp.iconColor || 'text-white')
               )}
             >
-              <AppIcon className="w-3.5 h-3.5" />
+              <AppIcon className="w-full h-full object-contain" />
             </div>
           )}
 

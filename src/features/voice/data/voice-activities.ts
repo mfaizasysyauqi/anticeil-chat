@@ -19,7 +19,7 @@ export function YouTubeIcon({ className = 'w-4 h-4' }: { className?: string }) {
 export function TradingViewIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return React.createElement(
     'svg',
-    { className, viewBox: '0 0 24 24', fill: 'currentColor' },
+    { className, viewBox: '0 4 24 16', fill: 'currentColor' },
     React.createElement('path', {
       d: 'M15.865 8.279a2.452 2.452 0 1 1-4.904 0a2.452 2.452 0 0 1 4.904 0M9.75 6H0v4.904h4.846v7.269H9.75Zm8.596 0H24l-5.106 12.173H13.24z',
     })
