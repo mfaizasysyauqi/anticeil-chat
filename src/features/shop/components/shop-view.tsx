@@ -1625,21 +1625,18 @@ export function ShopView({
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Sort by dropdown */}
-              <div className="flex items-center gap-1 sm:gap-1.5">
-                <span className="hidden md:inline text-xs text-muted-foreground font-medium shrink-0">{t('Sort by')}</span>
-                <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
-                  <SelectTrigger size="xs" className="w-26 sm:w-34 md:w-38 h-7 text-xs bg-muted/40 border-border/60">
-                    <SelectValue placeholder={t('Sort by')} />
-                  </SelectTrigger>
-                  <SelectContent align="end" className="bg-card border-border z-[160]">
-                    <SelectItem value="recent">{t('Recently Added')}</SelectItem>
-                    <SelectItem value="price_asc">{t('Price: Low to High')}</SelectItem>
-                    <SelectItem value="price_desc">{t('Price: High to Low')}</SelectItem>
-                    <SelectItem value="name_asc">{t('Name (A-Z)')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Sort dropdown */}
+              <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
+                <SelectTrigger size="xs" className="w-auto min-w-[7.5rem] px-2.5 sm:px-3 h-7 text-xs bg-muted/40 border-border/60 gap-1.5 whitespace-nowrap shrink-0">
+                  <SelectValue placeholder={t('Recently Added')} />
+                </SelectTrigger>
+                <SelectContent align="end" className="w-auto min-w-[var(--radix-select-trigger-width)] bg-card border-border z-[160]">
+                  <SelectItem value="recent">{t('Recently Added')}</SelectItem>
+                  <SelectItem value="price_asc">{t('Price: Low to High')}</SelectItem>
+                  <SelectItem value="price_desc">{t('Price: High to Low')}</SelectItem>
+                  <SelectItem value="name_asc">{t('Name (A-Z)')}</SelectItem>
+                </SelectContent>
+              </Select>
 
               {/* Filter Sheet Trigger (100% Symmetrical layout on all screen sizes) */}
               <FilterToggleButton

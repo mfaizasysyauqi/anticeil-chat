@@ -838,9 +838,9 @@ export function QuestsView({
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className={cn(BUTTON_STYLES.TOOLBAR_BORDERED, 'px-2 sm:px-2.5 max-w-[105px] sm:max-w-none')}
+                      className={cn(BUTTON_STYLES.TOOLBAR_BORDERED, 'w-auto px-2.5 sm:px-3 whitespace-nowrap shrink-0')}
                     >
-                      <span className="truncate">
+                      <span>
                         {sortBy === 'suggested'
                           ? t('Suggested')
                           : sortBy === 'reward_desc'
