@@ -114,43 +114,87 @@ export const FALLBACK_QUESTS: QuestItem[] = [
   },
 ];
 
+function getDeletedQuestIds(): string[] {
+  try {
+    const raw = localStorage.getItem('anticeil_deleted_quest_ids');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+function addDeletedQuestId(id: string) {
+  const ids = getDeletedQuestIds();
+  if (!ids.includes(id)) {
+    ids.push(id);
+    localStorage.setItem('anticeil_deleted_quest_ids', JSON.stringify(ids));
+  }
+}
+
+function removeDeletedQuestId(id: string) {
+  const ids = getDeletedQuestIds();
+  if (ids.includes(id)) {
+    localStorage.setItem('anticeil_deleted_quest_ids', JSON.stringify(ids.filter((x) => x !== id)));
+  }
+}
+
 export const questsApi = {
   async getQuests(): Promise<QuestItem[]> {
+    const deletedIds = getDeletedQuestIds();
     try {
       const res = await api.get<any>('/v1/community/quests');
-      if (Array.isArray(res) && res.length > 0) {
-        localStorage.setItem('anticeil_community_quests', JSON.stringify(res));
-        return res;
+      if (Array.isArray(res)) {
+        const clean = res.filter((q: QuestItem) => !deletedIds.includes(q.id));
+        localStorage.setItem('anticeil_community_quests', JSON.stringify(clean));
+        return clean;
       }
     } catch {}
+
     const stored = localStorage.getItem('anticeil_community_quests');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((q: QuestItem) => !deletedIds.includes(q.id));
+        }
       } catch {}
     }
-    return FALLBACK_QUESTS;
+
+    const fallback = FALLBACK_QUESTS.filter((q) => !deletedIds.includes(q.id));
+    return fallback;
   },
 
   async createQuest(data: Partial<QuestItem>): Promise<{ success: boolean; message: string; quest?: QuestItem }> {
+    const newQuestId = data.id || `quest_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    removeDeletedQuestId(newQuestId);
+
+    const payload = { ...data, id: newQuestId };
+
     try {
-      const res = await api.post('/v1/community/quests', data);
-      if (res?.success) return res;
+      const res = await api.post('/v1/community/quests', payload);
+      if (res?.success && res.quest) {
+        const current = await this.getQuests();
+        const updated = [res.quest, ...current.filter((q) => q.id !== res.quest!.id)];
+        localStorage.setItem('anticeil_community_quests', JSON.stringify(updated));
+        return res;
+      }
     } catch {}
-    // Optimistic fallback
+
+    // Fallback if offline
     const current = await this.getQuests();
     const newQuest: QuestItem = {
-      id: `quest_${Date.now()}`,
+      id: newQuestId,
       title: data.title || 'Quest Baru',
       subtitle: data.subtitle || '',
       category: data.category || 'activity',
       promoter: data.promoter || 'Komunitas Anticeil',
       coverUrl: data.coverUrl || 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80',
       badge: data.badge || 'Baru',
-      rewardDew: data.rewardDew || 100,
+      rewardDew: Number(data.rewardDew) || 100,
       rewardIcon: '💧',
-      target: data.target || 1,
+      target: Number(data.target) || 1,
       unit: data.unit || 'kali',
       actionLabel: data.actionLabel || 'Mulai',
       appId: data.appId || '',
@@ -158,7 +202,7 @@ export const questsApi = {
       status: 'available',
       progress: 0,
     };
-    const updated = [newQuest, ...current];
+    const updated = [newQuest, ...current.filter((q) => q.id !== newQuest.id)];
     localStorage.setItem('anticeil_community_quests', JSON.stringify(updated));
     return { success: true, message: 'Quest berhasil ditambahkan', quest: newQuest };
   },
@@ -166,8 +210,14 @@ export const questsApi = {
   async updateQuest(questId: string, data: Partial<QuestItem>): Promise<{ success: boolean; message: string; quest?: QuestItem }> {
     try {
       const res = await api.put(`/v1/community/quests/${questId}`, data);
-      if (res?.success) return res;
+      if (res?.success && res.quest) {
+        const current = await this.getQuests();
+        const updated = current.map((q) => (q.id === questId ? res.quest! : q));
+        localStorage.setItem('anticeil_community_quests', JSON.stringify(updated));
+        return res;
+      }
     } catch {}
+
     const current = await this.getQuests();
     const updated = current.map((q) => (q.id === questId ? { ...q, ...data } : q));
     localStorage.setItem('anticeil_community_quests', JSON.stringify(updated));
@@ -176,13 +226,25 @@ export const questsApi = {
   },
 
   async deleteQuest(questId: string): Promise<{ success: boolean; message: string }> {
+    addDeletedQuestId(questId);
+
+    // Immediately remove from localStorage cache
+    const stored = localStorage.getItem('anticeil_community_quests');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter((q: QuestItem) => q.id !== questId);
+          localStorage.setItem('anticeil_community_quests', JSON.stringify(filtered));
+        }
+      } catch {}
+    }
+
     try {
       const res = await api.delete(`/v1/community/quests/${questId}`);
       if (res?.success) return res;
     } catch {}
-    const current = await this.getQuests();
-    const filtered = current.filter((q) => q.id !== questId);
-    localStorage.setItem('anticeil_community_quests', JSON.stringify(filtered));
+
     return { success: true, message: 'Quest berhasil dihapus' };
   },
 
