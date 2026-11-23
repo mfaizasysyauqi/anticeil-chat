@@ -1538,16 +1538,9 @@ export function ShopView({
           )}
         </div>
 
-        {/* Right side: Search, Wishlist, Currency Balance, TopBarActionButton */}
+        {/* Right side: Wishlist, Search, Currency Balance, TopBarActionButton */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <ResponsiveSearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder={t('Cari di shop...')}
-            inputWidth="w-28 sm:w-40 md:w-48"
-          />
-
-          {/* Wishlist Button */}
+          {/* Wishlist Button (placed to the left of search form) */}
           <Button
             type="button"
             variant="ghost"
@@ -1563,6 +1556,13 @@ export function ShopView({
               </span>
             )}
           </Button>
+
+          <ResponsiveSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder={t('Cari di shop...')}
+            inputWidth="w-28 sm:w-40 md:w-48"
+          />
 
           {/* Currency Pill with quick Top Up (Single Dew Currency) */}
           <DropdownMenu>
