@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   X,
-  Upload,
   Sparkles,
   Zap,
   Search,
@@ -9,11 +8,15 @@ import {
   Store,
   Lock,
   ShoppingBag,
+  User,
+  ImagePlus,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { shopApi, type ShopItem } from '@/features/shop/api/shop-api';
+import { profileApi } from '../api/profile-api';
 
 export interface SelectImageDialogProps {
   open: boolean;
@@ -53,25 +56,6 @@ const CURATED_GIFS = [
   },
 ];
 
-// Curated 6 slots for recent avatar / banner uploads
-const PRESET_RECENT_AVATARS = [
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
-  'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=200&q=80',
-];
-
-const PRESET_RECENT_BANNERS = [
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80',
-];
-
 export function SelectImageDialog({
   open,
   onOpenChange,
@@ -87,16 +71,37 @@ export function SelectImageDialog({
   const [searchQuery, setSearchQuery] = useState('');
   const [shopItems, setShopItems] = useState<ShopItem[]>([]);
   const [ownedItems, setOwnedItems] = useState<ShopItem[]>([]);
-  const [isLoadingShop, setIsLoadingShop] = useState(false);
+  const [recentUploads, setRecentUploads] = useState<string[]>([]);
+  const [, setIsLoadingRecent] = useState(true);
 
   const isAvatar = mode === 'avatar';
   const shopCategory = isAvatar ? 'animated_avatar' : 'profile_banner';
-  const recentPresets = isAvatar ? PRESET_RECENT_AVATARS : PRESET_RECENT_BANNERS;
 
+  // Load Real User Recent Uploads and Shop Items from Database
   useEffect(() => {
     if (!open) return;
 
-    setIsLoadingShop(true);
+    // Load fullstack recent uploads from user profile
+    setIsLoadingRecent(true);
+    profileApi.getProfile()
+      .then((data) => {
+        const list = isAvatar ? data.recentAvatars || [] : data.recentBanners || [];
+        const activeUrl = isAvatar
+          ? (currentImageUrl || data.avatarUrl)
+          : (currentImageUrl || data.bannerUrl);
+
+        let merged = [...list];
+        if (activeUrl && !merged.includes(activeUrl)) {
+          merged = [activeUrl, ...merged];
+        }
+        setRecentUploads(merged.slice(0, 6));
+      })
+      .catch(() => {})
+      .finally(() => {
+        setIsLoadingRecent(false);
+      });
+
+    // Load shop items & inventory
     Promise.all([
       shopApi.getItems(shopCategory),
       shopApi.getInventory(),
@@ -109,28 +114,40 @@ export function SelectImageDialog({
           setOwnedItems(inv.filter((i) => i.category === shopCategory));
         }
       })
-      .catch(() => {})
-      .finally(() => {
-        setIsLoadingShop(false);
-      });
-  }, [open, shopCategory]);
+      .catch(() => {});
+  }, [open, shopCategory, isAvatar, currentImageUrl]);
+
+  const addRecentUpload = async (url: string) => {
+    const updated = [url, ...recentUploads.filter((u) => u !== url)].slice(0, 6);
+    setRecentUploads(updated);
+    try {
+      if (isAvatar) {
+        await profileApi.updateProfile({ recentAvatars: updated, avatarUrl: url });
+      } else {
+        await profileApi.updateProfile({ recentBanners: updated, bannerUrl: url });
+      }
+    } catch {}
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       if (typeof reader.result === 'string') {
-        onSelectImage(reader.result);
+        const resultUrl = reader.result;
+        onSelectImage(resultUrl);
+        await addRecentUpload(resultUrl);
         onOpenChange(false);
       }
     };
     reader.readAsDataURL(file);
   };
 
-  const handleSelectPreset = (url: string) => {
+  const handleSelectRecent = async (url: string) => {
     onSelectImage(url);
+    await addRecentUpload(url);
     onOpenChange(false);
   };
 
@@ -162,7 +179,7 @@ export function SelectImageDialog({
         <div className="flex items-center justify-between px-5 pt-4 pb-2 border-b border-border/60">
           <div>
             <h2 className="text-base font-bold tracking-tight text-foreground">
-              {isAvatar ? t('Select Avatar Image') : t('Select Profile Banner')}
+              {isAvatar ? t('Select an Image') : t('Select Profile Banner')}
             </h2>
             <p className="text-[11px] text-muted-foreground">
               {isAvatar
@@ -238,61 +255,58 @@ export function SelectImageDialog({
         />
 
         <div className="px-5 py-4 space-y-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
-          {/* TAB 1: PICKER */}
+          {/* TAB 1: PICKER (Discord-Parity) */}
           {activeTab === 'picker' && (
             <>
-              {/* Action Cards */}
-              <div className="grid grid-cols-3 gap-2.5">
-                {/* Upload Image Card */}
+              {/* 2 Big Action Cards (Upload Image & Choose GIF) */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* 1. Upload Image Card */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="h-28 rounded-xl bg-card border border-border/80 hover:border-primary/60 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group shadow-xs"
+                  className="h-32 rounded-xl bg-card border border-border/80 hover:border-primary/60 flex flex-col items-center justify-center gap-2.5 transition-all cursor-pointer group shadow-xs"
                 >
-                  <div className="size-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
-                    <Upload className="w-5 h-5" />
+                  <div className="size-11 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                    <ImagePlus className="w-6 h-6" />
                   </div>
                   <span className="text-xs font-bold text-foreground">
-                    {t('Upload File')}
+                    {t('Upload Image')}
                   </span>
                 </button>
 
-                {/* Choose GIF Card */}
+                {/* 2. Choose GIF Card (with Collage Visual like Discord) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('gif')}
-                  className="h-28 rounded-xl bg-card border border-border/80 hover:border-primary/60 relative flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group shadow-xs"
+                  className="h-32 rounded-xl border border-border/80 hover:border-primary/60 relative flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group overflow-hidden shadow-xs"
                 >
-                  <span className="absolute top-1.5 right-1.5 px-1 py-0.2 rounded text-[8px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  {/* 2x2 Collage Background */}
+                  <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 opacity-50 group-hover:opacity-70 transition-opacity">
+                    <img src={CURATED_GIFS[0].items[0].url} alt="" className="size-full object-cover" />
+                    <img src={CURATED_GIFS[2].items[0].url} alt="" className="size-full object-cover" />
+                    <img src={CURATED_GIFS[1].items[0].url} alt="" className="size-full object-cover" />
+                    <img src={CURATED_GIFS[2].items[1].url} alt="" className="size-full object-cover" />
+                  </div>
+                  <div className="absolute inset-0 bg-background/60 backdrop-blur-2xs" />
+
+                  {/* Top-right GIF badge */}
+                  <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest bg-emerald-500/80 text-white shadow-xs z-10">
                     GIF
                   </span>
-                  <div className="size-10 rounded-full bg-muted flex items-center justify-center text-pink-400 group-hover:scale-110 transition-transform">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-bold text-foreground">
-                    {t('Pilih GIF')}
-                  </span>
-                </button>
 
-                {/* Shop Items Card */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('shop')}
-                  className="h-28 rounded-xl bg-card border border-border/80 hover:border-primary/60 relative flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group shadow-xs"
-                >
-                  <span className="absolute top-1.5 right-1.5 px-1 py-0.2 rounded text-[8px] font-black bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                    SHOP
-                  </span>
-                  <div className="size-10 rounded-full bg-muted flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                    <Store className="w-5 h-5" />
+                  {/* Centered label */}
+                  <div className="relative z-10 flex flex-col items-center gap-1.5">
+                    <div className="size-9 rounded-full bg-background/80 flex items-center justify-center text-pink-400 group-hover:scale-110 transition-transform shadow-xs">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-bold text-white drop-shadow-sm">
+                      {t('Choose GIF')}
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-foreground">
-                    {t('Dari Toko')}
-                  </span>
                 </button>
               </div>
 
-              {/* Recent Avatars / Banners Section */}
+              {/* Recent Avatars / Banners Section (FULLSTACK LIVE DATA) */}
               <div className="space-y-2 pt-1">
                 <div>
                   <h3 className="text-xs font-bold text-foreground">
@@ -305,28 +319,52 @@ export function SelectImageDialog({
                   </p>
                 </div>
 
-                {/* 6 Preview Slots */}
+                {/* 6 Real Slots */}
                 <div className="grid grid-cols-6 gap-2 pt-1">
-                  {recentPresets.map((url, idx) => {
-                    const isCurrent = currentImageUrl === url;
+                  {Array.from({ length: 6 }).map((_, idx) => {
+                    const url = recentUploads[idx];
+                    if (url) {
+                      const isCurrent = currentImageUrl === url;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectRecent(url)}
+                          className={cn(
+                            'relative aspect-square border overflow-hidden transition-all hover:scale-105 cursor-pointer bg-muted/40 shadow-xs group',
+                            isAvatar ? 'rounded-full' : 'rounded-lg',
+                            isCurrent
+                              ? 'border-primary ring-2 ring-primary/50'
+                              : 'border-border/70 hover:border-border'
+                          )}
+                          title={t('Pilih item ini')}
+                        >
+                          <img src={url} alt={`Recent ${idx}`} className="size-full object-cover" />
+                          {isCurrent && (
+                            <div className="absolute inset-0 bg-primary/40 flex items-center justify-center">
+                              <Check className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    }
+
+                    // Empty placeholder slot with silhouette (Discord Parity)
                     return (
                       <button
-                        key={idx}
+                        key={`empty-${idx}`}
                         type="button"
-                        onClick={() => handleSelectPreset(url)}
+                        onClick={() => fileInputRef.current?.click()}
                         className={cn(
-                          'relative aspect-square border overflow-hidden transition-all hover:scale-105 cursor-pointer bg-muted/40 shadow-xs',
-                          isAvatar ? 'rounded-full' : 'rounded-lg',
-                          isCurrent
-                            ? 'border-primary ring-2 ring-primary/50'
-                            : 'border-border/70 hover:border-border'
+                          'relative aspect-square border border-dashed border-border/70 bg-muted/20 hover:bg-muted/40 hover:border-primary/50 transition-all flex items-center justify-center cursor-pointer group',
+                          isAvatar ? 'rounded-full' : 'rounded-lg'
                         )}
+                        title={t('Unggah ke slot ini')}
                       >
-                        <img src={url} alt={`Preset ${idx}`} className="w-full h-full object-cover" />
-                        {isCurrent && (
-                          <div className="absolute inset-0 bg-primary/40 flex items-center justify-center">
-                            <Check className="w-4 h-4 text-white" />
-                          </div>
+                        {isAvatar ? (
+                          <User className="w-5 h-5 text-muted-foreground/35 group-hover:text-primary/70 transition-colors" />
+                        ) : (
+                          <ImageIcon className="w-5 h-5 text-muted-foreground/35 group-hover:text-primary/70 transition-colors" />
                         )}
                       </button>
                     );
@@ -369,7 +407,7 @@ export function SelectImageDialog({
                           <button
                             key={it.id}
                             type="button"
-                            onClick={() => handleSelectPreset(it.url)}
+                            onClick={() => handleSelectRecent(it.url)}
                             className={cn(
                               'relative aspect-video rounded-lg overflow-hidden border border-border/70 hover:border-primary hover:scale-105 transition-all cursor-pointer group shadow-xs',
                               isAvatar && 'aspect-square rounded-full'
@@ -418,7 +456,7 @@ export function SelectImageDialog({
                         <button
                           key={item.id}
                           type="button"
-                          onClick={() => handleSelectPreset(imgUrl)}
+                          onClick={() => handleSelectRecent(imgUrl)}
                           className={cn(
                             'p-2 rounded-xl border bg-card hover:bg-muted/50 transition-all text-left flex flex-col gap-1.5 cursor-pointer shadow-xs',
                             isCurrent
@@ -526,7 +564,7 @@ export function SelectImageDialog({
                               type="button"
                               size="sm"
                               variant="outline"
-                              onClick={() => handleSelectPreset(imgUrl)}
+                              onClick={() => handleSelectRecent(imgUrl)}
                               className="h-6 text-[10px] px-2 font-bold cursor-pointer"
                             >
                               {t('Gunakan')}

@@ -91,6 +91,8 @@ export interface UserProfileData {
   customStatus?: string;
   createdAt?: string;
   widgets?: UserProfileWidgets;
+  recentAvatars?: string[];
+  recentBanners?: string[];
 }
 
 export interface ColonyUserProfile {
