@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Globe,
   Plus,
   Users,
   Search,
@@ -391,7 +390,14 @@ export function ColoniesView({
 
             {filteredMyColonies.length === 0 ? (
               <EmptyState
-                icon={<Globe className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+                media={
+                  <img
+                    src="/atlas-colony-empty.png"
+                    alt={t('Belum Bergabung dengan Colony')}
+                    className="h-36 sm:h-44 md:h-48 w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)] select-none pointer-events-none mb-1 animate-in fade-in zoom-in-95 duration-300"
+                    loading="lazy"
+                  />
+                }
                 title={t('Belum Bergabung dengan Colony')}
                 description={t(
                   'Anda belum memiliki atau bergabung dengan colony komunitas. Buat colony baru atau jelajahi komunitas publik yang tersedia!'
