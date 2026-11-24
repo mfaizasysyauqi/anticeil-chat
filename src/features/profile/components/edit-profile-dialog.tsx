@@ -4,6 +4,7 @@ import {
   ChevronDown,
   Pencil,
   Sparkles,
+  Zap,
   Eye,
   Palette,
   X,
@@ -76,6 +77,19 @@ import {
 } from '../data/profile-constants';
 import { ProfileConnectedPlatformsSection } from './profile-connected-platforms-section';
 import { ProfileWishlistSubtab } from './profile-wishlist-subtab';
+import { ChangeDisplayNameStyleDialog } from './change-display-name-style-dialog';
+import { SelectImageDialog } from './select-image-dialog';
+import { PreviewNectarDialog } from './preview-nectar-dialog';
+import { ProfileThemeColorPicker } from './profile-theme-color-picker';
+import {
+  parseDisplayNameStyle,
+  getDisplayNameInlineStyles,
+  serializeDisplayNameStyle,
+  FONT_OPTIONS,
+  LIMITED_TIME_FONT,
+  EFFECT_OPTIONS as DISPLAY_EFFECT_OPTIONS,
+  COLOR_SWATCHES,
+} from '../data/display-name-styles';
 
 export interface EditProfileDialogProps {
   open: boolean;
@@ -119,6 +133,16 @@ export function EditProfileDialog({
   const [profileEffect, setProfileEffect] = useState('none');
   const [profileTheme, setProfileTheme] = useState('teal');
   const [displayNameStyle, setDisplayNameStyle] = useState('default');
+
+  // Discord-style Profile Customization States
+  const [themePrimary, setThemePrimary] = useState('#3b37af');
+  const [themeAccent, setThemeAccent] = useState('#ad3e3a');
+  const [isNameStyleDialogOpen, setIsNameStyleDialogOpen] = useState(false);
+  const [isPreviewNectarOpen, setIsPreviewNectarOpen] = useState(false);
+  const [isSelectImageOpen, setIsSelectImageOpen] = useState(false);
+  const [selectImageMode, setSelectImageMode] = useState<'avatar' | 'banner'>('banner');
+  const [isThemeColorPickerOpen, setIsThemeColorPickerOpen] = useState(false);
+  const [themeColorPickerTarget, setThemeColorPickerTarget] = useState<'primary' | 'accent'>('primary');
 
   // Decoration picker popover state
   const [isDecorationPickerOpen, setIsDecorationPickerOpen] = useState(false);
@@ -262,7 +286,14 @@ export function EditProfileDialog({
       if (data.nameplate) setProfileNameplate(data.nameplate);
       if (data.profileFrame) setProfileFrame(data.profileFrame);
       if (data.profileEffect) setProfileEffect(data.profileEffect);
-      if (data.theme) setProfileTheme(data.theme);
+      if (data.theme) {
+        setProfileTheme(data.theme);
+        if (data.theme.startsWith('custom:')) {
+          const parts = data.theme.replace('custom:', '').split(',');
+          if (parts[0]) setThemePrimary(parts[0]);
+          if (parts[1]) setThemeAccent(parts[1]);
+        }
+      }
       if (data.displayNameStyle) setDisplayNameStyle(data.displayNameStyle);
 
       if (data.widgets) {
@@ -353,6 +384,35 @@ export function EditProfileDialog({
     } else if (onNavigateSection) {
       onNavigateSection('nitro');
     }
+  };
+
+  const handleThemeColorChange = (newColor: string) => {
+    if (themeColorPickerTarget === 'primary') {
+      setThemePrimary(newColor);
+      setProfileTheme(`custom:${newColor},${themeAccent}`);
+    } else {
+      setThemeAccent(newColor);
+      setProfileTheme(`custom:${themePrimary},${newColor}`);
+    }
+  };
+
+  const handleRandomizeNectarProfile = () => {
+    const allFonts = [...FONT_OPTIONS, LIMITED_TIME_FONT];
+    const randomFont = allFonts[Math.floor(Math.random() * allFonts.length)];
+    const randomEffect = DISPLAY_EFFECT_OPTIONS[Math.floor(Math.random() * DISPLAY_EFFECT_OPTIONS.length)];
+    const randomColor = COLOR_SWATCHES[Math.floor(Math.random() * COLOR_SWATCHES.length)];
+    const randomStyle = serializeDisplayNameStyle({
+      fontId: randomFont.id,
+      effectId: randomEffect.id,
+      color: randomColor,
+    });
+    setDisplayNameStyle(randomStyle);
+
+    const randomPrimary = COLOR_SWATCHES[Math.floor(Math.random() * COLOR_SWATCHES.length)];
+    const randomAccent = COLOR_SWATCHES[Math.floor(Math.random() * COLOR_SWATCHES.length)];
+    setThemePrimary(randomPrimary);
+    setThemeAccent(randomAccent);
+    setProfileTheme(`custom:${randomPrimary},${randomAccent}`);
   };
 
   // Custom Note Widget Handlers
@@ -968,54 +1028,162 @@ export function EditProfileDialog({
                   </div>
                 </div>
 
-                {/* 5. Display Name Style */}
-                <FormDropdown
-                  label={<span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('Display Name Style')}</span>}
-                  value={displayNameStyle}
-                  onChange={(val) => setDisplayNameStyle(val)}
-                  options={DISPLAY_NAME_STYLE_OPTIONS.map((style) => ({ value: style.id, label: style.label }))}
-                />
+                {/* Discord-style Nectar & Customization Sections */}
 
-                {/* 6. Profile Theme */}
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {t('Profile Theme')}
-                  </span>
-                  <div className="grid grid-cols-2 gap-2">
-                    {THEME_OPTIONS.map((theme) => (
-                      <button
-                        key={theme.id}
-                        type="button"
-                        onClick={() => setProfileTheme(theme.id)}
-                        className={cn(
-                          'p-2 rounded-lg border text-left text-[11px] font-semibold transition-all flex items-center justify-between cursor-pointer',
-                          profileTheme === theme.id
-                            ? 'border-sidebar-primary bg-sidebar-primary/15 text-sidebar-primary'
-                            : 'border-border/70 bg-card hover:border-sidebar-primary/40 text-muted-foreground',
-                        )}
-                      >
-                        <span className="truncate">{theme.label}</span>
-                        <span className={cn('size-3 rounded-full shrink-0 bg-gradient-to-r', theme.gradient)} />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 7. Nectar Promo Box */}
-                <div className="p-3.5 rounded-xl border border-sidebar-primary/40 bg-sidebar-primary/10 space-y-2.5">
-                  <div className="text-xs font-semibold text-foreground leading-snug">
+                {/* 1. Nectar Promo Box */}
+                <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#5865F2]/25 via-purple-600/20 to-pink-600/20 border border-[#5865F2]/40 space-y-2.5 shadow-sm">
+                  <div className="text-xs font-bold text-foreground leading-snug">
                     {t('Level up your look, only with Nectar')}
                   </div>
                   <Button
+                    type="button"
                     size="sm"
-                    variant="teal"
-                    onClick={handleNectarCta}
-                    className="w-full text-xs h-8 font-semibold cursor-pointer"
+                    onClick={() => setIsPreviewNectarOpen(true)}
+                    className="w-full text-xs h-8 font-bold bg-[#5865F2] hover:bg-[#4752c4] text-white cursor-pointer shadow-sm rounded-lg flex items-center justify-center gap-1.5 transition-all"
                   >
-                    <Eye className="w-3.5 h-3.5 mr-1.5" />
-                    {t('Preview Nectar')}
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>{t('Preview Nectar')}</span>
                   </Button>
                 </div>
+
+                {/* 2. Display Name Style */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {t('Display Name Style')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsNameStyleDialogOpen(true)}
+                    className="w-full h-12 px-3 rounded-xl bg-[#111214] border border-border/80 hover:border-[#5865F2] flex items-center justify-center transition-all cursor-pointer group shadow-xs"
+                  >
+                    <span
+                      className="text-base font-black truncate group-hover:scale-105 transition-transform"
+                      style={getDisplayNameInlineStyles(parseDisplayNameStyle(displayNameStyle))}
+                    >
+                      {currentUserName}
+                    </span>
+                  </button>
+                </div>
+
+                {/* 3. Profile Theme (Dual Color Gradient Box) */}
+                <div className="space-y-1.5 relative">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {t('Profile Theme')}
+                  </span>
+                  <div
+                    className="w-full h-24 rounded-xl border border-border/80 p-2.5 flex flex-col justify-between relative shadow-xs overflow-hidden"
+                    style={{
+                      background: `linear-gradient(to bottom, ${themePrimary}, ${themeAccent})`,
+                    }}
+                  >
+                    {/* Top Color Box (Primary) */}
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setThemeColorPickerTarget('primary');
+                          setIsThemeColorPickerOpen(true);
+                        }}
+                        title={t('Pilih Warna Utama')}
+                        className="size-6 rounded-lg border-2 border-white shadow-md cursor-pointer hover:scale-110 transition-transform"
+                        style={{ backgroundColor: themePrimary }}
+                      />
+                    </div>
+                    {/* Bottom Color Box (Accent) */}
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setThemeColorPickerTarget('accent');
+                          setIsThemeColorPickerOpen(true);
+                        }}
+                        title={t('Pilih Warna Aksen')}
+                        className="size-6 rounded-lg border-2 border-white shadow-md cursor-pointer hover:scale-110 transition-transform"
+                        style={{ backgroundColor: themeAccent }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Popover Color Picker */}
+                  {isThemeColorPickerOpen && (
+                    <div className="absolute top-8 right-0 z-50">
+                      <ProfileThemeColorPicker
+                        color={themeColorPickerTarget === 'primary' ? themePrimary : themeAccent}
+                        title={
+                          themeColorPickerTarget === 'primary'
+                            ? t('Warna Utama')
+                            : t('Warna Aksen')
+                        }
+                        onChange={handleThemeColorChange}
+                        onClose={() => setIsThemeColorPickerOpen(false)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Profile Banner */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {t('Profile Banner')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectImageMode('banner');
+                      setIsSelectImageOpen(true);
+                    }}
+                    className="w-full h-16 rounded-xl border border-border/80 hover:border-[#5865F2] bg-cover bg-center overflow-hidden transition-all cursor-pointer shadow-xs relative group flex items-center justify-center bg-[#111214]"
+                    style={{
+                      backgroundColor: profileBannerColor,
+                      backgroundImage: profileBannerUrl ? `url(${profileBannerUrl})` : undefined,
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-[11px] font-bold text-white bg-black/60 px-3 py-1 rounded-full">
+                        {t('Ubah Banner')}
+                      </span>
+                    </div>
+                  </button>
+                </div>
+
+                {/* 5. Animated Avatar */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {t('Animated Avatar')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectImageMode('avatar');
+                      setIsSelectImageOpen(true);
+                    }}
+                    className="w-full h-16 rounded-xl bg-[#111214] border border-border/80 hover:border-[#5865F2] flex items-center justify-center transition-all cursor-pointer group shadow-xs"
+                  >
+                    <div className="size-11 rounded-full border-2 border-white/20 overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
+                      {profileAvatarUrl ? (
+                        <img
+                          src={profileAvatarUrl}
+                          alt="Avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center font-bold text-white text-xs bg-[#2b2d31]">
+                          {currentUserName.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                </div>
+
+                {/* 6. Unlock / Get Nectar button */}
+                <Button
+                  type="button"
+                  onClick={handleNectarCta}
+                  className="w-full h-9 rounded-xl font-bold text-xs bg-gradient-to-r from-[#5865F2] via-purple-600 to-pink-600 hover:opacity-95 text-white shadow-lg cursor-pointer flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
+                >
+                  <Zap className="w-4 h-4 fill-white" />
+                  <span>{t('Get Nectar')}</span>
+                </Button>
               </div>
 
             {/* Save Changes Button */}
@@ -2081,6 +2249,64 @@ export function EditProfileDialog({
             </div>
           </div>
         )}
+
+        {/* 1. Change Display Name Style Dialog */}
+        <ChangeDisplayNameStyleDialog
+          open={isNameStyleDialogOpen}
+          onOpenChange={setIsNameStyleDialogOpen}
+          currentUserName={currentUserName}
+          avatarUrl={profileAvatarUrl}
+          bannerColor={profileBannerColor}
+          bannerUrl={profileBannerUrl}
+          initialStyle={displayNameStyle}
+          onApply={(newStyle) => setDisplayNameStyle(newStyle)}
+        />
+
+        {/* 2. Select an Image Dialog (Avatar & Banner) */}
+        <SelectImageDialog
+          open={isSelectImageOpen}
+          onOpenChange={setIsSelectImageOpen}
+          mode={selectImageMode}
+          currentImageUrl={selectImageMode === 'avatar' ? profileAvatarUrl : profileBannerUrl}
+          onSelectImage={(url) => {
+            if (selectImageMode === 'avatar') {
+              setProfileAvatarUrl(url);
+            } else {
+              setProfileBannerUrl(url);
+            }
+          }}
+          onOpenNectarUpgrade={handleNectarCta}
+        />
+
+        {/* 3. Full Preview Nectar Dialog */}
+        <PreviewNectarDialog
+          open={isPreviewNectarOpen}
+          onOpenChange={setIsPreviewNectarOpen}
+          currentUserName={currentUserName}
+          avatarUrl={profileAvatarUrl}
+          bannerUrl={profileBannerUrl}
+          bannerColor={profileBannerColor}
+          themePrimary={themePrimary}
+          themeAccent={themeAccent}
+          displayNameStyle={displayNameStyle}
+          avatarDecoration={profileAvatarDecoration}
+          bioText={profileBioText}
+          onOpenChangeNameStyle={() => setIsNameStyleDialogOpen(true)}
+          onOpenSelectBanner={() => {
+            setSelectImageMode('banner');
+            setIsSelectImageOpen(true);
+          }}
+          onOpenSelectAvatar={() => {
+            setSelectImageMode('avatar');
+            setIsSelectImageOpen(true);
+          }}
+          onOpenThemeColorPicker={(target) => {
+            setThemeColorPickerTarget(target);
+            setIsThemeColorPickerOpen(true);
+          }}
+          onOpenUpgradePlan={handleNectarCta}
+          onRandomizeAll={handleRandomizeNectarProfile}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -29,6 +29,10 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { ShareProfileDialog } from '@/features/profile/components/share-profile-dialog';
+import {
+  parseDisplayNameStyle,
+  getDisplayNameInlineStyles,
+} from '@/features/profile/data/display-name-styles';
 
 import type { UserConnectionItem } from '@/features/user-settings/api/games-apps-api';
 
@@ -165,9 +169,26 @@ export function ProfilePreviewCard({
   const visibleConnections = (connections || []).filter((c) => c.displayOnProfile !== false);
   const decoration = getDecorationBadge(avatarDecoration);
 
+  const isJsonStyle = displayNameStyle?.startsWith('{');
+  const parsedStyle = isJsonStyle ? parseDisplayNameStyle(displayNameStyle) : null;
+  const inlineStyles = parsedStyle ? getDisplayNameInlineStyles(parsedStyle) : undefined;
+
+  const isCustomGradient =
+    Boolean(profileTheme?.startsWith('custom:') || profileTheme?.startsWith('linear-gradient'));
+  const customCardStyle = isCustomGradient
+    ? {
+        background: profileTheme?.startsWith('custom:')
+          ? `linear-gradient(to bottom, ${profileTheme.replace('custom:', '')})`
+          : profileTheme,
+      }
+    : undefined;
+
   return (
     <div className="w-full max-w-[340px] sm:max-w-[360px] 2xl:max-w-[380px] mx-auto overflow-hidden">
-      <div className="rounded-2xl bg-card border border-border/80 shadow-2xl overflow-hidden">
+      <div
+        className="rounded-2xl bg-card border border-border/80 shadow-2xl overflow-hidden transition-all"
+        style={customCardStyle}
+      >
         {/* Banner Area (TikTok Style with Gradient & Overlay Content) */}
         <div
           className="h-36 sm:h-40 relative transition-colors bg-cover bg-center overflow-hidden flex flex-col justify-end"
@@ -201,8 +222,9 @@ export function ProfilePreviewCard({
               <div
                 className={cn(
                   "text-lg sm:text-xl font-black text-white leading-tight transition-all truncate tracking-tight drop-shadow-sm",
-                  getDisplayNameStyleClass(displayNameStyle)
+                  !isJsonStyle && getDisplayNameStyleClass(displayNameStyle)
                 )}
+                style={inlineStyles}
               >
                 {currentUserName}
               </div>

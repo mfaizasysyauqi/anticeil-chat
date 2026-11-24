@@ -1,0 +1,399 @@
+import React, { useState } from 'react';
+import {
+  ArrowLeft,
+  X,
+  Dices,
+  Sparkles,
+  Zap,
+  Palette,
+  ExternalLink,
+  Shield,
+  Crown,
+  Gamepad2,
+  Calendar,
+  MessageSquare,
+  Music,
+} from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useTranslation } from '@/core/i18n';
+import {
+  parseDisplayNameStyle,
+  getDisplayNameInlineStyles,
+  FONT_OPTIONS,
+  LIMITED_TIME_FONT,
+  EFFECT_OPTIONS,
+  COLOR_SWATCHES,
+} from '../data/display-name-styles';
+
+export interface PreviewNectarDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  currentUserName: string;
+  avatarUrl?: string | null;
+  bannerUrl?: string | null;
+  bannerColor?: string;
+  themePrimary?: string;
+  themeAccent?: string;
+  displayNameStyle?: string;
+  avatarDecoration?: string;
+  bioText?: string;
+  onOpenChangeNameStyle: () => void;
+  onOpenSelectBanner: () => void;
+  onOpenSelectAvatar: () => void;
+  onOpenThemeColorPicker: (type: 'primary' | 'accent') => void;
+  onOpenUpgradePlan: () => void;
+  onRandomizeAll?: () => void;
+}
+
+export function PreviewNectarDialog({
+  open,
+  onOpenChange,
+  currentUserName,
+  avatarUrl,
+  bannerUrl,
+  bannerColor = '#3b37af',
+  themePrimary = '#3b37af',
+  themeAccent = '#ad3e3a',
+  displayNameStyle = 'default',
+  avatarDecoration = 'none',
+  bioText,
+  onOpenChangeNameStyle,
+  onOpenSelectBanner,
+  onOpenSelectAvatar,
+  onOpenThemeColorPicker,
+  onOpenUpgradePlan,
+  onRandomizeAll,
+}: PreviewNectarDialogProps) {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<'board' | 'activity' | 'wishlist'>('board');
+
+  const styleConfig = parseDisplayNameStyle(displayNameStyle);
+  const inlineStyles = getDisplayNameInlineStyles(styleConfig);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-5xl p-0 overflow-hidden bg-[#18191c] text-white border border-[#27272a] shadow-2xl rounded-2xl">
+        <DialogTitle className="sr-only">Preview Nectar</DialogTitle>
+
+        {/* Modal Body */}
+        <div className="grid grid-cols-1 md:grid-cols-12 min-h-[580px] max-h-[82vh] overflow-hidden">
+          {/* LEFT SIDEBAR: CONTROLS & PREVIEW SWITCHERS */}
+          <div className="md:col-span-4 p-5 bg-[#111214] border-r border-[#232428] flex flex-col justify-between overflow-y-auto custom-scrollbar space-y-4">
+            <div className="space-y-4">
+              {/* Back / Close button */}
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer group"
+              >
+                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                <span>{t('Preview Nectar')}</span>
+              </button>
+
+              <p className="text-xs text-zinc-400 leading-snug">
+                {t("You're previewing what your profile could look like with Nectar")}
+              </p>
+
+              {/* Surprise Me Button */}
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={onRandomizeAll}
+                className="w-full h-8 text-xs font-bold bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 flex items-center justify-center gap-2 rounded-xl cursor-pointer"
+              >
+                <Dices className="w-4 h-4 text-amber-400 animate-spin-slow" />
+                <span>{t('Surprise Me!')}</span>
+              </Button>
+
+              {/* 1. Display Name Style Card */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                  {t('Display Name Style')}
+                </span>
+                <button
+                  type="button"
+                  onClick={onOpenChangeNameStyle}
+                  className="w-full h-11 px-3 rounded-xl bg-[#1e1f22] border border-white/10 hover:border-[#5865F2] flex items-center justify-center transition-all cursor-pointer group shadow-xs"
+                >
+                  <span
+                    className="text-base font-black truncate drop-shadow-sm group-hover:scale-105 transition-transform"
+                    style={inlineStyles}
+                  >
+                    {currentUserName}
+                  </span>
+                </button>
+              </div>
+
+              {/* 2. Profile Theme Card (Dual color gradient box) */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                  {t('Profile Theme')}
+                </span>
+                <div
+                  className="w-full h-16 rounded-xl border border-white/10 p-2 flex flex-col justify-between relative shadow-xs overflow-hidden"
+                  style={{
+                    background: `linear-gradient(to bottom, ${themePrimary}, ${themeAccent})`,
+                  }}
+                >
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => onOpenThemeColorPicker('primary')}
+                      title={t('Ubah Warna Utama')}
+                      className="size-5 rounded-md border-2 border-white shadow-md cursor-pointer hover:scale-110 transition-transform"
+                      style={{ backgroundColor: themePrimary }}
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => onOpenThemeColorPicker('accent')}
+                      title={t('Ubah Warna Aksen')}
+                      className="size-5 rounded-md border-2 border-white shadow-md cursor-pointer hover:scale-110 transition-transform"
+                      style={{ backgroundColor: themeAccent }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Profile Banner Card */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                  {t('Profile Banner')}
+                </span>
+                <button
+                  type="button"
+                  onClick={onOpenSelectBanner}
+                  className="w-full h-14 rounded-xl border border-white/10 hover:border-[#5865F2] bg-cover bg-center overflow-hidden transition-all cursor-pointer shadow-xs relative group flex items-center justify-center"
+                  style={{
+                    backgroundColor: bannerColor,
+                    backgroundImage: bannerUrl ? `url(${bannerUrl})` : undefined,
+                  }}
+                >
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="text-[11px] font-bold text-white bg-black/60 px-2.5 py-1 rounded-full">
+                      {t('Ubah Banner')}
+                    </span>
+                  </div>
+                </button>
+              </div>
+
+              {/* 4. Animated Avatar Card */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                  {t('Animated Avatar')}
+                </span>
+                <button
+                  type="button"
+                  onClick={onOpenSelectAvatar}
+                  className="w-full h-14 rounded-xl bg-[#1e1f22] border border-white/10 hover:border-[#5865F2] flex items-center justify-center transition-all cursor-pointer group shadow-xs"
+                >
+                  <div className="size-10 rounded-full border-2 border-white/20 overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center font-bold text-white text-xs bg-[#2b2d31]">
+                        {currentUserName.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Unlock Button in Sidebar */}
+            <Button
+              type="button"
+              onClick={onOpenUpgradePlan}
+              className="w-full h-9 rounded-xl font-bold text-xs bg-gradient-to-r from-[#5865F2] via-purple-600 to-pink-600 hover:opacity-95 text-white shadow-lg cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Zap className="w-4 h-4 fill-white" />
+              <span>{t('Get Nectar')}</span>
+            </Button>
+          </div>
+
+          {/* RIGHT SHOWCASE: MASSIVE DISCORD-STYLE PROFILE CARD */}
+          <div
+            className="md:col-span-8 p-6 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar relative"
+            style={{
+              background: `radial-gradient(ellipse at top, ${themePrimary}33, #18191c 70%)`,
+            }}
+          >
+            {/* Discord Live Profile Card Container */}
+            <div className="w-full max-w-[420px] rounded-2xl bg-[#111214] border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              {/* Banner */}
+              <div
+                className="h-28 bg-cover bg-center relative"
+                style={{
+                  backgroundColor: bannerColor,
+                  backgroundImage: bannerUrl ? `url(${bannerUrl})` : undefined,
+                }}
+              >
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `linear-gradient(to bottom, transparent, #111214)`,
+                  }}
+                />
+              </div>
+
+              {/* Profile Card Header with Avatar & Styled Display Name */}
+              <div className="px-5 pb-4 -mt-10 relative z-10 space-y-3">
+                <div className="flex items-end justify-between">
+                  {/* Avatar */}
+                  <div className="relative">
+                    <div className="size-20 rounded-full border-4 border-[#111214] bg-[#2b2d31] overflow-hidden shadow-xl">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center font-bold text-xl text-white">
+                          {currentUserName.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    {/* Status indicator */}
+                    <div className="absolute bottom-1 right-1 size-4 rounded-full bg-emerald-500 border-2 border-[#111214]" />
+                  </div>
+
+                  {/* Badges */}
+                  <div className="flex items-center gap-1.5 bg-[#1e1f22] border border-white/10 px-2.5 py-1 rounded-full shadow-xs">
+                    <span title="Enterprise"><Crown className="w-3.5 h-3.5 text-amber-400" /></span>
+                    <span title="Nectar"><Zap className="w-3.5 h-3.5 text-pink-400 fill-pink-400" /></span>
+                    <span title="Verified"><Shield className="w-3.5 h-3.5 text-emerald-400" /></span>
+                    <span title="Gamer"><Gamepad2 className="w-3.5 h-3.5 text-cyan-400" /></span>
+                  </div>
+                </div>
+
+                {/* Display Name & Username */}
+                <div>
+                  <div
+                    className="text-xl font-black truncate leading-tight tracking-tight"
+                    style={inlineStyles}
+                  >
+                    {currentUserName}
+                  </div>
+                  <div className="text-xs text-zinc-400 font-mono mt-0.5">
+                    @{currentUserName.toLowerCase().replace(/\s+/g, '')}
+                  </div>
+                </div>
+
+                {/* Profile Tabs (Board, Activity, Wishlist) */}
+                <div className="flex items-center gap-4 border-b border-white/10 text-xs font-bold pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('board')}
+                    className={cn(
+                      'pb-2 border-b-2 transition-colors cursor-pointer',
+                      activeTab === 'board'
+                        ? 'border-[#5865F2] text-white'
+                        : 'border-transparent text-zinc-400 hover:text-white'
+                    )}
+                  >
+                    {t('Board')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('activity')}
+                    className={cn(
+                      'pb-2 border-b-2 transition-colors cursor-pointer',
+                      activeTab === 'activity'
+                        ? 'border-[#5865F2] text-white'
+                        : 'border-transparent text-zinc-400 hover:text-white'
+                    )}
+                  >
+                    {t('Activity')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('wishlist')}
+                    className={cn(
+                      'pb-2 border-b-2 transition-colors cursor-pointer',
+                      activeTab === 'wishlist'
+                        ? 'border-[#5865F2] text-white'
+                        : 'border-transparent text-zinc-400 hover:text-white'
+                    )}
+                  >
+                    {t('Wishlist')}
+                  </button>
+                </div>
+
+                {/* Tab Content */}
+                <div className="pt-2 space-y-3">
+                  {/* Rich Activity Subcard */}
+                  <div className="p-3 rounded-xl bg-[#1e1f22] border border-white/10 flex items-center justify-between gap-3 shadow-xs">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="size-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                        <Gamepad2 className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-white truncate">
+                          Neverness to Everness
+                        </div>
+                        <div className="text-[10px] text-zinc-400 truncate">
+                          58 Hunter Lv. • 276 Achievements
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 font-mono shrink-0">SEA</span>
+                  </div>
+
+                  {/* About Me */}
+                  {bioText && (
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                        {t('About Me')}
+                      </div>
+                      <p className="text-xs text-zinc-300 leading-snug line-clamp-3">
+                        {bioText}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Member Since & Connected platforms */}
+                  <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-zinc-400 font-medium">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-zinc-500" />
+                      <span>{t('Member Since Jun 16, 2026')}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <span className="text-emerald-400">● Spotify</span>
+                      <span className="text-sky-400">● GitHub</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* BOTTOM STICKY BAR */}
+        <div className="flex items-center justify-between px-6 py-3.5 bg-[#111214] border-t border-[#27272a] text-xs">
+          <span className="text-zinc-400">
+            {t("You're previewing what your profile could look like with Nectar")}
+          </span>
+
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              className="text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/10 cursor-pointer"
+            >
+              {t('Exit Preview')}
+            </Button>
+            <Button
+              type="button"
+              onClick={onOpenUpgradePlan}
+              className="h-8 px-5 bg-gradient-to-r from-[#5865F2] via-purple-600 to-pink-600 hover:opacity-95 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
+            >
+              <Zap className="w-3.5 h-3.5 fill-white" />
+              <span>{t('Get Nectar')}</span>
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
