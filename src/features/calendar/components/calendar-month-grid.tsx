@@ -18,10 +18,14 @@ export function CalendarMonthGrid({
 }: CalendarMonthGridProps) {
   const todayStr = dayjs().format('YYYY-MM-DD');
 
+  const hasAnyEventsInMonth = days.some((item) =>
+    filteredEvents.some((e) => e.startTime.startsWith(item.dateStr))
+  );
+
   return (
-    <div className="lg:col-span-2 flex flex-col bg-card border border-border rounded-xl p-3 sm:p-4 shadow-xs lg:h-full min-h-0">
+    <div className="lg:col-span-2 flex flex-col bg-card border border-border rounded-xl p-3 sm:p-4 shadow-xs lg:h-full min-h-0 relative overflow-hidden">
       {/* Day Headers (Mon - Sun) */}
-      <div className="grid grid-cols-7 mb-2 text-center text-xs font-semibold text-muted-foreground shrink-0">
+      <div className="grid grid-cols-7 mb-2 text-center text-xs font-semibold text-muted-foreground shrink-0 relative z-20">
         <span>Sen</span>
         <span>Sel</span>
         <span>Rab</span>
@@ -32,7 +36,7 @@ export function CalendarMonthGrid({
       </div>
 
       {/* Day Cells */}
-      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 flex-1 auto-rows-fr [grid-auto-rows:1fr] min-h-0">
+      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 flex-1 auto-rows-fr [grid-auto-rows:1fr] min-h-0 relative">
         {days.map((item, idx) => {
           const isSelected = item.dateStr === selectedDateStr;
           const isToday = item.dateStr === todayStr;
@@ -54,7 +58,7 @@ export function CalendarMonthGrid({
                 isToday && !isSelected && 'border-primary/40'
               )}
             >
-              <div className="flex items-center justify-between shrink-0">
+              <div className="flex items-center justify-between shrink-0 relative z-20">
                 <span
                   className={cn(
                     'text-xs font-bold size-5 flex items-center justify-center rounded-full',
@@ -75,7 +79,7 @@ export function CalendarMonthGrid({
               </div>
 
               {/* Small Event Pills on desktop */}
-              <div className="space-y-1 mt-1 hidden sm:block flex-1 overflow-hidden">
+              <div className="space-y-1 mt-1 hidden sm:block flex-1 overflow-hidden relative z-20">
                 {dayEvents.slice(0, 3).map((ev) => (
                   <div
                     key={ev.id}
@@ -99,7 +103,7 @@ export function CalendarMonthGrid({
               </div>
 
               {/* Dots on mobile */}
-              <div className="flex sm:hidden gap-1 mt-1">
+              <div className="flex sm:hidden gap-1 mt-1 relative z-20">
                 {dayEvents.slice(0, 3).map((ev, dotIdx) => (
                   <div
                     key={dotIdx}
@@ -117,6 +121,21 @@ export function CalendarMonthGrid({
             </div>
           );
         })}
+
+        {/* Empty Schedule Atlas Mascot Illustration in Left Container */}
+        {!hasAnyEventsInMonth && (
+          <div
+            className="absolute bottom-1 left-2 sm:bottom-2 sm:left-4 z-10 pointer-events-none select-none transition-all duration-300 animate-in fade-in zoom-in-95"
+            aria-hidden="true"
+          >
+            <img
+              src="/atlas-calendar-empty.png"
+              alt="Atlas - Tidak ada jadwal"
+              className="h-28 sm:h-44 md:h-52 lg:h-60 w-auto object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)] opacity-90"
+              loading="lazy"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
