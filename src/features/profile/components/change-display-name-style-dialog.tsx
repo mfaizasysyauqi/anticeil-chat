@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Sparkles,
@@ -9,7 +9,6 @@ import {
   Clock,
   Dices,
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -52,6 +51,23 @@ export function ChangeDisplayNameStyleDialog({
   );
   const [previewTheme, setPreviewTheme] = useState<'dark' | 'light'>('dark');
 
+  useEffect(() => {
+    if (open) {
+      setConfig(parseDisplayNameStyle(initialStyle));
+    }
+  }, [open, initialStyle]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onOpenChange(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onOpenChange]);
+
+  if (!open) return null;
+
   // Handle Surprise Me randomizer
   const handleSurpriseMe = () => {
     const allFonts = [...FONT_OPTIONS, LIMITED_TIME_FONT];
@@ -86,10 +102,14 @@ export function ChangeDisplayNameStyleDialog({
   const inlineStyles = getDisplayNameInlineStyles(config);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-[#18191c] text-white border border-[#27272a] shadow-2xl rounded-2xl">
-        <DialogTitle className="sr-only">Change Display Name Style</DialogTitle>
-
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+      onClick={() => onOpenChange(false)}
+    >
+      <div
+        className="relative w-full max-w-4xl p-0 overflow-hidden bg-[#18191c] text-white border border-[#27272a] shadow-2xl rounded-2xl animate-in zoom-in-95 duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Top Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-2">
           <h2 className="text-xl font-bold tracking-tight text-white">
@@ -98,7 +118,7 @@ export function ChangeDisplayNameStyleDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="text-zinc-400 hover:text-white p-1 rounded-md transition-colors"
+            className="text-zinc-400 hover:text-white p-1 rounded-md transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -379,7 +399,7 @@ export function ChangeDisplayNameStyleDialog({
             {t('Apply')}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

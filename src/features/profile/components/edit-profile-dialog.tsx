@@ -1103,22 +1103,6 @@ export function EditProfileDialog({
                       />
                     </div>
                   </div>
-
-                  {/* Popover Color Picker */}
-                  {isThemeColorPickerOpen && (
-                    <div className="absolute top-8 right-0 z-50">
-                      <ProfileThemeColorPicker
-                        color={themeColorPickerTarget === 'primary' ? themePrimary : themeAccent}
-                        title={
-                          themeColorPickerTarget === 'primary'
-                            ? t('Warna Utama')
-                            : t('Warna Aksen')
-                        }
-                        onChange={handleThemeColorChange}
-                        onClose={() => setIsThemeColorPickerOpen(false)}
-                      />
-                    </div>
-                  )}
                 </div>
 
                 {/* 4. Profile Banner */}
@@ -2307,6 +2291,27 @@ export function EditProfileDialog({
           onOpenUpgradePlan={handleNectarCta}
           onRandomizeAll={handleRandomizeNectarProfile}
         />
+
+        {/* 4. Profile Theme Color Picker Overlay */}
+        {isThemeColorPickerOpen && (
+          <div
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-2xs p-4 animate-in fade-in duration-150"
+            onClick={() => setIsThemeColorPickerOpen(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <ProfileThemeColorPicker
+                color={themeColorPickerTarget === 'primary' ? themePrimary : themeAccent}
+                title={
+                  themeColorPickerTarget === 'primary'
+                    ? t('Warna Utama')
+                    : t('Warna Aksen')
+                }
+                onChange={handleThemeColorChange}
+                onClose={() => setIsThemeColorPickerOpen(false)}
+              />
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

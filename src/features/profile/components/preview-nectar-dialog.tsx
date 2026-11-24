@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   X,
@@ -14,7 +14,6 @@ import {
   MessageSquare,
   Music,
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
@@ -72,10 +71,26 @@ export function PreviewNectarDialog({
   const styleConfig = parseDisplayNameStyle(displayNameStyle);
   const inlineStyles = getDisplayNameInlineStyles(styleConfig);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onOpenChange(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onOpenChange]);
+
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl p-0 overflow-hidden bg-[#18191c] text-white border border-[#27272a] shadow-2xl rounded-2xl">
-        <DialogTitle className="sr-only">Preview Nectar</DialogTitle>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+      onClick={() => onOpenChange(false)}
+    >
+      <div
+        className="relative w-full max-w-5xl p-0 overflow-hidden bg-[#18191c] text-white border border-[#27272a] shadow-2xl rounded-2xl animate-in zoom-in-95 duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
 
         {/* Modal Body */}
         <div className="grid grid-cols-1 md:grid-cols-12 min-h-[580px] max-h-[82vh] overflow-hidden">
@@ -393,7 +408,7 @@ export function PreviewNectarDialog({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
