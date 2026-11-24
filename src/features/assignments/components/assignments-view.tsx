@@ -250,7 +250,14 @@ export function AssignmentsView({
         <div className="w-full space-y-3">
           {filteredList.length === 0 ? (
             <EmptyState
-              icon={<Backpack className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+              media={
+                <img
+                  src="/atlas-tasks-empty.png"
+                  alt="Tidak ada tugas"
+                  className="h-36 sm:h-44 md:h-48 w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)] select-none pointer-events-none mb-1 animate-in fade-in zoom-in-95 duration-300"
+                  loading="lazy"
+                />
+              }
               title={
                 activeTab === 'completed'
                   ? 'Belum ada tugas yang selesai'

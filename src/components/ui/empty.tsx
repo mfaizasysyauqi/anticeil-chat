@@ -133,6 +133,7 @@ function EmptyIconBadge({
 
 export interface EmptyStateProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   icon?: React.ReactNode;
+  media?: React.ReactNode;
   title: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
@@ -141,6 +142,7 @@ export interface EmptyStateProps extends Omit<React.HTMLAttributes<HTMLDivElemen
 
 export function EmptyState({
   icon,
+  media,
   title,
   description,
   action,
@@ -158,11 +160,13 @@ export function EmptyState({
       )}
       {...props}
     >
-      {icon && (
+      {media ? (
+        <div className="mb-4 flex items-center justify-center">{media}</div>
+      ) : icon ? (
         <EmptyIconBadge size={compact ? 'compact' : 'default'} className="mb-4">
           {icon}
         </EmptyIconBadge>
-      )}
+      ) : null}
       <h3
         data-slot="empty-title"
         className={cn(
