@@ -907,9 +907,12 @@ export function EditProfileDialog({
                   <div className="grid grid-cols-2 gap-3">
                     {/* Left Card: Avatar */}
                     <div
-                      onClick={() => avatarInputRef.current?.click()}
+                      onClick={() => {
+                        setSelectImageMode('avatar');
+                        setIsSelectImageOpen(true);
+                      }}
                       className="h-28 rounded-2xl border border-border/70 bg-[#1e1f22]/70 hover:bg-[#2b2d31] hover:border-sidebar-primary/60 flex items-center justify-center cursor-pointer group relative transition-all"
-                      title={t('Upload Avatar')}
+                      title={t('Pilih Avatar')}
                     >
                       <div className="size-16 sm:size-18 rounded-full overflow-hidden border border-border/80 bg-muted/40 flex items-center justify-center text-xl shadow-inner relative group-hover:scale-105 transition-transform">
                         {activeAvatar ? (
@@ -964,15 +967,15 @@ export function EditProfileDialog({
                             <div className="size-full rounded-full bg-zinc-800/80 border border-white/10 flex items-center justify-center">
                               <Gamepad2 className="w-6 h-6 text-zinc-500/80" />
                             </div>
+
+                            {/* Plus badge in the center only when no decoration */}
+                            <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                              <div className="size-7 rounded-full bg-zinc-700/90 border border-white/30 text-white flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-[#5865f2] transition-all">
+                                <Plus className="w-4 h-4" />
+                              </div>
+                            </div>
                           </div>
                         )}
-
-                        {/* Plus badge in the center */}
-                        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-                          <div className="size-7 rounded-full bg-zinc-700/90 border border-white/30 text-white flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-[#5865f2] transition-all">
-                            <Plus className="w-4 h-4" />
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -1014,11 +1017,14 @@ export function EditProfileDialog({
                     <Button
                       size="sm"
                       variant="tealOutline"
-                      onClick={() => bannerInputRef.current?.click()}
+                      onClick={() => {
+                        setSelectImageMode('banner');
+                        setIsSelectImageOpen(true);
+                      }}
                       className="flex-1 text-xs h-8 font-semibold cursor-pointer"
                     >
                       <ImageIcon className="w-3.5 h-3.5 mr-1" />
-                      {t('Upload')}
+                      {t('Pilih Banner')}
                     </Button>
                     {profileBannerUrl && (
                       <Button

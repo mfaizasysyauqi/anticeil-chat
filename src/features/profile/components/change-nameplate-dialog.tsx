@@ -280,42 +280,36 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
                 type="button"
                 onClick={() => setSelectedNameplate(plate.id)}
                 className={cn(
-                  'w-full h-13 rounded-xl border flex items-center justify-between px-3.5 relative overflow-hidden transition-all cursor-pointer group text-left bg-card',
+                  'w-full h-12 rounded-xl border flex items-center justify-between px-3 relative overflow-hidden transition-all cursor-pointer group text-left bg-card',
                   isSelected
                     ? 'border-primary ring-2 ring-primary/40 shadow-[0_0_12px_rgba(var(--primary),0.35)]'
                     : 'border-border/70 hover:border-border'
                 )}
-                title={plate.name}
+                title={`${plate.name} - ${plate.priceDew ? `${plate.priceDew} Dew` : `Rp ${plate.priceIdr?.toLocaleString()}`}`}
               >
                 <NameplateRenderer nameplateId={plate.id} />
 
-                {/* Content representation */}
-                <div className="flex items-center gap-3 relative z-10 pointer-events-none min-w-0">
-                  <div className="size-7 rounded-full bg-muted/80 border border-border/60 flex items-center justify-center relative shrink-0">
-                    <Gamepad2 className="w-3.5 h-3.5 text-muted-foreground" />
-                    <div className="absolute bottom-0 right-0 size-2 rounded-full bg-emerald-500 border border-background" />
+                {/* Left: Discord Mock Member Pill: Avatar + Placeholder bar */}
+                <div className="flex items-center gap-2.5 relative z-10 pointer-events-none">
+                  <div className="size-6.5 rounded-full bg-muted/80 border border-border/60 flex items-center justify-center shrink-0">
+                    <Gamepad2 className="w-3.5 h-3.5 text-muted-foreground/70" />
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-foreground truncate">
-                      {plate.name}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground truncate">
-                      {plate.description || plate.collection}
-                    </div>
-                  </div>
+                  <div className="w-20 sm:w-28 h-2 rounded-full bg-white/20 shrink-0" />
                 </div>
 
-                {/* Right: Price or Owned badge */}
-                <div className="relative z-10 flex items-center gap-1.5 shrink-0 pl-2">
+                {/* Right: Lock with price or Owned badge */}
+                <div className="relative z-10 flex items-center gap-1.5 shrink-0 pointer-events-none">
                   {isOwned ? (
-                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/30">
                       {t('Dimiliki')}
                     </span>
                   ) : (
-                    <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded-full border border-white/10">
+                    <div className="flex items-center gap-1 bg-black/50 backdrop-blur-xs px-2 py-0.5 rounded-full border border-white/10 text-muted-foreground">
                       <Lock className="w-2.5 h-2.5 text-muted-foreground" />
-                      <span>{plate.priceDew ? `${plate.priceDew} Dew` : `Rp ${plate.priceIdr?.toLocaleString()}`}</span>
-                    </span>
+                      <span className="text-[10px] font-bold text-zinc-300">
+                        {plate.priceDew ? `${plate.priceDew} Dew` : `Rp ${plate.priceIdr?.toLocaleString()}`}
+                      </span>
+                    </div>
                   )}
                 </div>
               </button>

@@ -70,12 +70,18 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
     }
   }, [open, currentDecoration]);
 
-  const nectarDecorations = shopDecorations.filter(
-    (d) => d.collection?.toLowerCase().includes('nectar') || d.collection?.toLowerCase().includes('nitro')
-  ).length > 0
-    ? shopDecorations.filter(
-        (d) => d.collection?.toLowerCase().includes('nectar') || d.collection?.toLowerCase().includes('nitro')
-      )
+  const isNectarItem = (d: { id: string; badge?: string; collection?: string }) => {
+    return (
+      d.badge?.toLowerCase().includes('nectar') ||
+      d.badge?.toLowerCase().includes('exclusive') ||
+      d.collection?.toLowerCase().includes('nectar') ||
+      d.collection?.toLowerCase().includes('nitro') ||
+      AVATAR_DECORATIONS_LIST.some((ref) => ref.id === d.id && ref.category === 'nectar')
+    );
+  };
+
+  const nectarDecorations = shopDecorations.filter(isNectarItem).length > 0
+    ? shopDecorations.filter(isNectarItem)
     : AVATAR_DECORATIONS_LIST.filter((d) => d.category === 'nectar').map((d) => ({
         id: d.id,
         name: d.name,
@@ -87,9 +93,7 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
         allowDew: false,
       }));
 
-  const standardShopDecorations = shopDecorations.filter(
-    (d) => !d.collection?.toLowerCase().includes('nectar') && !d.collection?.toLowerCase().includes('nitro')
-  );
+  const standardShopDecorations = shopDecorations.filter((d) => !isNectarItem(d));
 
   const displayShopDecorations =
     standardShopDecorations.length > 0

@@ -26,7 +26,10 @@ import {
   Crown,
   Gamepad2,
   Palette,
+  User,
 } from 'lucide-react';
+import { AvatarDecorationRenderer } from '@/features/profile/components/avatar-decoration-renderer';
+import { NameplateRenderer } from '@/features/profile/components/nameplate-renderer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -1037,25 +1040,29 @@ export function ShopView({
         <div className="h-32 sm:h-36 p-3 relative flex items-center justify-center bg-muted/40 border-b border-border/40 overflow-hidden">
           <div className="absolute inset-0 bg-radial from-primary/10 via-transparent to-transparent pointer-events-none" />
 
-          {/* Avatar Base Silhouette */}
-          <div className="relative size-16 sm:size-18 rounded-full bg-card border-2 border-border/70 flex items-center justify-center shadow-lg">
-            <div className="size-full rounded-full bg-secondary flex items-center justify-center text-muted-foreground/50 font-black text-xl select-none">
-              ❄
-            </div>
+          {/* Avatar Base Silhouette with Live Avatar Decoration */}
+          <div className="relative size-16 sm:size-18 rounded-full bg-secondary border-2 border-border/70 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+            {currentUser?.avatarUrl ? (
+              <img src={currentUser.avatarUrl} alt="" className="size-full rounded-full object-cover" />
+            ) : (
+              <User className="size-8 text-muted-foreground/40" />
+            )}
 
-            {/* Layered Animated Frame GIF */}
-            {gifUrl && (
+            {/* Layered Animated Frame GIF or Vector/SVG Renderer */}
+            {gifUrl ? (
               <img
                 src={gifUrl}
                 alt={item.name}
-                className="absolute -inset-3.5 size-[calc(100%+28px)] object-contain pointer-events-none select-none z-10 drop-shadow-[0_0_12px_rgba(0,0,0,0.8)] group-hover:scale-110 transition-transform duration-300"
+                className="absolute -inset-3.5 size-[calc(100%+28px)] object-contain pointer-events-none select-none z-10 drop-shadow-[0_0_12px_rgba(0,0,0,0.8)]"
                 loading="lazy"
               />
+            ) : (
+              <AvatarDecorationRenderer decorationId={item.id} />
             )}
           </div>
 
           <span className="absolute bottom-2 left-2 text-[8px] font-bold text-muted-foreground/60 tracking-wider">
-            FRAME .GIF
+            DECORATION
           </span>
         </div>
       );
@@ -1067,31 +1074,86 @@ export function ShopView({
           <div className="absolute inset-0 bg-radial from-cyan-500/10 via-transparent to-transparent pointer-events-none" />
 
           {/* Discord/Anticeil Chat Row Preview */}
-          <div className="w-[92%] h-13 rounded-lg bg-card border border-border/60 p-2 flex items-center gap-2.5 relative overflow-hidden shadow-lg group-hover:border-primary/50 transition-colors">
-            {gifUrl && (
+          <div className="w-[92%] h-13 rounded-xl bg-card border border-border/60 p-2 flex items-center gap-2.5 relative overflow-hidden shadow-lg group-hover:border-primary/50 transition-colors">
+            {gifUrl ? (
               <img
                 src={gifUrl}
                 alt={item.name}
                 className="absolute inset-0 size-full object-cover opacity-80 mix-blend-screen pointer-events-none select-none group-hover:scale-105 transition-transform duration-500"
                 loading="lazy"
               />
+            ) : (
+              <NameplateRenderer nameplateId={item.id} />
             )}
 
             <div className="size-7 rounded-full bg-secondary border border-border flex items-center justify-center text-xs text-muted-foreground font-black shrink-0 z-10 shadow-xs">
-              ❄
+              {currentUser?.avatarUrl ? (
+                <img src={currentUser.avatarUrl} alt="" className="size-full rounded-full object-cover" />
+              ) : (
+                <User className="size-3.5 text-muted-foreground/70" />
+              )}
             </div>
 
             <div className="min-w-0 z-10 space-y-0.5">
               <div className="text-[11px] font-bold text-foreground drop-shadow-sm flex items-center gap-1.5 leading-none">
-                <span className="truncate">Username</span>
-                <span className="text-[8px] px-1 py-0.5 rounded bg-primary/40 text-primary-foreground font-bold">NAMECARD</span>
+                <span className="truncate">{currentUser?.username || 'Username'}</span>
+                {item.badge && (
+                  <span className="text-[8px] px-1 py-0.5 rounded bg-primary/40 text-primary-foreground font-bold">
+                    {item.badge}
+                  </span>
+                )}
               </div>
-              <div className="w-20 h-1.5 rounded-full bg-muted-foreground/30" />
+              <div className="w-16 h-1 rounded-full bg-muted-foreground/30" />
             </div>
           </div>
 
           <span className="absolute bottom-2 left-2 text-[8px] font-bold text-muted-foreground/60 tracking-wider">
-            NAMECARD .GIF
+            NAMEPLATE
+          </span>
+        </div>
+      );
+    }
+
+    if (item.category === 'profile_banner') {
+      const bannerUrl = (item as any).bannerUrl || gifUrl;
+      return (
+        <div className="h-32 sm:h-36 relative overflow-hidden bg-muted/40 border-b border-border/40">
+          {bannerUrl ? (
+            <img
+              src={bannerUrl}
+              alt={item.name}
+              className="absolute inset-0 size-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-60" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent pointer-events-none" />
+          <span className="absolute bottom-2 left-2 text-[8px] font-bold text-foreground/80 bg-background/70 px-1.5 py-0.5 rounded backdrop-blur-xs tracking-wider z-10 border border-border/40">
+            BANNER
+          </span>
+        </div>
+      );
+    }
+
+    if (item.category === 'animated_avatar') {
+      return (
+        <div className="h-32 sm:h-36 p-3 relative flex items-center justify-center bg-muted/40 border-b border-border/40 overflow-hidden">
+          <div className="absolute inset-0 bg-radial from-violet-500/10 via-transparent to-transparent pointer-events-none" />
+          <div className="relative size-16 sm:size-18 rounded-full bg-secondary border-2 border-border/70 overflow-hidden flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+            {gifUrl ? (
+              <img
+                src={gifUrl}
+                alt={item.name}
+                className="size-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <User className="size-8 text-muted-foreground/40" />
+            )}
+          </div>
+          <span className="absolute bottom-2 left-2 text-[8px] font-bold text-muted-foreground/60 tracking-wider">
+            ANIMATED AVATAR
           </span>
         </div>
       );
