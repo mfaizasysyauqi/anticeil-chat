@@ -83,6 +83,9 @@ import { PreviewNectarDialog } from './preview-nectar-dialog';
 import { ProfileThemeColorPicker } from './profile-theme-color-picker';
 import { ChangeAvatarDecorationDialog } from './change-avatar-decoration-dialog';
 import { AvatarDecorationRenderer } from './avatar-decoration-renderer';
+import { ChangeNameplateDialog } from './change-nameplate-dialog';
+import { NameplateRenderer } from './nameplate-renderer';
+import { NAMEPLATES_LIST } from '../data/nameplates';
 import {
   parseDisplayNameStyle,
   getDisplayNameInlineStyles,
@@ -146,8 +149,9 @@ export function EditProfileDialog({
   const [isThemeColorPickerOpen, setIsThemeColorPickerOpen] = useState(false);
   const [themeColorPickerTarget, setThemeColorPickerTarget] = useState<'primary' | 'accent'>('primary');
 
-  // Standalone Avatar Decoration Dialog state
+  // Standalone Avatar Decoration & Nameplate Dialog states
   const [isAvatarDecorationDialogOpen, setIsAvatarDecorationDialogOpen] = useState(false);
+  const [isNameplateDialogOpen, setIsNameplateDialogOpen] = useState(false);
 
   // Widgets State
   const [profileWidgets, setProfileWidgets] = useState<UserProfileWidgets>({
@@ -840,13 +844,42 @@ export function EditProfileDialog({
             </div>
 
             <div className="space-y-4">
-              {/* 1. Nameplate Selector */}
-              <FormDropdown
-                label={<span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('Nameplate')}</span>}
-                value={profileNameplate}
-                onChange={(val) => setProfileNameplate(val)}
-                options={NAMEPLATE_OPTIONS.map((opt) => ({ value: opt.id, label: opt.label }))}
-              />
+              {/* 1. Nameplate Card matching Discord */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t('Nameplate')}
+                </span>
+                <div
+                  onClick={() => setIsNameplateDialogOpen(true)}
+                  className="h-14 rounded-2xl border border-border/70 bg-[#1e1f22]/70 hover:bg-[#2b2d31] hover:border-sidebar-primary/60 px-4 flex items-center justify-between cursor-pointer group transition-all relative overflow-hidden"
+                  title={t('Change Nameplate')}
+                >
+                  {/* Nameplate background if active */}
+                  {profileNameplate && profileNameplate !== 'none' && (
+                    <NameplateRenderer nameplateId={profileNameplate} />
+                  )}
+
+                  {/* Left avatar placeholder & pill bar */}
+                  <div className="flex items-center gap-3 relative z-10 pointer-events-none">
+                    <div className="size-8 rounded-full bg-zinc-800/90 border border-white/20 flex items-center justify-center relative">
+                      <Gamepad2 className="w-4 h-4 text-zinc-400" />
+                      <div className="absolute bottom-0 right-0 size-2 rounded-full bg-zinc-500 border border-zinc-900" />
+                    </div>
+                    {profileNameplate && profileNameplate !== 'none' ? (
+                      <span className="font-bold text-xs text-white drop-shadow-sm">
+                        {NAMEPLATES_LIST.find((n) => n.id === profileNameplate)?.name || profileNameplate}
+                      </span>
+                    ) : (
+                      <div className="w-24 sm:w-32 h-3 rounded-full bg-zinc-700/60" />
+                    )}
+                  </div>
+
+                  {/* Right circle plus icon */}
+                  <div className="size-7 rounded-full bg-zinc-700/80 text-white flex items-center justify-center border border-white/20 group-hover:scale-110 group-hover:bg-[#5865f2] transition-all relative z-10">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
 
                 {/* 2. Avatar & Frame Decoration */}
                 <div className="space-y-1.5">
@@ -2314,6 +2347,18 @@ export function EditProfileDialog({
           onApply={(newDec) => setProfileAvatarDecoration(newDec)}
           avatarUrl={activeAvatar}
           userName={activeName}
+          onOpenShop={handleOpenShop}
+        />
+
+        {/* 6. Standalone Discord-Parity Change Nameplate Dialog */}
+        <ChangeNameplateDialog
+          open={isNameplateDialogOpen}
+          onClose={() => setIsNameplateDialogOpen(false)}
+          currentNameplate={profileNameplate}
+          onApply={(newPlate) => setProfileNameplate(newPlate)}
+          avatarUrl={activeAvatar}
+          userName={activeName}
+          avatarDecoration={profileAvatarDecoration}
           onOpenShop={handleOpenShop}
         />
       </DialogContent>

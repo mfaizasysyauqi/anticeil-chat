@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { ShareProfileDialog } from '@/features/profile/components/share-profile-dialog';
-import { AvatarDecorationRenderer } from '@/features/profile';
+import { AvatarDecorationRenderer, NameplateRenderer, NAMEPLATES_LIST } from '@/features/profile';
 import {
   parseDisplayNameStyle,
   getDisplayNameInlineStyles,
@@ -300,8 +300,13 @@ export function ProfilePreviewCard({
                 </span>
               )}
               <span>•</span>
-              <span className="text-[11px] bg-sidebar-primary/15 text-sidebar-primary px-1.5 py-0.5 rounded border border-sidebar-primary/30 font-medium">
-                {colonyName ? `@${colonyName}` : (nameplate && nameplate !== 'none' ? nameplate : 'Server Tag ⌵')}
+              <span className="text-[11px] bg-sidebar-primary/15 text-sidebar-primary px-2 py-0.5 rounded border border-sidebar-primary/30 font-medium relative overflow-hidden inline-flex items-center gap-1.5">
+                {nameplate && nameplate !== 'none' && (
+                  <NameplateRenderer nameplateId={nameplate} className="opacity-40" />
+                )}
+                <span className="relative z-10">
+                  {colonyName ? `@${colonyName}` : (NAMEPLATES_LIST.find((n) => n.id === nameplate)?.name || nameplate || 'Server Tag ⌵')}
+                </span>
               </span>
             </div>
 
