@@ -444,7 +444,14 @@ export function CalendarView({
                 {selectedDayEvents.length === 0 ? (
                   <EmptyState
                     compact
-                    icon={<CalendarIcon className="w-6 h-6 stroke-[1.8] text-primary/80" />}
+                    media={
+                      <img
+                        src="/atlas-calendar-empty.png"
+                        alt="Tidak ada jadwal pada tanggal ini"
+                        className="h-32 sm:h-36 w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)] select-none pointer-events-none mb-1 animate-in fade-in zoom-in-95 duration-300"
+                        loading="lazy"
+                      />
+                    }
                     title="Tidak ada jadwal pada tanggal ini"
                     description="Klik Jadwalkan Meeting untuk menambahkan jadwal baru."
                   />
@@ -566,7 +573,14 @@ export function CalendarView({
             <div className="space-y-3">
               {filteredEvents.length === 0 ? (
                 <EmptyState
-                  icon={<CalendarIcon className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+                  media={
+                    <img
+                      src="/atlas-calendar-empty.png"
+                      alt="Belum ada agenda meeting atau tugas"
+                      className="h-36 sm:h-44 md:h-48 w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)] select-none pointer-events-none mb-1 animate-in fade-in zoom-in-95 duration-300"
+                      loading="lazy"
+                    />
+                  }
                   title="Belum ada agenda meeting atau tugas"
                   description="Jadwalkan rapat komunitas atau buat tugas di Kanban channel."
                 />

@@ -18,10 +18,6 @@ export function CalendarMonthGrid({
 }: CalendarMonthGridProps) {
   const todayStr = dayjs().format('YYYY-MM-DD');
 
-  const hasAnyEventsInMonth = days.some((item) =>
-    filteredEvents.some((e) => e.startTime.startsWith(item.dateStr))
-  );
-
   return (
     <div className="lg:col-span-2 flex flex-col bg-card border border-border rounded-xl p-3 sm:p-4 shadow-xs lg:h-full min-h-0 relative overflow-hidden">
       {/* Day Headers (Mon - Sun) */}
@@ -121,21 +117,6 @@ export function CalendarMonthGrid({
             </div>
           );
         })}
-
-        {/* Empty Schedule Atlas Mascot Illustration in Left Container */}
-        {!hasAnyEventsInMonth && (
-          <div
-            className="absolute bottom-1 left-2 sm:bottom-2 sm:left-4 z-10 pointer-events-none select-none transition-all duration-300 animate-in fade-in zoom-in-95"
-            aria-hidden="true"
-          >
-            <img
-              src="/atlas-calendar-empty.png"
-              alt="Atlas - Tidak ada jadwal"
-              className="h-28 sm:h-44 md:h-52 lg:h-60 w-auto object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)] opacity-90"
-              loading="lazy"
-            />
-          </div>
-        )}
       </div>
     </div>
   );
