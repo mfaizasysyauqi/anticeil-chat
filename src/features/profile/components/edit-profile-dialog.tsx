@@ -81,6 +81,8 @@ import { ChangeDisplayNameStyleDialog } from './change-display-name-style-dialog
 import { SelectImageDialog } from './select-image-dialog';
 import { PreviewNectarDialog } from './preview-nectar-dialog';
 import { ProfileThemeColorPicker } from './profile-theme-color-picker';
+import { ChangeAvatarDecorationDialog } from './change-avatar-decoration-dialog';
+import { AvatarDecorationRenderer } from './avatar-decoration-renderer';
 import {
   parseDisplayNameStyle,
   getDisplayNameInlineStyles,
@@ -144,8 +146,8 @@ export function EditProfileDialog({
   const [isThemeColorPickerOpen, setIsThemeColorPickerOpen] = useState(false);
   const [themeColorPickerTarget, setThemeColorPickerTarget] = useState<'primary' | 'accent'>('primary');
 
-  // Decoration picker popover state
-  const [isDecorationPickerOpen, setIsDecorationPickerOpen] = useState(false);
+  // Standalone Avatar Decoration Dialog state
+  const [isAvatarDecorationDialogOpen, setIsAvatarDecorationDialogOpen] = useState(false);
 
   // Widgets State
   const [profileWidgets, setProfileWidgets] = useState<UserProfileWidgets>({
@@ -866,13 +868,14 @@ export function EditProfileDialog({
                       }
                     }}
                   />
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Left Card: Avatar */}
                     <div
                       onClick={() => avatarInputRef.current?.click()}
-                      className="p-3 rounded-xl border border-border/70 bg-card hover:border-sidebar-primary/60 flex flex-col items-center justify-center cursor-pointer group relative transition-colors gap-1.5"
-                      title={t('Upload avatar')}
+                      className="h-28 rounded-2xl border border-border/70 bg-[#1e1f22]/70 hover:bg-[#2b2d31] hover:border-sidebar-primary/60 flex items-center justify-center cursor-pointer group relative transition-all"
+                      title={t('Upload Avatar')}
                     >
-                      <div className="size-11 rounded-full overflow-hidden border border-border/80 bg-muted/40 flex items-center justify-center text-xl shadow-inner relative">
+                      <div className="size-16 sm:size-18 rounded-full overflow-hidden border border-border/80 bg-muted/40 flex items-center justify-center text-xl shadow-inner relative group-hover:scale-105 transition-transform">
                         {activeAvatar ? (
                           <img
                             src={activeAvatar}
@@ -880,73 +883,63 @@ export function EditProfileDialog({
                             className="size-full object-cover"
                           />
                         ) : (
-                          <div className="size-full flex items-center justify-center bg-sidebar-primary/20 text-sidebar-primary font-bold text-xs select-none">
+                          <div className="size-full flex items-center justify-center bg-sidebar-primary/20 text-sidebar-primary font-bold text-base select-none">
                             {currentUserName ? currentUserName.slice(0, 2).toUpperCase() : 'U'}
                           </div>
                         )}
                       </div>
-                      <span className="text-[10px] font-bold text-muted-foreground group-hover:text-sidebar-primary transition-colors flex items-center gap-1">
-                        <Upload className="w-3 h-3" />
-                        {t('Upload Avatar')}
-                      </span>
                     </div>
 
+                    {/* Right Card: Decoration with smoky ring & (+) badge */}
                     <div
-                      onClick={() => setIsDecorationPickerOpen(!isDecorationPickerOpen)}
-                      className="p-3 rounded-xl border border-border/70 bg-card hover:border-sidebar-primary/60 flex flex-col items-center justify-center cursor-pointer group relative transition-colors gap-1.5"
+                      onClick={() => setIsAvatarDecorationDialogOpen(true)}
+                      className="h-28 rounded-2xl border border-border/70 bg-[#1e1f22]/70 hover:bg-[#2b2d31] hover:border-sidebar-primary/60 flex items-center justify-center cursor-pointer group relative transition-all"
                       title={t('Pilih Dekorasi Avatar')}
                     >
-                      <div className="size-11 rounded-full border border-dashed border-border/80 bg-muted/20 flex items-center justify-center text-xl">
-                        {profileAvatarDecoration !== 'none' ? (
-                          <span>
-                            {AVATAR_DECORATION_OPTIONS.find((d) => d.id === profileAvatarDecoration)
-                              ?.icon || '✨'}
-                          </span>
+                      <div className="relative size-16 sm:size-18 rounded-full flex items-center justify-center">
+                        {profileAvatarDecoration && profileAvatarDecoration !== 'none' ? (
+                          <>
+                            <div className="size-full rounded-full bg-zinc-800/80 border border-white/10 flex items-center justify-center">
+                              <Gamepad2 className="w-6 h-6 text-zinc-500/80" />
+                            </div>
+                            <AvatarDecorationRenderer decorationId={profileAvatarDecoration} />
+                          </>
                         ) : (
-                          <Sparkles className="w-5 h-5 text-muted-foreground group-hover:text-sidebar-primary transition-colors" />
+                          <div className="relative size-full rounded-full flex items-center justify-center">
+                            {/* Ethereal smoky ring SVG matching Discord */}
+                            <svg
+                              viewBox="0 0 100 100"
+                              className="absolute -inset-2.5 size-[calc(100%+20px)] animate-pulse pointer-events-none"
+                              style={{ animationDuration: '4s' }}
+                            >
+                              <circle
+                                cx="50"
+                                cy="50"
+                                r="42"
+                                stroke="rgba(255, 255, 255, 0.25)"
+                                strokeWidth="3"
+                                strokeDasharray="12 8 20 6"
+                                strokeLinecap="round"
+                                filter="blur(1px) drop-shadow(0 0 8px rgba(255,255,255,0.3))"
+                                className="animate-spin"
+                                style={{ animationDuration: '18s' }}
+                              />
+                            </svg>
+                            <div className="size-full rounded-full bg-zinc-800/80 border border-white/10 flex items-center justify-center">
+                              <Gamepad2 className="w-6 h-6 text-zinc-500/80" />
+                            </div>
+                          </div>
                         )}
+
+                        {/* Plus badge in the center */}
+                        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                          <div className="size-7 rounded-full bg-zinc-700/90 border border-white/30 text-white flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-[#5865f2] transition-all">
+                            <Plus className="w-4 h-4" />
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-bold text-muted-foreground group-hover:text-sidebar-primary transition-colors flex items-center gap-1">
-                        <Crown className="w-3 h-3" />
-                        {t('Dekorasi')}
-                      </span>
                     </div>
                   </div>
-
-                  {/* Decoration Selector Popover */}
-                  {isDecorationPickerOpen && (
-                    <div className="p-3 rounded-xl border border-sidebar-primary/40 bg-card shadow-lg space-y-2 mt-2">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-foreground">
-                        <span>{t('Pilih Dekorasi Avatar')}</span>
-                        <X
-                          className="w-3.5 h-3.5 cursor-pointer text-muted-foreground hover:text-foreground"
-                          onClick={() => setIsDecorationPickerOpen(false)}
-                        />
-                      </div>
-                      <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto custom-scrollbar">
-                        {AVATAR_DECORATION_OPTIONS.map((dec) => (
-                          <button
-                            key={dec.id}
-                            type="button"
-                            onClick={() => {
-                              setProfileAvatarDecoration(dec.id);
-                              setIsDecorationPickerOpen(false);
-                              toast.success(t(`Dekorasi ${dec.label} dipilih!`));
-                            }}
-                            className={cn(
-                              'flex items-center gap-2 p-2 rounded-lg text-xs font-semibold text-left transition-colors cursor-pointer',
-                              profileAvatarDecoration === dec.id
-                                ? 'bg-sidebar-primary/15 text-sidebar-primary border border-sidebar-primary/40'
-                                : 'hover:bg-muted text-foreground',
-                            )}
-                          >
-                            <span className="text-base">{dec.icon}</span>
-                            <span className="truncate">{dec.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* 3. Banner Color & Image */}
@@ -2312,6 +2305,17 @@ export function EditProfileDialog({
             </div>
           </div>
         )}
+
+        {/* 5. Standalone Discord-Parity Change Avatar Decoration Dialog */}
+        <ChangeAvatarDecorationDialog
+          open={isAvatarDecorationDialogOpen}
+          onClose={() => setIsAvatarDecorationDialogOpen(false)}
+          currentDecoration={profileAvatarDecoration}
+          onApply={(newDec) => setProfileAvatarDecoration(newDec)}
+          avatarUrl={activeAvatar}
+          userName={activeName}
+          onOpenShop={handleOpenShop}
+        />
       </DialogContent>
     </Dialog>
   );

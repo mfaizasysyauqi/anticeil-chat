@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import { toast } from 'sonner';
 import { ShareProfileDialog } from '@/features/profile/components/share-profile-dialog';
+import { AvatarDecorationRenderer } from '@/features/profile';
 import {
   parseDisplayNameStyle,
   getDisplayNameInlineStyles,
@@ -236,22 +237,7 @@ export function ProfilePreviewCard({
             {/* Right: Avatar on the right overlapping banner */}
             <div className="relative shrink-0">
               {/* Avatar Decoration / Animated Frame Overlay */}
-              {avatarDecoration && avatarDecoration !== 'none' && (
-                avatarDecoration.startsWith('http') ? (
-                  <img
-                    src={avatarDecoration}
-                    alt="Frame"
-                    className="absolute -inset-3.5 size-[calc(100%+28px)] object-contain pointer-events-none select-none z-20 drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
-                  />
-                ) : decoration ? (
-                  <div
-                    className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 text-2xl filter drop-shadow-lg pointer-events-none select-none animate-pulse"
-                    title={decoration.tooltip}
-                  >
-                    {decoration.icon}
-                  </div>
-                ) : null
-              )}
+              <AvatarDecorationRenderer decorationId={avatarDecoration} />
               <div
                 className={`size-18 sm:size-20 rounded-full border-[3px] border-card overflow-hidden bg-muted flex items-center justify-center text-3xl shadow-2xl transition-all relative ${getFrameClassName(
                   profileFrame,

@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
+import { AvatarDecorationRenderer } from './avatar-decoration-renderer';
 import {
   parseDisplayNameStyle,
   getDisplayNameInlineStyles,
@@ -259,6 +260,7 @@ export function PreviewNectarDialog({
                 <div className="flex items-end justify-between">
                   {/* Avatar */}
                   <div className="relative">
+                    <AvatarDecorationRenderer decorationId={avatarDecoration} />
                     <div className="size-20 rounded-full border-4 border-[#111214] bg-[#2b2d31] overflow-hidden shadow-xl">
                       {avatarUrl ? (
                         <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
