@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { FormDropdown } from '@/components/ui/select';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
+import { AnticeilAvatarMannequin } from '@/components/ui/anticeil-avatar-mannequin';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import type { ShopItem } from '../api/shop-api';
@@ -303,13 +304,11 @@ export function ShopAddProductModal({
                   <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent pointer-events-none z-[1]" />
 
                   {/* Left Mannequin Circular Avatar with Anticeil Logo */}
-                  <div className="relative size-8 sm:size-9 rounded-full bg-[#2b2d31] border border-black/40 flex items-center justify-center shrink-0 z-10 shadow-md">
-                    <div className="size-4.5 sm:size-5 text-muted-foreground/60 flex items-center justify-center pointer-events-none">
-                      <AnticeilLogo className="size-full fill-current" />
-                    </div>
-                    {/* Status Dot */}
-                    <div className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-[#23a55a] border-2 border-[#111214]" />
-                  </div>
+                  <AnticeilAvatarMannequin
+                    size="sm"
+                    statusDot
+                    statusColor="#23a55a"
+                  />
 
                   {/* Translucent Rounded Pill Placeholder for Username (Exactly like Discord) */}
                   <div className="w-28 sm:w-36 h-4 sm:h-4.5 rounded-full bg-white/20 backdrop-blur-md z-10" />

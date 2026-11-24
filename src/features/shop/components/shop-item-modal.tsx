@@ -10,6 +10,8 @@ import {
 import { MediumDialog } from '@/components/ui/medium-dialog';
 import { Button } from '@/components/ui/button';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
+import { AnticeilAvatarMannequin } from '@/components/ui/anticeil-avatar-mannequin';
+import { NameplateRenderer } from '@/features/profile/components/nameplate-renderer';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import type { ShopItem, ShopBalance } from '../api/shop-api';
@@ -67,45 +69,32 @@ export function ShopItemModal({
       {/* Header Preview Banner with Real Animated Cosmetic in Action */}
       <div className="relative h-36 sm:h-44 bg-muted/30 flex items-center justify-center p-4 sm:p-6 border-b border-border/60 overflow-hidden shrink-0">
         {item.category === 'avatar_decoration' ? (
-          <div className="relative size-20 sm:size-22 rounded-full bg-[#1e1f22] border-2 border-border/70 flex items-center justify-center shadow-2xl z-10">
-            {currentUser?.avatar ? (
-              <img src={currentUser.avatar} alt="User Avatar" className="size-full rounded-full object-cover" />
-            ) : (
-              <div className="size-11 text-muted-foreground/45 flex items-center justify-center select-none">
-                <AnticeilLogo className="size-full fill-current" />
-              </div>
-            )}
-            {(item.gifUrl || item.previewIcon) && (
-              <img
-                src={item.gifUrl || item.previewIcon}
-                alt={item.name}
-                className="absolute -inset-4.5 size-[calc(100%+36px)] object-contain pointer-events-none select-none z-20 drop-shadow-[0_0_16px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 duration-300"
-              />
-            )}
-          </div>
+          <AnticeilAvatarMannequin
+            size="xl"
+            avatarUrl={currentUser?.avatar}
+            decorationId={item.id}
+          />
         ) : item.category === 'nameplate' ? (
           <div className="relative w-full max-w-[340px] h-14 sm:h-15 rounded-2xl bg-[#111214] border border-border/80 flex items-center px-3.5 gap-3 overflow-hidden shadow-2xl z-10 select-none">
-            {(item.gifUrl || item.previewIcon) && (
+            {item.gifUrl || item.previewIcon ? (
               <img
                 src={item.gifUrl || item.previewIcon}
                 alt={item.name}
                 className="absolute inset-0 size-full object-cover opacity-95 pointer-events-none select-none z-0"
               />
+            ) : (
+              <NameplateRenderer nameplateId={item.id} />
             )}
             {/* Scrim gradient for contrast */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent pointer-events-none z-[1]" />
 
             {/* Mannequin Avatar with Anticeil Logo and status dot */}
-            <div className="relative size-8 sm:size-9 rounded-full bg-[#2b2d31] border border-black/40 flex items-center justify-center shrink-0 z-10 shadow-md">
-              {currentUser?.avatar ? (
-                <img src={currentUser.avatar} alt="User Avatar" className="size-full rounded-full object-cover" />
-              ) : (
-                <div className="size-4.5 sm:size-5 text-muted-foreground/60 flex items-center justify-center pointer-events-none select-none">
-                  <AnticeilLogo className="size-full fill-current" />
-                </div>
-              )}
-              <div className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-[#23a55a] border-2 border-[#111214]" />
-            </div>
+            <AnticeilAvatarMannequin
+              size="md"
+              avatarUrl={currentUser?.avatar}
+              statusDot
+              statusColor="#23a55a"
+            />
 
             {/* Username display or Discord-style rounded placeholder pill */}
             {currentUser?.name ? (

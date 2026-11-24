@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { AvatarDecorationRenderer } from '@/features/profile/components/avatar-decoration-renderer';
 import { NameplateRenderer } from '@/features/profile/components/nameplate-renderer';
+import { AnticeilAvatarMannequin } from '@/components/ui/anticeil-avatar-mannequin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -1083,16 +1084,15 @@ export function ShopView({
                 loading="lazy"
               />
             ) : (
-              <NameplateRenderer nameplateId={item.id} />
+              <NameplateRenderer nameplateId={item.id} imageUrl={item.previewIcon} />
             )}
 
-            <div className="size-7 rounded-full bg-secondary border border-border flex items-center justify-center text-xs text-muted-foreground font-black shrink-0 z-10 shadow-xs">
-              {currentUser?.avatarUrl ? (
-                <img src={currentUser.avatarUrl} alt="" className="size-full rounded-full object-cover" />
-              ) : (
-                <User className="size-3.5 text-muted-foreground/70" />
-              )}
-            </div>
+            <AnticeilAvatarMannequin
+              size="sm"
+              avatarUrl={currentUser?.avatarUrl}
+              statusDot
+              statusColor="#23a55a"
+            />
 
             <div className="min-w-0 z-10 space-y-0.5">
               <div className="text-[11px] font-bold text-foreground drop-shadow-sm flex items-center gap-1.5 leading-none">

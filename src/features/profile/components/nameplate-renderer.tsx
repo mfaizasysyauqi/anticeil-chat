@@ -3,19 +3,41 @@ import { cn } from '@/lib/utils';
 
 interface NameplateRendererProps {
   nameplateId?: string | null;
+  imageUrl?: string | null;
   className?: string;
 }
 
 export const NameplateRenderer: React.FC<NameplateRendererProps> = ({
   nameplateId,
+  imageUrl,
   className,
 }) => {
   if (!nameplateId || nameplateId === 'none') {
-    return null;
+    if (!imageUrl) return null;
   }
+
+  const isUrl = Boolean(
+    imageUrl ||
+    (nameplateId && (
+      nameplateId.startsWith('http://') ||
+      nameplateId.startsWith('https://') ||
+      nameplateId.startsWith('data:image') ||
+      nameplateId.startsWith('/api/') ||
+      nameplateId.includes('/')
+    ))
+  );
+
+  const effectiveImageUrl = imageUrl || (isUrl ? nameplateId : null);
 
   return (
     <div className={cn('absolute inset-0 pointer-events-none overflow-hidden rounded-lg', className)}>
+      {effectiveImageUrl && (
+        <img
+          src={effectiveImageUrl}
+          alt="Nameplate Graphic"
+          className="absolute inset-0 size-full object-cover opacity-90 pointer-events-none select-none z-0"
+        />
+      )}
       {/* MANGA EYES */}
       {nameplateId === 'manga_eyes' && (
         <svg

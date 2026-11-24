@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { AVATAR_DECORATIONS_LIST } from '../data/avatar-decorations';
 import { AvatarDecorationRenderer } from './avatar-decoration-renderer';
 import { SplitPaneDialog } from '@/components/ui/split-pane-dialog';
+import { AnticeilAvatarMannequin } from '@/components/ui/anticeil-avatar-mannequin';
 import { shopApi, type ShopItem } from '@/features/shop/api/shop-api';
 
 interface ChangeAvatarDecorationDialogProps {
@@ -144,79 +145,43 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
       <div className="flex items-center justify-center gap-4">
         {/* Big Avatar Preview */}
         <div className="size-[170px] rounded-xl bg-background/80 flex items-center justify-center relative shadow-inner border border-border/60">
-          <div className="relative size-24 flex items-center justify-center">
-            {/* Inner avatar container with overflow-hidden for image */}
-            <div className="size-full rounded-full overflow-hidden border-2 border-border/80 bg-muted/60 flex items-center justify-center shadow-lg">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" className="size-full object-cover" />
-              ) : (
-                <div className="size-full flex items-center justify-center bg-muted text-foreground font-bold text-xl select-none">
-                  {userName.slice(0, 2).toUpperCase()}
-                </div>
-              )}
-            </div>
-            {/* Decoration rendered outside overflow-hidden with high z-index */}
-            <AvatarDecorationRenderer decorationId={selectedDecoration} />
-          </div>
+          <AnticeilAvatarMannequin
+            size="xl"
+            avatarUrl={avatarUrl}
+            decorationId={selectedDecoration}
+          />
         </div>
 
         {/* Vertical Column of 4 small avatars showing real scaling */}
         <div className="flex flex-col items-center justify-between h-[170px] py-1">
           {/* 44px */}
-          <div className="relative size-11 flex items-center justify-center shrink-0">
-            <div className="size-full rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="size-full object-cover" />
-              ) : (
-                <span className="text-[10px] font-bold text-muted-foreground">
-                  {userName.slice(0, 1).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <AvatarDecorationRenderer decorationId={selectedDecoration} />
-          </div>
+          <AnticeilAvatarMannequin
+            size="lg"
+            avatarUrl={avatarUrl}
+            decorationId={selectedDecoration}
+          />
 
           {/* 32px */}
-          <div className="relative size-8 flex items-center justify-center shrink-0">
-            <div className="size-full rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="size-full object-cover" />
-              ) : (
-                <span className="text-[8px] font-bold text-muted-foreground">
-                  {userName.slice(0, 1).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <AvatarDecorationRenderer decorationId={selectedDecoration} />
-          </div>
+          <AnticeilAvatarMannequin
+            size="md"
+            avatarUrl={avatarUrl}
+            decorationId={selectedDecoration}
+          />
 
           {/* 24px */}
-          <div className="relative size-6 flex items-center justify-center shrink-0">
-            <div className="size-full rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="size-full object-cover" />
-              ) : (
-                <span className="text-[7px] font-bold text-muted-foreground">
-                  {userName.slice(0, 1).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <AvatarDecorationRenderer decorationId={selectedDecoration} />
-          </div>
+          <AnticeilAvatarMannequin
+            size="xs"
+            avatarUrl={avatarUrl}
+            decorationId={selectedDecoration}
+          />
 
           {/* 20px */}
-          <div className="relative size-5 flex items-center justify-center shrink-0">
-            <div className="size-full rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="size-full object-cover" />
-              ) : (
-                <span className="text-[6px] font-bold text-muted-foreground">
-                  {userName.slice(0, 1).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <AvatarDecorationRenderer decorationId={selectedDecoration} />
-          </div>
+          <AnticeilAvatarMannequin
+            size="xs"
+            className="size-5"
+            avatarUrl={avatarUrl}
+            decorationId={selectedDecoration}
+          />
         </div>
       </div>
 
@@ -326,10 +291,11 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
                 title={owned.name}
               >
                 <div className="relative size-10 flex items-center justify-center">
-                  <div className="size-full rounded-full overflow-hidden bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-bold">
-                    {userName.slice(0, 1).toUpperCase()}
-                  </div>
-                  <AvatarDecorationRenderer decorationId={owned.id} />
+                  <AnticeilAvatarMannequin
+                    size="md"
+                    avatarUrl={avatarUrl}
+                    decorationId={owned.id}
+                  />
                 </div>
                 <span className="text-[10px] font-bold text-foreground truncate w-full text-center">
                   {owned.name}
@@ -370,10 +336,10 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
                 </span>
 
                 <div className="relative size-11 flex items-center justify-center">
-                  <div className="size-full rounded-full overflow-hidden bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-bold">
-                    {userName.slice(0, 1).toUpperCase()}
-                  </div>
-                  <AvatarDecorationRenderer decorationId={item.id} />
+                  <AnticeilAvatarMannequin
+                    size="md"
+                    decorationId={item.id}
+                  />
                 </div>
               </button>
             );
@@ -423,10 +389,10 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
                 )}
 
                 <div className="relative size-11 flex items-center justify-center">
-                  <div className="size-full rounded-full overflow-hidden bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-bold">
-                    {userName.slice(0, 1).toUpperCase()}
-                  </div>
-                  <AvatarDecorationRenderer decorationId={item.id} />
+                  <AnticeilAvatarMannequin
+                    size="md"
+                    decorationId={item.id}
+                  />
                 </div>
               </button>
             );

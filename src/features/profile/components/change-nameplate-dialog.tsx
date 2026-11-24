@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Ban, Store, Lock, Gamepad2, ShoppingBag, Sparkles } from 'lucide-react';
+import { Ban, Store, Lock, ShoppingBag, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/core/i18n';
 import { cn } from '@/lib/utils';
 import { NAMEPLATES_LIST } from '../data/nameplates';
 import { NameplateRenderer } from './nameplate-renderer';
 import { AvatarDecorationRenderer } from './avatar-decoration-renderer';
 import { SplitPaneDialog } from '@/components/ui/split-pane-dialog';
+import { AnticeilAvatarMannequin } from '@/components/ui/anticeil-avatar-mannequin';
 import { shopApi, type ShopItem } from '@/features/shop/api/shop-api';
 
 interface ChangeNameplateDialogProps {
@@ -125,21 +126,20 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
           )}
         >
           {selectedNameplate !== 'none' && (
-            <NameplateRenderer nameplateId={selectedNameplate} />
+            <NameplateRenderer
+              nameplateId={selectedNameplate}
+              imageUrl={selectedPlateData && ('gifUrl' in selectedPlateData || 'previewIcon' in selectedPlateData) ? ((selectedPlateData as any).gifUrl || (selectedPlateData as any).previewIcon) : undefined}
+            />
           )}
 
-          {/* Avatar with decoration */}
-          <div className="relative size-8 rounded-full bg-muted shrink-0 z-10 flex items-center justify-center border border-border/60">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="size-full rounded-full object-cover" />
-            ) : (
-              <span className="text-xs font-bold text-foreground">
-                {userName.slice(0, 1).toUpperCase()}
-              </span>
-            )}
-            <div className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-500 border border-background" />
-            <AvatarDecorationRenderer decorationId={avatarDecoration} />
-          </div>
+          {/* Anticeil Mannequin Avatar with decoration and status dot */}
+          <AnticeilAvatarMannequin
+            size="md"
+            avatarUrl={avatarUrl}
+            statusDot
+            statusColor="#10b981"
+            decorationId={avatarDecoration}
+          />
 
           {/* Display Name */}
           <span className="font-bold text-sm text-foreground drop-shadow-sm select-none z-10 truncate">
@@ -241,7 +241,10 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
                 )}
                 title={owned.name}
               >
-                <NameplateRenderer nameplateId={owned.id} />
+                <NameplateRenderer
+                  nameplateId={owned.id}
+                  imageUrl={owned.gifUrl || owned.previewIcon}
+                />
                 <span className="text-[10px] font-bold text-foreground truncate w-full text-center relative z-10">
                   {owned.name}
                 </span>
@@ -288,13 +291,18 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
                 )}
                 title={`${plate.name} - ${plate.priceDew ? `${plate.priceDew} Dew` : `Rp ${plate.priceIdr?.toLocaleString()}`}`}
               >
-                <NameplateRenderer nameplateId={plate.id} />
+                <NameplateRenderer
+                  nameplateId={plate.id}
+                  imageUrl={plate.gifUrl || plate.previewIcon}
+                />
 
-                {/* Left: Discord Mock Member Pill: Avatar + Placeholder bar */}
+                {/* Left: Discord Mock Member Pill: Anticeil Mannequin Avatar + Placeholder bar */}
                 <div className="flex items-center gap-2.5 relative z-10 pointer-events-none">
-                  <div className="size-6.5 rounded-full bg-muted/80 border border-border/60 flex items-center justify-center shrink-0">
-                    <Gamepad2 className="w-3.5 h-3.5 text-muted-foreground/70" />
-                  </div>
+                  <AnticeilAvatarMannequin
+                    size="xs"
+                    statusDot
+                    statusColor="#23a55a"
+                  />
                   <div className="w-20 sm:w-28 h-2 rounded-full bg-white/20 shrink-0" />
                 </div>
 
