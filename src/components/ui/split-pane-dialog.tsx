@@ -7,7 +7,8 @@ export interface SplitPaneDialogProps {
   open: boolean;
   onClose: () => void;
   title: string;
-  size?: 'md-lg' | '2xl' | 'wide';
+  size?: 'md-lg' | '2xl' | 'wide' | '3xl';
+  previewWidth?: 'normal' | 'wide';
   children: React.ReactNode;
   preview: React.ReactNode;
   footerActions?: React.ReactNode;
@@ -22,6 +23,7 @@ export const SplitPaneDialog: React.FC<SplitPaneDialogProps> = ({
   onClose,
   title,
   size = '2xl',
+  previewWidth = 'normal',
   children,
   preview,
   footerActions,
@@ -53,6 +55,7 @@ export const SplitPaneDialog: React.FC<SplitPaneDialogProps> = ({
           'w-full bg-card text-card-foreground rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden',
           size === '2xl' && 'max-w-[680px]',
           size === 'wide' && 'max-w-[760px]',
+          size === '3xl' && 'max-w-[880px]',
           size === 'md-lg' && 'max-w-[620px]'
         )}
         onClick={(e) => e.stopPropagation()}
@@ -72,12 +75,17 @@ export const SplitPaneDialog: React.FC<SplitPaneDialogProps> = ({
         {/* Body: 2 Kolom (Kiri Konten, Kanan Preview) */}
         <div className="flex flex-col md:flex-row gap-6 p-6 min-h-[460px]">
           {/* Kolom Kiri */}
-          <div className="flex-1 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar space-y-6">
+          <div className="flex-1 max-h-[460px] overflow-y-auto pr-2 custom-scrollbar space-y-6">
             {children}
           </div>
 
           {/* Kolom Kanan: Preview Box */}
-          <div className="shrink-0 w-full md:w-[260px] flex flex-col justify-center bg-muted/30 p-4 rounded-xl border border-border/50">
+          <div
+            className={cn(
+              'shrink-0 flex flex-col justify-center bg-muted/30 p-4 rounded-xl border border-border/50',
+              previewWidth === 'wide' ? 'w-full md:w-[340px]' : 'w-full md:w-[260px]'
+            )}
+          >
             {preview}
           </div>
         </div>

@@ -18,7 +18,7 @@ const PRESET_SWATCHES = [
   '#15803d', // Green
 ];
 
-// Helper HSV to Hex
+// Helper HSV to RGB
 function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
   const f = (n: number, k = (n + h / 60) % 6) =>
     v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
@@ -160,16 +160,16 @@ export function ProfileThemeColorPicker({
   const pureHex = rgbToHex(pureR, pureG, pureB);
 
   return (
-    <div className="w-64 p-3 bg-[#111214] border border-[#232428] rounded-xl shadow-2xl space-y-3 z-50 text-white select-none animate-in fade-in zoom-in-95 duration-150">
+    <div className="w-64 p-3 bg-card border border-border rounded-xl shadow-2xl space-y-3 z-50 text-foreground select-none animate-in fade-in zoom-in-95 duration-150">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-zinc-300">
+        <span className="text-xs font-bold text-foreground">
           {title || t('Pilih Warna Tema')}
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="text-zinc-400 hover:text-white transition-colors p-0.5"
+          className="text-muted-foreground hover:text-foreground transition-colors p-0.5 cursor-pointer rounded-md hover:bg-muted"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -182,7 +182,7 @@ export function ProfileThemeColorPicker({
           isDraggingSatVal.current = true;
           handleSatValMove(e);
         }}
-        className="relative w-full h-32 rounded-lg cursor-crosshair overflow-hidden border border-white/10"
+        className="relative w-full h-32 rounded-lg cursor-crosshair overflow-hidden border border-border/80"
         style={{
           backgroundColor: pureHex,
           backgroundImage:
@@ -225,7 +225,7 @@ export function ProfileThemeColorPicker({
             onChange={(e) => setHexInput(e.target.value)}
             onBlur={handleHexSubmit}
             maxLength={7}
-            className="w-full h-8 px-2.5 bg-[#1e1f22] border border-[#2b2d31] rounded-lg text-xs font-mono text-zinc-100 uppercase focus:outline-none focus:border-primary"
+            className="w-full h-8 px-2.5 bg-muted/50 border border-border rounded-lg text-xs font-mono text-foreground uppercase focus:outline-none focus:border-primary"
           />
         </div>
         {'EyeDropper' in window && (
@@ -233,7 +233,7 @@ export function ProfileThemeColorPicker({
             type="button"
             onClick={handleEyedropper}
             title={t('Ambil Warna Layar')}
-            className="size-8 rounded-lg bg-[#1e1f22] border border-[#2b2d31] hover:border-zinc-500 text-zinc-300 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+            className="size-8 rounded-lg bg-muted border border-border hover:border-primary text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer transition-colors"
           >
             <Pipette className="w-3.5 h-3.5" />
           </button>
@@ -241,7 +241,7 @@ export function ProfileThemeColorPicker({
       </form>
 
       {/* 5 Preset Swatches */}
-      <div className="flex items-center justify-between pt-1 border-t border-[#232428]">
+      <div className="flex items-center justify-between pt-1 border-t border-border/60">
         {PRESET_SWATCHES.map((swatch) => (
           <button
             key={swatch}
@@ -252,8 +252,8 @@ export function ProfileThemeColorPicker({
               setHsv(hexToHsv(swatch));
             }}
             className={cn(
-              'size-7 rounded-md border border-white/20 transition-transform hover:scale-110 cursor-pointer',
-              color.toLowerCase() === swatch.toLowerCase() && 'ring-2 ring-white ring-offset-1 ring-offset-black'
+              'size-7 rounded-md border border-border transition-transform hover:scale-110 cursor-pointer',
+              color.toLowerCase() === swatch.toLowerCase() && 'ring-2 ring-primary ring-offset-1 ring-offset-background'
             )}
             style={{ backgroundColor: swatch }}
           />
