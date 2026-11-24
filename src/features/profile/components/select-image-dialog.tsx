@@ -1,13 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   X,
+  ArrowLeft,
   Sparkles,
   Zap,
   Search,
   Check,
-  Store,
-  Lock,
-  ShoppingBag,
   User,
   ImagePlus,
   Image as ImageIcon,
@@ -15,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
-import { shopApi, type ShopItem } from '@/features/shop/api/shop-api';
 import { profileApi } from '../api/profile-api';
 
 export interface SelectImageDialogProps {
@@ -67,19 +64,18 @@ export function SelectImageDialog({
 }: SelectImageDialogProps) {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<'picker' | 'gif' | 'shop'>('picker');
+  const [activeTab, setActiveTab] = useState<'picker' | 'gif'>('picker');
   const [searchQuery, setSearchQuery] = useState('');
-  const [shopItems, setShopItems] = useState<ShopItem[]>([]);
-  const [ownedItems, setOwnedItems] = useState<ShopItem[]>([]);
   const [recentUploads, setRecentUploads] = useState<string[]>([]);
   const [, setIsLoadingRecent] = useState(true);
 
   const isAvatar = mode === 'avatar';
-  const shopCategory = isAvatar ? 'animated_avatar' : 'profile_banner';
 
-  // Load Real User Recent Uploads and Shop Items from Database
+  // Load Real User Recent Uploads from Database
   useEffect(() => {
     if (!open) return;
+    setActiveTab('picker');
+    setSearchQuery('');
 
     // Load fullstack recent uploads from user profile
     setIsLoadingRecent(true);
@@ -100,22 +96,7 @@ export function SelectImageDialog({
       .finally(() => {
         setIsLoadingRecent(false);
       });
-
-    // Load shop items & inventory
-    Promise.all([
-      shopApi.getItems(shopCategory),
-      shopApi.getInventory(),
-    ])
-      .then(([items, inv]) => {
-        if (Array.isArray(items)) {
-          setShopItems(items);
-        }
-        if (Array.isArray(inv)) {
-          setOwnedItems(inv.filter((i) => i.category === shopCategory));
-        }
-      })
-      .catch(() => {});
-  }, [open, shopCategory, isAvatar, currentImageUrl]);
+  }, [open, isAvatar, currentImageUrl]);
 
   const addRecentUpload = async (url: string) => {
     const updated = [url, ...recentUploads.filter((u) => u !== url)].slice(0, 6);
@@ -151,10 +132,6 @@ export function SelectImageDialog({
     onOpenChange(false);
   };
 
-  const getItemImageUrl = (item: ShopItem): string => {
-    return item.bannerUrl || item.previewIcon || item.gifUrl || '';
-  };
-
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -176,72 +153,44 @@ export function SelectImageDialog({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-2 border-b border-border/60">
-          <div>
-            <h2 className="text-base font-bold tracking-tight text-foreground">
-              {isAvatar ? t('Select an Image') : t('Select Profile Banner')}
-            </h2>
-            <p className="text-[11px] text-muted-foreground">
-              {isAvatar
-                ? t('Unggah foto, pilih animated GIF, atau gunakan item dari Toko.')
-                : t('Unggah banner kustom, pilih animated GIF, atau pilih banner dari Toko.')}
-            </p>
-          </div>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/60">
+          {activeTab === 'gif' ? (
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab('picker')}
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+                title={t('Kembali')}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h2 className="text-base font-bold tracking-tight text-foreground">
+                  {t('Choose a GIF')}
+                </h2>
+                <p className="text-[11px] text-muted-foreground">
+                  {t('Pilih animasi GIF favorit Anda.')}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <h2 className="text-base font-bold tracking-tight text-foreground">
+                {isAvatar ? t('Select an Image') : t('Select Profile Banner')}
+              </h2>
+              <p className="text-[11px] text-muted-foreground">
+                {isAvatar
+                  ? t('Unggah foto atau pilih dari avatar terbaru Anda.')
+                  : t('Unggah banner kustom atau pilih dari banner terbaru Anda.')}
+              </p>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             className="text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-1 px-5 pt-3 border-b border-border/60 bg-muted/20">
-          <button
-            type="button"
-            onClick={() => setActiveTab('picker')}
-            className={cn(
-              'px-3.5 py-1.5 text-xs font-bold rounded-t-lg transition-all border-b-2 cursor-pointer',
-              activeTab === 'picker'
-                ? 'border-primary text-foreground bg-card'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {t('Upload & Presets')}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('gif')}
-            className={cn(
-              'px-3.5 py-1.5 text-xs font-bold rounded-t-lg transition-all border-b-2 cursor-pointer flex items-center gap-1.5',
-              activeTab === 'gif'
-                ? 'border-primary text-foreground bg-card'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-pink-400" />
-            <span>{t('GIF Gallery')}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('shop')}
-            className={cn(
-              'px-3.5 py-1.5 text-xs font-bold rounded-t-lg transition-all border-b-2 cursor-pointer flex items-center gap-1.5',
-              activeTab === 'shop'
-                ? 'border-primary text-foreground bg-card'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Store className="w-3.5 h-3.5 text-amber-400" />
-            <span>{t('Katalog Toko')}</span>
-            {ownedItems.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-primary/20 text-primary border border-primary/30">
-                {ownedItems.length}
-              </span>
-            )}
           </button>
         </div>
 
@@ -429,167 +378,6 @@ export function SelectImageDialog({
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: SHOP COLLECTION (Connected to Database) */}
-          {activeTab === 'shop' && (
-            <div className="space-y-4">
-              {/* Owned Items */}
-              <div>
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                  {t('Koleksi Kamu')}
-                </h3>
-                {ownedItems.length === 0 ? (
-                  <div className="p-3 rounded-xl bg-muted/20 border border-dashed border-border/70 text-center">
-                    <p className="text-xs text-muted-foreground">
-                      {t('Kamu belum memiliki item ini dari Shop.')}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    {ownedItems.map((item) => {
-                      const imgUrl = getItemImageUrl(item);
-                      const isCurrent = currentImageUrl === imgUrl;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleSelectRecent(imgUrl)}
-                          className={cn(
-                            'p-2 rounded-xl border bg-card hover:bg-muted/50 transition-all text-left flex flex-col gap-1.5 cursor-pointer shadow-xs',
-                            isCurrent
-                              ? 'border-primary ring-2 ring-primary/40'
-                              : 'border-border/70'
-                          )}
-                        >
-                          <div
-                            className={cn(
-                              'relative overflow-hidden bg-muted/60',
-                              isAvatar ? 'aspect-square rounded-full mx-auto w-16' : 'aspect-video rounded-lg w-full'
-                            )}
-                          >
-                            {imgUrl ? (
-                              <img src={imgUrl} alt={item.name} className="size-full object-cover" />
-                            ) : (
-                              <div className="size-full flex items-center justify-center text-xs font-bold text-muted-foreground">
-                                {item.name.slice(0, 2)}
-                              </div>
-                            )}
-                            <span className="absolute bottom-1 right-1 px-1 py-0.2 rounded text-[8px] font-bold bg-emerald-500 text-white">
-                              {t('Dimiliki')}
-                            </span>
-                          </div>
-                          <div className="text-xs font-bold text-foreground truncate w-full">
-                            {item.name}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Shop Catalog from Database */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t('Tersedia di Shop')}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onOpenShop) {
-                        onOpenShop(shopCategory);
-                        onOpenChange(false);
-                      }
-                    }}
-                    className="text-[11px] font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1"
-                  >
-                    <Store className="w-3 h-3" />
-                    <span>{t('Buka Toko Lengkap')}</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  {shopItems.map((item) => {
-                    const imgUrl = getItemImageUrl(item);
-                    const isOwned = ownedItems.some((o) => o.id === item.id);
-                    const isCurrent = currentImageUrl === imgUrl;
-
-                    return (
-                      <div
-                        key={item.id}
-                        className={cn(
-                          'p-2.5 rounded-xl border bg-card transition-all flex flex-col justify-between gap-2 shadow-xs',
-                          isCurrent ? 'border-primary' : 'border-border/70'
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            'relative overflow-hidden bg-muted/60',
-                            isAvatar ? 'aspect-square rounded-full mx-auto w-16' : 'aspect-video rounded-lg w-full'
-                          )}
-                        >
-                          {imgUrl ? (
-                            <img src={imgUrl} alt={item.name} className="size-full object-cover" />
-                          ) : (
-                            <div className="size-full flex items-center justify-center text-xs font-bold text-muted-foreground">
-                              {item.name.slice(0, 2)}
-                            </div>
-                          )}
-
-                          {!isOwned && (
-                            <span className="absolute top-1 right-1 size-5 rounded-full bg-black/70 flex items-center justify-center text-muted-foreground">
-                              <Lock className="w-2.5 h-2.5" />
-                            </span>
-                          )}
-                        </div>
-
-                        <div>
-                          <div className="text-xs font-bold text-foreground truncate">{item.name}</div>
-                          <div className="text-[10px] text-muted-foreground truncate">
-                            {item.description || item.collection}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-1 border-t border-border/40">
-                          <span className="text-[10px] font-bold text-muted-foreground">
-                            {item.priceDew ? `${item.priceDew} Dew` : `Rp ${item.priceIdr?.toLocaleString('id-ID')}`}
-                          </span>
-
-                          {isOwned ? (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleSelectRecent(imgUrl)}
-                              className="h-6 text-[10px] px-2 font-bold cursor-pointer"
-                            >
-                              {t('Gunakan')}
-                            </Button>
-                          ) : (
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => {
-                                if (onOpenShop) {
-                                  onOpenShop(shopCategory);
-                                  onOpenChange(false);
-                                }
-                              }}
-                              className="h-6 text-[10px] px-2 font-bold bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-1 cursor-pointer"
-                            >
-                              <ShoppingBag className="w-2.5 h-2.5" />
-                              <span>{t('Beli')}</span>
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
             </div>
           )}

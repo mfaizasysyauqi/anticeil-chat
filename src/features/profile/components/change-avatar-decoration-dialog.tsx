@@ -118,12 +118,21 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
     shopDecorations.find((d) => d.id === selectedDecoration) ||
     AVATAR_DECORATIONS_LIST.find((d) => d.id === selectedDecoration);
 
+  const handleShopRedirect = () => {
+    if (onOpenShop) {
+      onOpenShop('avatar_decoration');
+    } else {
+      window.history.pushState({}, '', '/shop');
+      window.dispatchEvent(new CustomEvent('anticeil:navigate-home', { detail: 'shop' }));
+      window.dispatchEvent(new CustomEvent('anticeil:close-all-modals'));
+      window.dispatchEvent(new CustomEvent('anticeil:shop-category', { detail: 'avatar_decoration' }));
+    }
+    onClose();
+  };
+
   const handleApply = () => {
     if (!isSelectedOwned && selectedDecoration !== 'none') {
-      if (onOpenShop) {
-        onOpenShop('avatar_decoration');
-        onClose();
-      }
+      handleShopRedirect();
       return;
     }
     onApply(selectedDecoration);
@@ -226,12 +235,7 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
           </div>
           <button
             type="button"
-            onClick={() => {
-              if (onOpenShop) {
-                onOpenShop('avatar_decoration');
-                onClose();
-              }
-            }}
+            onClick={handleShopRedirect}
             className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity flex items-center gap-1 cursor-pointer shrink-0"
           >
             <ShoppingBag className="w-3 h-3" />
@@ -264,12 +268,7 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (onOpenShop) {
-                  onOpenShop('avatar_decoration');
-                  onClose();
-                }
-              }}
+              onClick={handleShopRedirect}
               className="px-6 py-2 rounded-lg font-semibold text-sm text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 transition-opacity cursor-pointer shadow-md flex items-center gap-1.5"
             >
               <ShoppingBag className="w-4 h-4" />
@@ -303,12 +302,7 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
           {/* Shop Button */}
           <button
             type="button"
-            onClick={() => {
-              if (onOpenShop) {
-                onOpenShop('avatar_decoration');
-                onClose();
-              }
-            }}
+            onClick={handleShopRedirect}
             className="w-20 h-20 rounded-xl flex flex-col items-center justify-center gap-1.5 cursor-pointer border border-border/70 bg-card hover:bg-muted/60 transition-colors"
           >
             <Store className="w-7 h-7 text-muted-foreground" />
@@ -395,12 +389,7 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
           </h3>
           <button
             type="button"
-            onClick={() => {
-              if (onOpenShop) {
-                onOpenShop('avatar_decoration');
-                onClose();
-              }
-            }}
+            onClick={handleShopRedirect}
             className="text-[11px] font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1"
           >
             <Store className="w-3 h-3" />

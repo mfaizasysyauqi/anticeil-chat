@@ -77,7 +77,23 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
     selectedNameplate === 'none' ||
     ownedNameplates.some((p) => p.id === selectedNameplate);
 
+  const handleShopRedirect = () => {
+    if (onOpenShop) {
+      onOpenShop('nameplate');
+    } else {
+      window.history.pushState({}, '', '/shop');
+      window.dispatchEvent(new CustomEvent('anticeil:navigate-home', { detail: 'shop' }));
+      window.dispatchEvent(new CustomEvent('anticeil:close-all-modals'));
+      window.dispatchEvent(new CustomEvent('anticeil:shop-category', { detail: 'nameplate' }));
+    }
+    onClose();
+  };
+
   const handleApply = () => {
+    if (!isSelectedOwned && selectedNameplate !== 'none') {
+      handleShopRedirect();
+      return;
+    }
     onApply(selectedNameplate);
     onClose();
   };
@@ -168,12 +184,7 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (onOpenShop) {
-                  onOpenShop('nameplate');
-                  onClose();
-                }
-              }}
+              onClick={handleShopRedirect}
               className="px-6 py-2 rounded-lg font-semibold text-sm text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 transition-opacity cursor-pointer shadow-md flex items-center gap-1.5"
             >
               <ShoppingBag className="w-4 h-4" />
@@ -207,12 +218,7 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
           {/* Shop Button */}
           <button
             type="button"
-            onClick={() => {
-              if (onOpenShop) {
-                onOpenShop('nameplate');
-                onClose();
-              }
-            }}
+            onClick={handleShopRedirect}
             className="w-20 h-20 rounded-xl flex flex-col items-center justify-center gap-1.5 cursor-pointer border border-border/70 bg-card hover:bg-muted/60 transition-colors"
           >
             <Store className="w-7 h-7 text-muted-foreground" />
@@ -256,12 +262,7 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
           </h3>
           <button
             type="button"
-            onClick={() => {
-              if (onOpenShop) {
-                onOpenShop('nameplate');
-                onClose();
-              }
-            }}
+            onClick={handleShopRedirect}
             className="text-[11px] font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1"
           >
             <Store className="w-3 h-3" />

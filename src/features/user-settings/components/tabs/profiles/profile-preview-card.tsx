@@ -387,6 +387,7 @@ export function ProfilePreviewCard({
                     } else {
                       window.history.pushState({}, '', '/shop');
                       window.dispatchEvent(new CustomEvent('anticeil:navigate-home', { detail: 'shop' }));
+                      window.dispatchEvent(new CustomEvent('anticeil:close-all-modals'));
                     }
                     toast.success(t('Membuka Shop & Aksesori Profil! 🏪'));
                   }}

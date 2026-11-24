@@ -681,12 +681,22 @@ export function EditProfileDialog({
   };
 
   const handleOpenShop = (category?: string) => {
+    setIsAvatarDecorationDialogOpen(false);
+    setIsNameplateDialogOpen(false);
+    setIsSelectImageOpen(false);
+    setIsNameStyleDialogOpen(false);
+    setIsPreviewNectarOpen(false);
+    setIsThemeColorPickerOpen(false);
+    setActiveWidgetCreator(null);
+    setIsConnectModalOpen(false);
     onOpenChange(false);
     window.history.pushState({}, '', '/shop');
     window.dispatchEvent(new CustomEvent('anticeil:navigate-home', { detail: 'shop' }));
+    window.dispatchEvent(new CustomEvent('anticeil:close-all-modals'));
     if (category) {
       window.dispatchEvent(new CustomEvent('anticeil:shop-category', { detail: category }));
     }
+    toast.success(t('Membuka Shop Katalog! 🏪'));
   };
 
   // Connect Account Handler

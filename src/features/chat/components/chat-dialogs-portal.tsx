@@ -195,6 +195,32 @@ export function ChatDialogsPortal({
   const [isOnboardingWelcomeOpen, setIsOnboardingWelcomeOpen] = React.useState(false);
 
   React.useEffect(() => {
+    const handleCloseAll = () => {
+      setIsEditProfileOpen(false);
+      setIsUserSettingsOpen(false);
+      setIsGiftModalOpen(false);
+      setIsDmSearchOpen(false);
+      setIsCreateGroupDmOpen?.(false);
+      setIsThreadDrawerOpen(false);
+      setIsCreateThreadModalOpen(false);
+    };
+    window.addEventListener('anticeil:navigate-home', handleCloseAll);
+    window.addEventListener('anticeil:close-all-modals', handleCloseAll);
+    return () => {
+      window.removeEventListener('anticeil:navigate-home', handleCloseAll);
+      window.removeEventListener('anticeil:close-all-modals', handleCloseAll);
+    };
+  }, [
+    setIsEditProfileOpen,
+    setIsUserSettingsOpen,
+    setIsGiftModalOpen,
+    setIsDmSearchOpen,
+    setIsCreateGroupDmOpen,
+    setIsThreadDrawerOpen,
+    setIsCreateThreadModalOpen,
+  ]);
+
+  React.useEffect(() => {
     if (
       activeColony &&
       activeColony.id !== 'anticeil' &&
