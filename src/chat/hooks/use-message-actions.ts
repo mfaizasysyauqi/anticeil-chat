@@ -202,7 +202,11 @@ export function useMessageActions({
                 return `[Lampiran: ${att.name || 'File'}]`;
               })()
             : '[Pesan]'),
-        senderAvatar: replyingToMessage.senderAvatar,
+        senderAvatar:
+          replyingToMessage.senderAvatar ||
+          (replyingToMessage.senderId === currentUserId ? (currentUser?.imageUrl || (currentUser as any)?.avatarUrl) : null) ||
+          members.find((m) => m.id === replyingToMessage.senderId)?.avatar ||
+          null,
       } : null,
     };
 
@@ -370,6 +374,16 @@ export function useMessageActions({
                     id: saved.id,
                     senderId: saved.senderId,
                     senderName: saved.senderName,
+                    senderUsername:
+                      (saved as any).senderUsername?.replace(/^@/, '').trim() ||
+                      members.find((m) => m.id === saved.senderId)?.username?.replace(/^@/, '').trim() ||
+                      (saved.senderId === currentUserId ? (currentUser?.username || currentUser?.name) : null) ||
+                      null,
+                    senderAvatar:
+                      saved.senderAvatar ||
+                      (saved.senderId === currentUserId ? (currentUser?.imageUrl || (currentUser as any)?.avatarUrl) : null) ||
+                      members.find((m) => m.id === saved.senderId)?.avatar ||
+                      null,
                     content: saved.content,
                   },
                 };
@@ -465,6 +479,16 @@ export function useMessageActions({
                 id: saved.id,
                 senderId: saved.senderId,
                 senderName: saved.senderName,
+                senderUsername:
+                  (saved as any).senderUsername?.replace(/^@/, '').trim() ||
+                  members.find((m) => m.id === saved.senderId)?.username?.replace(/^@/, '').trim() ||
+                  (saved.senderId === currentUserId ? (currentUser?.username || currentUser?.name) : null) ||
+                  null,
+                senderAvatar:
+                  saved.senderAvatar ||
+                  (saved.senderId === currentUserId ? (currentUser?.imageUrl || (currentUser as any)?.avatarUrl) : null) ||
+                  members.find((m) => m.id === saved.senderId)?.avatar ||
+                  null,
                 content: saved.content,
               },
             };

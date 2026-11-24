@@ -47,6 +47,8 @@ export interface MessageItemProps {
   onJumpToMessage?: (messageId: string) => void;
   activeActivityAppId?: string | null;
   activeCallChannelId?: string | null;
+  members?: any[];
+  allMessages?: ColonyMessage[];
   t: (key: string) => string;
 }
 
@@ -187,6 +189,8 @@ export function MessageItem({
   onJumpToMessage,
   activeActivityAppId,
   activeCallChannelId,
+  members = [],
+  allMessages = [],
   t,
 }: MessageItemProps) {
   const activityAtt = msg.attachments?.find((a) => a.type === 'activity');
@@ -230,6 +234,44 @@ export function MessageItem({
     setCurrentPoll(pollData);
   }, [pollData]);
 
+  const replyAvatar = useMemo(() => {
+    if (!msg.replyTo) return null;
+    if (msg.replyTo.senderAvatar) return msg.replyTo.senderAvatar;
+
+    if (msg.replyTo.senderId === currentUser?.id) {
+      return currentUser?.imageUrl || currentUser?.avatarUrl || null;
+    }
+
+    if (
+      msg.replyTo.senderId === 'atlas_agent' ||
+      msg.replyTo.senderName?.toLowerCase().includes('atlas')
+    ) {
+      return '/atlas-head.png';
+    }
+
+    const foundMember = members?.find(
+      (m) =>
+        m.id === msg.replyTo?.senderId ||
+        (m.username && msg.replyTo?.senderUsername && m.username.replace(/^@/, '').toLowerCase() === msg.replyTo.senderUsername.replace(/^@/, '').toLowerCase()) ||
+        m.name === msg.replyTo?.senderName
+    );
+    if (foundMember) {
+      return foundMember.avatar || foundMember.imageUrl || foundMember.avatarUrl || null;
+    }
+
+    if (allMessages && allMessages.length > 0) {
+      const referencedMsg = allMessages.find((m) => m.id === msg.replyTo?.id);
+      if (referencedMsg?.senderAvatar) return referencedMsg.senderAvatar;
+
+      const sameSenderMsg = allMessages.find(
+        (m) => m.senderId === msg.replyTo?.senderId && m.senderAvatar
+      );
+      if (sameSenderMsg?.senderAvatar) return sameSenderMsg.senderAvatar;
+    }
+
+    return null;
+  }, [msg.replyTo, currentUser, members, allMessages]);
+
   return (
     <div className="flex flex-col">
                   {/* Discord Reply Quote Spine */}
@@ -242,13 +284,17 @@ export function MessageItem({
                       <div className="absolute left-2.5 top-2 w-3.5 h-3 rounded-tl-md border-t-2 border-l-2 border-muted-foreground/40 pointer-events-none group-hover/reply:border-foreground/60 transition-colors" />
                       <CommunityAvatar
                         name={msg.replyTo.senderName || 'Pengguna'}
-                        imageUrl={msg.replyTo.senderAvatar}
+                        imageUrl={replyAvatar}
                         size={16}
                         className="shrink-0"
                         showStatus={false}
                       />
                       <span className="font-semibold text-foreground/90 shrink-0 group-hover/reply:underline">
-                        @{msg.replyTo.senderUsername?.replace(/^@/, '').trim() || (msg.replyTo as any)?.username?.replace(/^@/, '').trim() || msg.replyTo.senderName}
+                        @{msg.replyTo.senderUsername?.replace(/^@/, '').trim() ||
+                          (msg.replyTo as any)?.username?.replace(/^@/, '').trim() ||
+                          members?.find((m) => m.id === msg.replyTo?.senderId)?.username?.replace(/^@/, '').trim() ||
+                          (msg.replyTo.senderId === currentUser?.id ? currentUser?.username?.replace(/^@/, '').trim() : null) ||
+                          msg.replyTo.senderName}
                       </span>
                       <span className="truncate max-w-[320px] sm:max-w-[480px] md:max-w-[650px] pr-1.5 text-muted-foreground/80 group-hover/reply:text-foreground/90 transition-colors">
                         {msg.replyTo.content ? (

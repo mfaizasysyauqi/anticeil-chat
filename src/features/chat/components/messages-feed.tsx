@@ -699,6 +699,8 @@ export function MessagesFeed({
                       onJumpToMessage={onJumpToMessage}
                       activeActivityAppId={activeActivityAppId}
                       activeCallChannelId={activeCallChannelId}
+                      members={members}
+                      allMessages={filteredMessages}
                       t={t}
                     />
           
