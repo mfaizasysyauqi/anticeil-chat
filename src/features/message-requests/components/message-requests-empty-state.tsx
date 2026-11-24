@@ -1,5 +1,4 @@
 import React from 'react';
-import { ShieldCheck } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty';
 import { useTranslation } from '@/core/i18n';
 import type { MessageRequestsTab } from '../types';
@@ -11,8 +10,7 @@ export interface MessageRequestsEmptyStateProps {
 
 /**
  * Reusable DRY empty state component for Message Requests tabs
- * Ensures identical high-fidelity visual styling (blue shield icon badge)
- * across "Semua", "Luar Kontak", and "Spam" tabs.
+ * Uses Atlas message requests mascot illustration across "Semua", "Luar Kontak", and "Spam" tabs.
  */
 export function MessageRequestsEmptyState({
   activeTab,
@@ -39,7 +37,14 @@ export function MessageRequestsEmptyState({
 
   return (
     <EmptyState
-      icon={<ShieldCheck className="w-8 h-8 text-primary/80 stroke-[1.8]" />}
+      media={
+        <img
+          src="/atlas-message-requests-empty.png"
+          alt={title}
+          className="h-36 sm:h-44 md:h-48 w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)] select-none pointer-events-none mb-1 animate-in fade-in zoom-in-95 duration-300"
+          loading="lazy"
+        />
+      }
       title={title}
       description={description}
       className={className}
