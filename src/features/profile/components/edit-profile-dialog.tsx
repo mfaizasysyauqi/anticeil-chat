@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { uploadMediaToR2 } from '@/lib/upload';
 import {
   ChevronDown,
@@ -66,6 +66,7 @@ import {
 import { availablePlatforms } from '@/features/user-settings/data/platforms';
 import { coloniesApi } from '@/features/colonies/api/colonies-api';
 import { shopApi, type ShopItem } from '@/features/shop/api/shop-api';
+import { AnticeilAvatarMannequin } from '@/components/ui/anticeil-avatar-mannequin';
 import type { Colony } from '@/chat/chat-types';
 import {
   NAMEPLATE_OPTIONS,
@@ -192,6 +193,8 @@ export function EditProfileDialog({
   // Real Wishlist & Shop Catalog State
   const [wishlistItems, setWishlistItems] = useState<ShopItem[]>([]);
   const [catalogItems, setCatalogItems] = useState<ShopItem[]>([]);
+  const [shopAvatarDecorations, setShopAvatarDecorations] = useState<ShopItem[]>([]);
+  const [hoveredShopDecoration, setHoveredShopDecoration] = useState<ShopItem | null>(null);
   const [isLoadingWishlist, setIsLoadingWishlist] = useState(false);
   const [newCustomWishlistInput, setNewCustomWishlistInput] = useState('');
 
@@ -328,10 +331,19 @@ export function EditProfileDialog({
 
     // Load real user wishlist and catalog items
     setIsLoadingWishlist(true);
-    Promise.all([shopApi.getWishlist(), shopApi.getItems()])
-      .then(([wList, cList]) => {
+    Promise.all([
+      shopApi.getWishlist(),
+      shopApi.getItems(),
+      shopApi.getItems('avatar_decoration'),
+    ])
+      .then(([wList, cList, dList]) => {
         setWishlistItems(wList || []);
         setCatalogItems(cList || []);
+        if (Array.isArray(dList) && dList.length > 0) {
+          setShopAvatarDecorations(dList);
+        } else if (Array.isArray(cList)) {
+          setShopAvatarDecorations(cList.filter(i => i.category === 'avatar_decoration' || i.itemTypes?.includes('avatar_decoration')));
+        }
       })
       .catch(() => {})
       .finally(() => setIsLoadingWishlist(false));
@@ -345,6 +357,35 @@ export function EditProfileDialog({
       setUserColoniesList(initialColonies);
     }
   }, [open, currentUser, defaultAvatar, initialColonies]);
+
+  const handleHoverDecorationBox = useCallback(async () => {
+    let list = shopAvatarDecorations;
+    if (!list || list.length === 0) {
+      if (catalogItems.length > 0) {
+        list = catalogItems.filter(i => i.category === 'avatar_decoration' || i.itemTypes?.includes('avatar_decoration'));
+      }
+      if (!list || list.length === 0) {
+        try {
+          const items = await shopApi.getItems('avatar_decoration');
+          if (Array.isArray(items) && items.length > 0) {
+            list = items;
+            setShopAvatarDecorations(items);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (list && list.length > 0) {
+      const randomItem = list[Math.floor(Math.random() * list.length)];
+      setHoveredShopDecoration(randomItem);
+    }
+  }, [shopAvatarDecorations, catalogItems]);
+
+  const effectiveDecoration = hoveredShopDecoration
+    ? (hoveredShopDecoration.gifUrl || hoveredShopDecoration.bannerUrl || hoveredShopDecoration.previewIcon || hoveredShopDecoration.id)
+    : profileAvatarDecoration;
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -926,16 +967,22 @@ export function EditProfileDialog({
                     {/* Right Card: Decoration with smoky ring & (+) badge */}
                     <div
                       onClick={() => setIsAvatarDecorationDialogOpen(true)}
+                      onMouseEnter={handleHoverDecorationBox}
+                      onMouseLeave={() => setHoveredShopDecoration(null)}
                       className="h-28 rounded-2xl border border-border/70 bg-[#1e1f22]/70 hover:bg-[#2b2d31] hover:border-sidebar-primary/60 flex items-center justify-center cursor-pointer group relative transition-all"
-                      title={t('Pilih Dekorasi Avatar')}
+                      title={hoveredShopDecoration ? t(`Contoh Toko: ${hoveredShopDecoration.name}`) : t('Pilih Dekorasi Avatar')}
                     >
                       <div className="relative size-16 sm:size-18 rounded-full flex items-center justify-center">
-                        {profileAvatarDecoration && profileAvatarDecoration !== 'none' ? (
+                        {effectiveDecoration && effectiveDecoration !== 'none' ? (
                           <>
-                            <div className="size-full rounded-full bg-zinc-800/80 border border-white/10 flex items-center justify-center">
-                              <Gamepad2 className="w-6 h-6 text-zinc-500/80" />
+                            <div className="size-full rounded-full bg-[#2b2d31] border border-white/10 flex items-center justify-center overflow-hidden">
+                              <AnticeilAvatarMannequin
+                                size="md"
+                                statusDot={false}
+                                className="size-full"
+                              />
                             </div>
-                            <AvatarDecorationRenderer decorationId={profileAvatarDecoration} />
+                            <AvatarDecorationRenderer decorationId={effectiveDecoration} />
                           </>
                         ) : (
                           <div className="relative size-full rounded-full flex items-center justify-center">
@@ -958,8 +1005,12 @@ export function EditProfileDialog({
                                 style={{ animationDuration: '18s' }}
                               />
                             </svg>
-                            <div className="size-full rounded-full bg-zinc-800/80 border border-white/10 flex items-center justify-center">
-                              <Gamepad2 className="w-6 h-6 text-zinc-500/80" />
+                            <div className="size-full rounded-full bg-[#2b2d31] border border-white/10 flex items-center justify-center overflow-hidden">
+                              <AnticeilAvatarMannequin
+                                size="md"
+                                statusDot={false}
+                                className="size-full"
+                              />
                             </div>
 
                             {/* Plus badge in the center only when no decoration */}
@@ -971,6 +1022,15 @@ export function EditProfileDialog({
                           </div>
                         )}
                       </div>
+
+                      {/* Random Shop Decoration Name Tag when hovered */}
+                      {hoveredShopDecoration && (
+                        <div className="absolute bottom-1.5 inset-x-2 text-center pointer-events-none z-30">
+                          <span className="text-[10px] font-bold text-white bg-black/80 px-2 py-0.5 rounded-full border border-white/20 truncate inline-block max-w-[90%] shadow-xs animate-in fade-in zoom-in-95 duration-150">
+                            {hoveredShopDecoration.name}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1250,7 +1310,7 @@ export function EditProfileDialog({
                 profileFrame={profileFrame}
                 profileEffect={profileEffect}
                 profileTheme={profileTheme}
-                avatarDecoration={profileAvatarDecoration}
+                avatarDecoration={effectiveDecoration}
                 displayNameStyle={displayNameStyle}
                 connections={userConnections}
                 memberSince={
