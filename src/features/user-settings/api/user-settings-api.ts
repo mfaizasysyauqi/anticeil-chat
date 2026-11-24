@@ -247,7 +247,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
     selectedColorTheme: 'custom',
     syncThemeDevices: true,
     applyThemeToProfiles: false,
-    selectedAppIcon: 'blurple',
+    selectedAppIcon: 'default',
     showMediaFromLinks: true,
     showMediaUploaded: true,
     showEmbedsPreviews: true,
@@ -304,6 +304,9 @@ export const userSettingsApi = {
           voiceVideo: { ...DEFAULT_USER_SETTINGS.voiceVideo, ...(parsed.voiceVideo || {}) },
           developer: { ...DEFAULT_USER_SETTINGS.developer, ...(parsed.developer || {}) },
         };
+        if (cached.appearance?.selectedAppIcon === 'blurple') {
+          cached.appearance.selectedAppIcon = 'default';
+        }
       }
     } catch {}
 
@@ -353,6 +356,9 @@ export const userSettingsApi = {
           voiceVideo: { ...DEFAULT_USER_SETTINGS.voiceVideo, ...(parsed.voiceVideo || {}) },
           developer: { ...DEFAULT_USER_SETTINGS.developer, ...(parsed.developer || {}) },
         };
+        if (current.appearance?.selectedAppIcon === 'blurple') {
+          current.appearance.selectedAppIcon = 'default';
+        }
       }
     } catch {}
 

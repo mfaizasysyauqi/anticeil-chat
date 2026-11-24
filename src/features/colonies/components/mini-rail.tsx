@@ -148,17 +148,17 @@ export function MiniRail({
   // Anticeil App Icon state (Fullstack & Live Theme reactive)
   const [currentAppIcon, setCurrentAppIcon] = useState<string>(() => {
     try {
+      const direct = localStorage.getItem('anticeil_app_icon');
+      if (direct && direct !== 'blurple') return direct;
       const raw = localStorage.getItem('anticeil_user_settings');
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.appearance?.selectedAppIcon) {
+        if (parsed.appearance?.selectedAppIcon && parsed.appearance.selectedAppIcon !== 'blurple') {
           return parsed.appearance.selectedAppIcon;
         }
       }
-      const direct = localStorage.getItem('anticeil_app_icon');
-      if (direct) return direct;
     } catch {}
-    return 'classic';
+    return 'default';
   });
 
   useEffect(() => {
@@ -768,27 +768,40 @@ export function MiniRail({
 
           <Tooltip delayDuration={150}>
             <TooltipTrigger asChild>
-              <button
-                onClick={() => {
-                  if (onSelectAiCenter) {
-                    onSelectAiCenter();
-                  } else {
-                    handleSelect('ai-center');
-                  }
-                }}
-                className={cn(
-                  'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px] overflow-hidden group/logo',
-                  isAiCurrentlyActive
-                    ? 'ring-2 ring-primary shadow-sm scale-105'
-                    : 'hover:scale-105 hover:shadow-xs',
-                )}
-              >
-                <AnticeilAppIcon
-                  iconId={currentAppIcon}
-                  className="w-full h-full"
-                  rounded="rounded-[14px]"
-                />
-              </button>
+              {(() => {
+                const isDefaultIcon = !currentAppIcon || currentAppIcon === 'default';
+                return (
+                  <button
+                    onClick={() => {
+                      if (onSelectAiCenter) {
+                        onSelectAiCenter();
+                      } else {
+                        handleSelect('ai-center');
+                      }
+                    }}
+                    className={cn(
+                      'relative size-10 flex items-center justify-center font-bold text-xs transition-all duration-200 cursor-pointer shrink-0 rounded-[14px] overflow-hidden group/logo',
+                      isDefaultIcon
+                        ? isAiCurrentlyActive
+                          ? 'bg-primary/20 text-primary border border-primary/30 shadow-xs'
+                          : 'bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-foreground'
+                        : isAiCurrentlyActive
+                        ? 'ring-2 ring-primary shadow-sm scale-105'
+                        : 'hover:scale-105 hover:shadow-xs',
+                    )}
+                  >
+                    {isDefaultIcon ? (
+                      <AnticeilLogo className="size-6 transition-transform duration-200 group-hover/logo:scale-110" />
+                    ) : (
+                      <AnticeilAppIcon
+                        iconId={currentAppIcon}
+                        className="w-full h-full"
+                        rounded="rounded-[14px]"
+                      />
+                    )}
+                  </button>
+                );
+              })()}
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10} className="font-semibold text-xs">
               {t('Atlas Agent')}

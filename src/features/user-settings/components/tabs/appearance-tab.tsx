@@ -66,9 +66,12 @@ export function AppearanceTab({
   const [selectedAppIcon, setSelectedAppIcon] = useState<string>(() => {
     try {
       const stored = localStorage.getItem('anticeil_app_icon');
-      if (stored) return stored;
+      if (stored && stored !== 'blurple') return stored;
     } catch {}
-    return initial.selectedAppIcon || 'classic';
+    if (initial.selectedAppIcon && initial.selectedAppIcon !== 'blurple') {
+      return initial.selectedAppIcon;
+    }
+    return 'default';
   });
 
   // Discord-style Floating Preview Panel state
@@ -124,7 +127,9 @@ export function AppearanceTab({
         if (app.selectedColorTheme) setSelectedColorTheme(app.selectedColorTheme);
         if (app.syncThemeDevices !== undefined) setSyncThemeDevices(app.syncThemeDevices);
         if (app.applyThemeToProfiles !== undefined) setApplyThemeToProfiles(app.applyThemeToProfiles);
-        if (app.selectedAppIcon) setSelectedAppIcon(app.selectedAppIcon);
+        if (app.selectedAppIcon) {
+          setSelectedAppIcon(app.selectedAppIcon === 'blurple' ? 'default' : app.selectedAppIcon);
+        }
         if (app.showMediaFromLinks !== undefined) setShowMediaFromLinks(app.showMediaFromLinks);
         if (app.showMediaUploaded !== undefined) setShowMediaUploaded(app.showMediaUploaded);
         if (app.showEmbedsPreviews !== undefined) setShowEmbedsPreviews(app.showEmbedsPreviews);

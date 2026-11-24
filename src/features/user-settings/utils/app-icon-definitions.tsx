@@ -1,5 +1,5 @@
 import React from 'react';
-import { ANTICEIL_LOGO_PATH } from '@/components/ui/anticeil-logo';
+import { AnticeilLogo, ANTICEIL_LOGO_PATH } from '@/components/ui/anticeil-logo';
 import { cn } from '@/lib/utils';
 
 export interface AppIconDefinition {
@@ -12,6 +12,7 @@ export interface AppIconDefinition {
 
 export const APP_ICON_LIST: AppIconDefinition[] = [
   // 1. Classic & Brand Base
+  { id: 'default', name: 'Default Anticeil', tier: 'free' },
   { id: 'classic', name: 'Classic Cyan', tier: 'free' },
   { id: 'blurple', name: 'Blurple Heritage', tier: 'free' },
   { id: 'monochrome', name: 'Clean Minimalist', tier: 'free' },
@@ -67,6 +68,19 @@ export function AnticeilAppIcon({
   const normalizedId = iconId.toLowerCase();
 
   switch (normalizedId) {
+    case 'default':
+      return (
+        <div
+          className={cn(
+            'relative overflow-hidden flex items-center justify-center bg-sidebar-accent shadow-xs',
+            rounded,
+            className,
+          )}
+        >
+          <AnticeilLogo className="w-[62%] h-[62%]" />
+        </div>
+      );
+
     case 'blurple':
       return (
         <div
