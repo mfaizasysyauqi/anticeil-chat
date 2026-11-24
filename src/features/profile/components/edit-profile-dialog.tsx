@@ -680,10 +680,13 @@ export function EditProfileDialog({
     toast.success(t(`Preview "${item.name}" ditampilkan di kartu profil!`));
   };
 
-  const handleOpenShop = () => {
+  const handleOpenShop = (category?: string) => {
     onOpenChange(false);
     window.history.pushState({}, '', '/shop');
     window.dispatchEvent(new CustomEvent('anticeil:navigate-home', { detail: 'shop' }));
+    if (category) {
+      window.dispatchEvent(new CustomEvent('anticeil:shop-category', { detail: category }));
+    }
   };
 
   // Connect Account Handler
@@ -2286,6 +2289,7 @@ export function EditProfileDialog({
             }
           }}
           onOpenNectarUpgrade={handleNectarCta}
+          onOpenShop={handleOpenShop}
         />
 
         {/* 3. Full Preview Nectar Dialog */}

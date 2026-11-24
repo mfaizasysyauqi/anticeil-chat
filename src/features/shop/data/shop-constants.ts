@@ -11,6 +11,8 @@ import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 export const ITEM_TYPE_OPTIONS = [
   { id: 'avatar_decoration', label: 'Avatar Decorations' },
   { id: 'nameplate', label: 'Nameplates' },
+  { id: 'profile_banner', label: 'Profile Banners' },
+  { id: 'animated_avatar', label: 'Animated Avatars' },
   { id: 'profile_effect', label: 'Profile Effects' },
   { id: 'bundle', label: 'Bundles' },
 ];

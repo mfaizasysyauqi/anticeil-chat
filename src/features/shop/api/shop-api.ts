@@ -4,7 +4,7 @@ export interface ShopItem {
   id: string;
   name: string;
   collection: string;
-  category: 'avatar_decoration' | 'profile_effect' | 'nameplate' | 'bundle' | 'theme';
+  category: 'avatar_decoration' | 'profile_effect' | 'nameplate' | 'bundle' | 'theme' | 'profile_banner' | 'animated_avatar' | string;
   description: string;
   priceIdr: number;
   priceDew: number;

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Ban, Store, Lock, Gamepad2 } from 'lucide-react';
+import { Ban, Store, Lock, Gamepad2, ShoppingBag, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/core/i18n';
 import { cn } from '@/lib/utils';
 import { NAMEPLATES_LIST } from '../data/nameplates';
 import { NameplateRenderer } from './nameplate-renderer';
 import { AvatarDecorationRenderer } from './avatar-decoration-renderer';
 import { SplitPaneDialog } from '@/components/ui/split-pane-dialog';
+import { shopApi, type ShopItem } from '@/features/shop/api/shop-api';
 
 interface ChangeNameplateDialogProps {
   open: boolean;
@@ -15,7 +16,7 @@ interface ChangeNameplateDialogProps {
   avatarUrl?: string | null;
   userName?: string;
   avatarDecoration?: string;
-  onOpenShop?: () => void;
+  onOpenShop?: (category?: string) => void;
 }
 
 export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
@@ -30,19 +31,60 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
 }) => {
   const { t } = useTranslation();
   const [selectedNameplate, setSelectedNameplate] = useState<string>(currentNameplate);
+  const [shopNameplates, setShopNameplates] = useState<ShopItem[]>([]);
+  const [ownedNameplates, setOwnedNameplates] = useState<ShopItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
       setSelectedNameplate(currentNameplate || 'none');
+      setIsLoading(true);
+
+      Promise.all([
+        shopApi.getItems('nameplate'),
+        shopApi.getInventory(),
+      ])
+        .then(([items, inv]) => {
+          if (Array.isArray(items) && items.length > 0) {
+            setShopNameplates(items);
+          } else {
+            // Fallback to static list if offline or empty
+            setShopNameplates(
+              NAMEPLATES_LIST.map((np) => ({
+                id: np.id,
+                name: np.name,
+                category: 'nameplate',
+                collection: 'Anticeil',
+                description: np.description,
+                priceIdr: 40000,
+                priceDew: 400,
+                allowDew: true,
+              }))
+            );
+          }
+
+          if (Array.isArray(inv)) {
+            setOwnedNameplates(inv.filter((i) => i.category === 'nameplate'));
+          }
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
   }, [open, currentNameplate]);
+
+  const isSelectedOwned =
+    selectedNameplate === 'none' ||
+    ownedNameplates.some((p) => p.id === selectedNameplate);
 
   const handleApply = () => {
     onApply(selectedNameplate);
     onClose();
   };
 
-  const selectedPlateData = NAMEPLATES_LIST.find((n) => n.id === selectedNameplate);
+  const selectedPlateData =
+    NAMEPLATES_LIST.find((n) => n.id === selectedNameplate) ||
+    shopNameplates.find((n) => n.id === selectedNameplate);
 
   const previewContent = (
     <div className="w-full">
@@ -61,8 +103,8 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
         <div
           className={cn(
             'flex items-center gap-3 px-2.5 py-1.5 rounded-xl relative overflow-hidden transition-all',
-            selectedNameplate !== 'none' && selectedPlateData
-              ? cn(selectedPlateData.backgroundClass, 'border')
+            selectedNameplate !== 'none'
+              ? 'bg-gradient-to-r from-blue-950/80 via-cyan-950/80 to-indigo-950/80 border border-primary/40'
               : 'bg-muted/50 border border-transparent'
           )}
         >
@@ -111,16 +153,42 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
       title={t('Change Nameplate')}
       size="2xl"
       onApply={handleApply}
-      applyLabel={t('Apply')}
+      applyLabel={isSelectedOwned ? t('Apply') : t('Lihat di Shop')}
       cancelLabel={t('Cancel')}
       preview={previewContent}
+      footerActions={
+        !isSelectedOwned && selectedNameplate !== 'none' ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 rounded-lg font-semibold text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              {t('Cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenShop) {
+                  onOpenShop('nameplate');
+                  onClose();
+                }
+              }}
+              className="px-6 py-2 rounded-lg font-semibold text-sm text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 transition-opacity cursor-pointer shadow-md flex items-center gap-1.5"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>{t('Buka di Shop')}</span>
+            </button>
+          </div>
+        ) : undefined
+      }
     >
       {/* Section: Your Nameplates */}
       <div>
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2.5">
           {t('Your Nameplates')}
         </h3>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* None Button */}
           <button
             type="button"
@@ -141,7 +209,7 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
             type="button"
             onClick={() => {
               if (onOpenShop) {
-                onOpenShop();
+                onOpenShop('nameplate');
                 onClose();
               }
             }}
@@ -150,46 +218,106 @@ export const ChangeNameplateDialog: React.FC<ChangeNameplateDialogProps> = ({
             <Store className="w-7 h-7 text-muted-foreground" />
             <span className="text-[11px] font-semibold text-foreground">{t('Shop')}</span>
           </button>
+
+          {/* User's Owned Nameplates from Database */}
+          {ownedNameplates.map((owned) => {
+            const isSelected = selectedNameplate === owned.id;
+            return (
+              <button
+                key={owned.id}
+                type="button"
+                onClick={() => setSelectedNameplate(owned.id)}
+                className={cn(
+                  'w-28 h-20 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-all border relative overflow-hidden p-2 text-left',
+                  isSelected
+                    ? 'border-primary bg-primary/20 ring-2 ring-primary/40 shadow-md'
+                    : 'border-border/70 bg-card hover:bg-muted/60'
+                )}
+                title={owned.name}
+              >
+                <NameplateRenderer nameplateId={owned.id} />
+                <span className="text-[10px] font-bold text-foreground truncate w-full text-center relative z-10">
+                  {owned.name}
+                </span>
+                <span className="text-[9px] text-emerald-400 font-semibold relative z-10">
+                  {t('Dimiliki')}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Section: See What's in Shop */}
+      {/* Section: See What's in Shop (Connected to Database) */}
       <div>
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2.5">
-          {t("See What's in Shop")}
-        </h3>
+        <div className="flex items-center justify-between mb-2.5">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            {t("See What's in Shop")}
+          </h3>
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenShop) {
+                onOpenShop('nameplate');
+                onClose();
+              }
+            }}
+            className="text-[11px] font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1"
+          >
+            <Store className="w-3 h-3" />
+            {t('Buka Shop Katalog')}
+          </button>
+        </div>
+
         <div className="space-y-2.5">
-          {NAMEPLATES_LIST.map((plate) => {
+          {shopNameplates.map((plate) => {
             const isSelected = selectedNameplate === plate.id;
+            const isOwned = ownedNameplates.some((o) => o.id === plate.id);
+
             return (
               <button
                 key={plate.id}
                 type="button"
                 onClick={() => setSelectedNameplate(plate.id)}
                 className={cn(
-                  'w-full h-13 rounded-xl border flex items-center justify-between px-3.5 relative overflow-hidden transition-all cursor-pointer group text-left',
-                  plate.backgroundClass,
+                  'w-full h-13 rounded-xl border flex items-center justify-between px-3.5 relative overflow-hidden transition-all cursor-pointer group text-left bg-card',
                   isSelected
                     ? 'border-primary ring-2 ring-primary/40 shadow-[0_0_12px_rgba(var(--primary),0.35)]'
-                    : 'hover:border-border/80'
+                    : 'border-border/70 hover:border-border'
                 )}
                 title={plate.name}
               >
                 <NameplateRenderer nameplateId={plate.id} />
 
                 {/* Content representation */}
-                <div className="flex items-center gap-3 relative z-10 pointer-events-none">
-                  <div className="size-7 rounded-full bg-muted/80 border border-border/60 flex items-center justify-center relative">
+                <div className="flex items-center gap-3 relative z-10 pointer-events-none min-w-0">
+                  <div className="size-7 rounded-full bg-muted/80 border border-border/60 flex items-center justify-center relative shrink-0">
                     <Gamepad2 className="w-3.5 h-3.5 text-muted-foreground" />
                     <div className="absolute bottom-0 right-0 size-2 rounded-full bg-emerald-500 border border-background" />
                   </div>
-                  <div className="w-28 h-2.5 rounded-full bg-muted-foreground/30" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-foreground truncate">
+                      {plate.name}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground truncate">
+                      {plate.description || plate.collection}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Lock icon badge */}
-                <span className="relative z-10 size-4 rounded-full bg-black/60 flex items-center justify-center">
-                  <Lock className="w-2.5 h-2.5 text-muted-foreground" />
-                </span>
+                {/* Right: Price or Owned badge */}
+                <div className="relative z-10 flex items-center gap-1.5 shrink-0 pl-2">
+                  {isOwned ? (
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      {t('Dimiliki')}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded-full border border-white/10">
+                      <Lock className="w-2.5 h-2.5 text-muted-foreground" />
+                      <span>{plate.priceDew ? `${plate.priceDew} Dew` : `Rp ${plate.priceIdr?.toLocaleString()}`}</span>
+                    </span>
+                  )}
+                </div>
               </button>
             );
           })}

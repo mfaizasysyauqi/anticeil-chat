@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Ban, Store, Lock, Sparkles } from 'lucide-react';
+import { Ban, Store, Lock, Sparkles, ShoppingBag } from 'lucide-react';
 import { useTranslation } from '@/core/i18n';
 import { cn } from '@/lib/utils';
 import { AVATAR_DECORATIONS_LIST } from '../data/avatar-decorations';
 import { AvatarDecorationRenderer } from './avatar-decoration-renderer';
 import { SplitPaneDialog } from '@/components/ui/split-pane-dialog';
+import { shopApi, type ShopItem } from '@/features/shop/api/shop-api';
 
 interface ChangeAvatarDecorationDialogProps {
   open: boolean;
@@ -13,7 +14,7 @@ interface ChangeAvatarDecorationDialogProps {
   onApply: (decorationId: string) => void;
   avatarUrl?: string | null;
   userName?: string;
-  onOpenShop?: () => void;
+  onOpenShop?: (category?: string) => void;
 }
 
 export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialogProps> = ({
@@ -27,87 +28,201 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
 }) => {
   const { t } = useTranslation();
   const [selectedDecoration, setSelectedDecoration] = useState<string>(currentDecoration);
+  const [shopDecorations, setShopDecorations] = useState<ShopItem[]>([]);
+  const [ownedDecorations, setOwnedDecorations] = useState<ShopItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
       setSelectedDecoration(currentDecoration || 'none');
+      setIsLoading(true);
+
+      Promise.all([
+        shopApi.getItems('avatar_decoration'),
+        shopApi.getInventory(),
+      ])
+        .then(([items, inv]) => {
+          if (Array.isArray(items) && items.length > 0) {
+            setShopDecorations(items);
+          } else {
+            // Fallback to static list
+            setShopDecorations(
+              AVATAR_DECORATIONS_LIST.map((dec) => ({
+                id: dec.id,
+                name: dec.name,
+                category: 'avatar_decoration',
+                collection: dec.category === 'nectar' ? 'Nectar Exclusive' : 'Community Shop',
+                description: dec.description || '',
+                priceIdr: 35000,
+                priceDew: 350,
+                allowDew: true,
+              }))
+            );
+          }
+
+          if (Array.isArray(inv)) {
+            setOwnedDecorations(inv.filter((i) => i.category === 'avatar_decoration'));
+          }
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
   }, [open, currentDecoration]);
 
-  const nectarDecorations = AVATAR_DECORATIONS_LIST.filter((d) => d.category === 'nectar');
-  const shopDecorations = AVATAR_DECORATIONS_LIST.filter((d) => d.category === 'shop');
+  const nectarDecorations = shopDecorations.filter(
+    (d) => d.collection?.toLowerCase().includes('nectar') || d.collection?.toLowerCase().includes('nitro')
+  ).length > 0
+    ? shopDecorations.filter(
+        (d) => d.collection?.toLowerCase().includes('nectar') || d.collection?.toLowerCase().includes('nitro')
+      )
+    : AVATAR_DECORATIONS_LIST.filter((d) => d.category === 'nectar').map((d) => ({
+        id: d.id,
+        name: d.name,
+        category: 'avatar_decoration',
+        collection: 'Nectar Exclusive',
+        description: d.description,
+        priceIdr: 0,
+        priceDew: 0,
+        allowDew: false,
+      }));
+
+  const standardShopDecorations = shopDecorations.filter(
+    (d) => !d.collection?.toLowerCase().includes('nectar') && !d.collection?.toLowerCase().includes('nitro')
+  );
+
+  const displayShopDecorations =
+    standardShopDecorations.length > 0
+      ? standardShopDecorations
+      : AVATAR_DECORATIONS_LIST.filter((d) => d.category === 'shop').map((d) => ({
+          id: d.id,
+          name: d.name,
+          category: 'avatar_decoration',
+          collection: 'Community Shop',
+          description: d.description,
+          priceIdr: 35000,
+          priceDew: 350,
+          allowDew: true,
+        }));
+
+  const isSelectedOwned =
+    selectedDecoration === 'none' ||
+    ownedDecorations.some((d) => d.id === selectedDecoration) ||
+    nectarDecorations.some((d) => d.id === selectedDecoration);
+
+  const selectedDecData =
+    shopDecorations.find((d) => d.id === selectedDecoration) ||
+    AVATAR_DECORATIONS_LIST.find((d) => d.id === selectedDecoration);
 
   const handleApply = () => {
+    if (!isSelectedOwned && selectedDecoration !== 'none') {
+      if (onOpenShop) {
+        onOpenShop('avatar_decoration');
+        onClose();
+      }
+      return;
+    }
     onApply(selectedDecoration);
     onClose();
   };
 
   const previewContent = (
-    <div className="flex items-center justify-center gap-4">
-      {/* Big Avatar Preview */}
-      <div className="size-[170px] rounded-xl bg-background/80 flex items-center justify-center relative shadow-inner border border-border/60">
-        <div className="relative size-24 rounded-full overflow-hidden border-2 border-border/80 bg-muted/60 flex items-center justify-center shadow-lg">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="Avatar" className="size-full object-cover" />
-          ) : (
-            <div className="size-full flex items-center justify-center bg-muted text-foreground font-bold text-xl select-none">
-              {userName.slice(0, 2).toUpperCase()}
+    <div className="flex flex-col items-center justify-center gap-4 w-full">
+      <div className="flex items-center justify-center gap-4">
+        {/* Big Avatar Preview */}
+        <div className="size-[170px] rounded-xl bg-background/80 flex items-center justify-center relative shadow-inner border border-border/60">
+          <div className="relative size-24 rounded-full overflow-hidden border-2 border-border/80 bg-muted/60 flex items-center justify-center shadow-lg">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="size-full object-cover" />
+            ) : (
+              <div className="size-full flex items-center justify-center bg-muted text-foreground font-bold text-xl select-none">
+                {userName.slice(0, 2).toUpperCase()}
+              </div>
+            )}
+            <AvatarDecorationRenderer decorationId={selectedDecoration} />
+          </div>
+        </div>
+
+        {/* Vertical Column of 4 small avatars showing real scaling */}
+        <div className="flex flex-col items-center justify-between h-[170px] py-1">
+          {/* 48px */}
+          <div className="relative size-11 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="size-full object-cover" />
+            ) : (
+              <span className="text-[10px] font-bold text-muted-foreground">
+                {userName.slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <AvatarDecorationRenderer decorationId={selectedDecoration} />
+          </div>
+
+          {/* 36px */}
+          <div className="relative size-8 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="size-full object-cover" />
+            ) : (
+              <span className="text-[8px] font-bold text-muted-foreground">
+                {userName.slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <AvatarDecorationRenderer decorationId={selectedDecoration} />
+          </div>
+
+          {/* 28px */}
+          <div className="relative size-6 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="size-full object-cover" />
+            ) : (
+              <span className="text-[7px] font-bold text-muted-foreground">
+                {userName.slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <AvatarDecorationRenderer decorationId={selectedDecoration} />
+          </div>
+
+          {/* 20px */}
+          <div className="relative size-5 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="size-full object-cover" />
+            ) : (
+              <span className="text-[6px] font-bold text-muted-foreground">
+                {userName.slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <AvatarDecorationRenderer decorationId={selectedDecoration} />
+          </div>
+        </div>
+      </div>
+
+      {/* Item info badge when locked */}
+      {selectedDecData && !isSelectedOwned && selectedDecoration !== 'none' && (
+        <div className="w-full max-w-[260px] p-2.5 rounded-xl bg-card border border-primary/30 flex items-center justify-between gap-2 shadow-xs">
+          <div className="min-w-0">
+            <div className="text-xs font-bold text-foreground truncate">{selectedDecData.name}</div>
+            <div className="text-[10px] text-muted-foreground">
+              {'priceDew' in selectedDecData && selectedDecData.priceDew
+                ? `${selectedDecData.priceDew} Dew`
+                : 'priceIdr' in selectedDecData && selectedDecData.priceIdr
+                  ? `Rp ${selectedDecData.priceIdr.toLocaleString('id-ID')}`
+                  : 'Rp 35.000'}
             </div>
-          )}
-          <AvatarDecorationRenderer decorationId={selectedDecoration} />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenShop) {
+                onOpenShop('avatar_decoration');
+                onClose();
+              }
+            }}
+            className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity flex items-center gap-1 cursor-pointer shrink-0"
+          >
+            <ShoppingBag className="w-3 h-3" />
+            <span>{t('Beli')}</span>
+          </button>
         </div>
-      </div>
-
-      {/* Vertical Column of 4 small avatars showing real scaling */}
-      <div className="flex flex-col items-center justify-between h-[170px] py-1">
-        {/* 48px */}
-        <div className="relative size-11 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="size-full object-cover" />
-          ) : (
-            <span className="text-[10px] font-bold text-muted-foreground">
-              {userName.slice(0, 1).toUpperCase()}
-            </span>
-          )}
-          <AvatarDecorationRenderer decorationId={selectedDecoration} />
-        </div>
-
-        {/* 36px */}
-        <div className="relative size-8 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="size-full object-cover" />
-          ) : (
-            <span className="text-[8px] font-bold text-muted-foreground">
-              {userName.slice(0, 1).toUpperCase()}
-            </span>
-          )}
-          <AvatarDecorationRenderer decorationId={selectedDecoration} />
-        </div>
-
-        {/* 28px */}
-        <div className="relative size-6 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="size-full object-cover" />
-          ) : (
-            <span className="text-[7px] font-bold text-muted-foreground">
-              {userName.slice(0, 1).toUpperCase()}
-            </span>
-          )}
-          <AvatarDecorationRenderer decorationId={selectedDecoration} />
-        </div>
-
-        {/* 20px */}
-        <div className="relative size-5 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="size-full object-cover" />
-          ) : (
-            <span className="text-[6px] font-bold text-muted-foreground">
-              {userName.slice(0, 1).toUpperCase()}
-            </span>
-          )}
-          <AvatarDecorationRenderer decorationId={selectedDecoration} />
-        </div>
-      </div>
+      )}
     </div>
   );
 
@@ -118,16 +233,42 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
       title={t('Change Avatar Decoration')}
       size="2xl"
       onApply={handleApply}
-      applyLabel={t('Apply')}
+      applyLabel={isSelectedOwned ? t('Apply') : t('Buka di Shop')}
       cancelLabel={t('Cancel')}
       preview={previewContent}
+      footerActions={
+        !isSelectedOwned && selectedDecoration !== 'none' ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 rounded-lg font-semibold text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              {t('Cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenShop) {
+                  onOpenShop('avatar_decoration');
+                  onClose();
+                }
+              }}
+              className="px-6 py-2 rounded-lg font-semibold text-sm text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 transition-opacity cursor-pointer shadow-md flex items-center gap-1.5"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>{t('Buka di Shop')}</span>
+            </button>
+          </div>
+        ) : undefined
+      }
     >
       {/* Section: Your Decorations */}
       <div>
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2.5">
           {t('Your Decorations')}
         </h3>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* None Button */}
           <button
             type="button"
@@ -148,7 +289,7 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
             type="button"
             onClick={() => {
               if (onOpenShop) {
-                onOpenShop();
+                onOpenShop('avatar_decoration');
                 onClose();
               }
             }}
@@ -157,6 +298,35 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
             <Store className="w-7 h-7 text-muted-foreground" />
             <span className="text-[11px] font-semibold text-foreground">{t('Shop')}</span>
           </button>
+
+          {/* User's Owned Decorations from Database */}
+          {ownedDecorations.map((owned) => {
+            const isSelected = selectedDecoration === owned.id;
+            return (
+              <button
+                key={owned.id}
+                type="button"
+                onClick={() => setSelectedDecoration(owned.id)}
+                className={cn(
+                  'w-20 h-20 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-all border relative overflow-hidden p-2',
+                  isSelected
+                    ? 'border-primary bg-primary/15 shadow-[0_0_12px_rgba(var(--primary),0.35)]'
+                    : 'border-border/70 bg-card hover:bg-muted/60'
+                )}
+                title={owned.name}
+              >
+                <div className="relative size-10 rounded-full bg-muted/60 flex items-center justify-center">
+                  <div className="size-full rounded-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-bold">
+                    {userName.slice(0, 1).toUpperCase()}
+                  </div>
+                  <AvatarDecorationRenderer decorationId={owned.id} />
+                </div>
+                <span className="text-[10px] font-bold text-foreground truncate w-full text-center">
+                  {owned.name}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -201,14 +371,32 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
         </div>
       </div>
 
-      {/* Section: See What's in Shop */}
+      {/* Section: See What's in Shop (Connected to Database) */}
       <div>
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2.5">
-          {t("See What's in Shop")}
-        </h3>
+        <div className="flex items-center justify-between mb-2.5">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            {t("See What's in Shop")}
+          </h3>
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenShop) {
+                onOpenShop('avatar_decoration');
+                onClose();
+              }
+            }}
+            className="text-[11px] font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1"
+          >
+            <Store className="w-3 h-3" />
+            {t('Buka Shop Katalog')}
+          </button>
+        </div>
+
         <div className="grid grid-cols-3 gap-2.5">
-          {shopDecorations.map((item) => {
+          {displayShopDecorations.map((item) => {
             const isSelected = selectedDecoration === item.id;
+            const isOwned = ownedDecorations.some((o) => o.id === item.id);
+
             return (
               <button
                 key={item.id}
@@ -222,10 +410,12 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
                 )}
                 title={item.name}
               >
-                {/* Lock badge */}
-                <span className="absolute top-1.5 right-1.5 size-4 rounded-full bg-black/60 flex items-center justify-center z-30 shadow-xs">
-                  <Lock className="w-2.5 h-2.5 text-muted-foreground" />
-                </span>
+                {/* Lock or Owned badge */}
+                {!isOwned && (
+                  <span className="absolute top-1.5 right-1.5 size-4 rounded-full bg-black/60 flex items-center justify-center z-30 shadow-xs">
+                    <Lock className="w-2.5 h-2.5 text-muted-foreground" />
+                  </span>
+                )}
 
                 <div className="relative size-11 rounded-full bg-muted/60 flex items-center justify-center">
                   <div className="size-full rounded-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-bold">

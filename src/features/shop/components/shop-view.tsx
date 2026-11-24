@@ -408,6 +408,19 @@ export function ShopView({
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [showOnlyDew, setShowOnlyDew] = useState(false);
   const [showOnlyFeatured, setShowOnlyFeatured] = useState(false);
+
+  useEffect(() => {
+    const handleCategoryEvent = (e: any) => {
+      const cat = typeof e.detail === 'string' ? e.detail : e.detail?.category;
+      if (cat) {
+        setActiveTab('browse');
+        setBrowseCategory(cat);
+        setSelectedTypes([cat]);
+      }
+    };
+    window.addEventListener('anticeil:shop-category', handleCategoryEvent);
+    return () => window.removeEventListener('anticeil:shop-category', handleCategoryEvent);
+  }, []);
   const [showOnlyDiscount, setShowOnlyDiscount] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
