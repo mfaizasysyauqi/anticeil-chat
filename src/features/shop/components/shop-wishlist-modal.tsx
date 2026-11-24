@@ -4,6 +4,8 @@ import { ShopEmptyState } from './shop-empty-state';
 import { MediumDialog } from '@/components/ui/medium-dialog';
 import { useTranslation } from '@/core/i18n';
 import type { ShopItem } from '../api/shop-api';
+import { AnticeilAvatarMannequin } from '@/components/ui/anticeil-avatar-mannequin';
+import { NameplateRenderer } from '@/features/profile';
 
 export interface ShopWishlistModalProps {
   open: boolean;
@@ -11,6 +13,31 @@ export interface ShopWishlistModalProps {
   wishlist: ShopItem[];
   onSelectItem: (item: ShopItem) => void;
   onToggleWishlist: (e: React.MouseEvent, item: ShopItem) => void;
+}
+
+function renderModalItemVisual(item: ShopItem) {
+  const isDeco = item.category === 'avatar_decoration' || item.itemTypes?.includes('avatar_decoration');
+  const isNameplate = item.category === 'nameplate' || item.itemTypes?.includes('nameplate');
+  const mediaUrl = item.gifUrl || (item.previewIcon && item.previewIcon.startsWith('http') ? item.previewIcon : null);
+
+  if (isDeco) {
+    return <AnticeilAvatarMannequin size="xs" decorationId={item.id} statusDot={false} />;
+  }
+  if (isNameplate) {
+    return (
+      <div className="w-12 h-6 flex items-center justify-center overflow-hidden rounded bg-black/40 border border-border/50 shrink-0">
+        <NameplateRenderer nameplateId={item.id} imageUrl={mediaUrl} className="scale-60 origin-center" />
+      </div>
+    );
+  }
+  if (mediaUrl) {
+    return (
+      <div className="size-9 rounded-lg bg-card border border-border flex items-center justify-center overflow-hidden shrink-0">
+        <img src={mediaUrl} alt={item.name} className="size-full object-cover" />
+      </div>
+    );
+  }
+  return <AnticeilAvatarMannequin size="xs" statusDot={false} />;
 }
 
 export function ShopWishlistModal({
@@ -44,9 +71,7 @@ export function ShopWishlistModal({
             className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border/80 hover:border-primary/60 cursor-pointer transition-colors"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="size-9 rounded-lg bg-card border border-border flex items-center justify-center overflow-hidden shrink-0">
-                <img src={item.previewIcon} alt={item.name} className="size-full object-cover" />
-              </div>
+              {renderModalItemVisual(item)}
               <div className="min-w-0">
                 <div className="text-xs font-bold text-foreground truncate">{item.name}</div>
                 <div className="text-[10px] text-muted-foreground truncate">{item.collection}</div>

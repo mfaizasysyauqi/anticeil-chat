@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import type { ShopItem } from '@/features/shop/api/shop-api';
+import { AnticeilAvatarMannequin } from '@/components/ui/anticeil-avatar-mannequin';
+import { NameplateRenderer } from './nameplate-renderer';
 
 export interface ProfileWishlistSubtabProps {
   wishlistItems: ShopItem[];
@@ -17,6 +19,41 @@ export interface ProfileWishlistSubtabProps {
   onToggleWishlist: (itemId: string, itemName: string) => void;
   onAddCustomWishlist: (e: React.FormEvent) => void;
   onOpenShop: () => void;
+}
+
+function renderWishlistItemVisual(item: ShopItem) {
+  const isDeco = item.category === 'avatar_decoration' || item.itemTypes?.includes('avatar_decoration');
+  const isNameplate = item.category === 'nameplate' || item.itemTypes?.includes('nameplate');
+  const mediaUrl = item.gifUrl || (item.previewIcon && item.previewIcon.startsWith('http') ? item.previewIcon : null);
+
+  if (isDeco) {
+    return (
+      <div className="shrink-0 flex items-center justify-center">
+        <AnticeilAvatarMannequin size="xs" decorationId={item.id} statusDot={false} />
+      </div>
+    );
+  }
+  if (isNameplate) {
+    return (
+      <div className="w-12 h-6 flex items-center justify-center overflow-hidden rounded bg-black/40 border border-border/50 shrink-0">
+        <NameplateRenderer nameplateId={item.id} imageUrl={mediaUrl} className="scale-60 origin-center" />
+      </div>
+    );
+  }
+  if (mediaUrl) {
+    return (
+      <img
+        src={mediaUrl}
+        alt={item.name}
+        className="size-8 rounded-lg object-cover border border-border/60 shrink-0"
+      />
+    );
+  }
+  return (
+    <div className="shrink-0 flex items-center justify-center">
+      <AnticeilAvatarMannequin size="xs" statusDot={false} />
+    </div>
+  );
 }
 
 export function ProfileWishlistSubtab({
@@ -54,17 +91,7 @@ export function ProfileWishlistSubtab({
                 className="p-3 rounded-xl border border-border/70 bg-card flex items-center justify-between hover:border-sidebar-primary/40 transition-colors shadow-2xs"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  {item.previewIcon && item.previewIcon.startsWith('http') ? (
-                    <img
-                      src={item.previewIcon}
-                      alt={item.name}
-                      className="size-9 rounded-lg object-cover border border-border/60 shrink-0"
-                    />
-                  ) : (
-                    <div className="size-9 rounded-lg bg-sidebar-primary/10 text-sidebar-primary flex items-center justify-center text-base shrink-0">
-                      {item.previewIcon || '✨'}
-                    </div>
-                  )}
+                  {renderWishlistItemVisual(item)}
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-foreground truncate">
                       {item.name}
@@ -122,7 +149,7 @@ export function ProfileWishlistSubtab({
             className="text-xs h-8 px-4 font-bold cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-            {t('Jelajahi Shop')}
+            {t('Jelajahi Toko')}
           </Button>
         </div>
       )}
@@ -141,15 +168,7 @@ export function ProfileWishlistSubtab({
                 className="p-3 rounded-xl border border-border/80 bg-card flex flex-col justify-between hover:border-sidebar-primary/60 transition-colors shadow-2xs group"
               >
                 <div className="flex items-start justify-between">
-                  {item.previewIcon && item.previewIcon.startsWith('http') ? (
-                    <img
-                      src={item.previewIcon}
-                      alt={item.name}
-                      className="size-8 rounded-lg object-cover border border-border/60"
-                    />
-                  ) : (
-                    <span className="text-xl">{item.previewIcon || '✨'}</span>
-                  )}
+                  {renderWishlistItemVisual(item)}
                   <button
                     type="button"
                     onClick={() => onToggleWishlist(item.id, item.name)}

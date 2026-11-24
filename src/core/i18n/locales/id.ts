@@ -1339,6 +1339,7 @@ export const idTranslations: Record<string, string> = {
   'Jelajahi Server': 'Jelajahi Colony',
   'Jelajahi server komunitas publik di tab Server Discovery!': 'Jelajahi server komunitas publik di tab Server Discovery!',
   'Jelajahi Shop': 'Jelajahi Toko',
+  'Jelajahi Toko': 'Jelajahi Toko',
   'Jelaskan tujuan dan fitur utama templat server ini...': 'Jelaskan tujuan dan fitur utama templat server ini...',
   'Jika Anda kehilangan akses ke ponsel atau aplikasi autentikator, kode ini adalah satu-satunya cara untuk memulihkan akun.': 'Jika Anda kehilangan akses ke ponsel atau aplikasi autentikator, kode ini adalah satu-satunya cara untuk memulihkan akun.',
   'Jika Anda membutuhkan salinan data pribadi dari seluruh riwayat akun Anda, Anda bisa mendapatkannya di sini.': 'Jika Anda membutuhkan salinan data pribadi dari seluruh riwayat akun Anda, Anda bisa mendapatkannya di sini.',

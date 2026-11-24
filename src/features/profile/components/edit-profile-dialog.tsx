@@ -358,6 +358,7 @@ export function EditProfileDialog({
         profileTheme: profileTheme,
         avatarDecoration: profileAvatarDecoration,
         displayNameStyle: displayNameStyle,
+        wishlist: wishlistItems as any,
       };
 
       await profileApi.updateProfile({
@@ -590,12 +591,9 @@ export function EditProfileDialog({
     try {
       const res = await shopApi.toggleWishlist(itemId);
       if (res.success) {
-        if (res.wishlist) {
-          setWishlistItems(res.wishlist);
-        } else {
-          const fresh = await shopApi.getWishlist();
-          setWishlistItems(fresh);
-        }
+        const nextList = res.wishlist || (await shopApi.getWishlist());
+        setWishlistItems(nextList);
+        setProfileWidgets((prev) => ({ ...prev, wishlist: nextList as any }));
         if (res.isWishlisted) {
           toast.success(t(`${itemTitle || 'Item'} ditambahkan ke Wishlist! ❤️`));
         } else {
@@ -611,12 +609,9 @@ export function EditProfileDialog({
     try {
       const res = await shopApi.toggleWishlist(itemId);
       if (res.success) {
-        if (res.wishlist) {
-          setWishlistItems(res.wishlist);
-        } else {
-          const fresh = await shopApi.getWishlist();
-          setWishlistItems(fresh);
-        }
+        const nextList = res.wishlist || (await shopApi.getWishlist());
+        setWishlistItems(nextList);
+        setProfileWidgets((prev) => ({ ...prev, wishlist: nextList as any }));
         toast.info(t('Item dihapus dari Wishlist'));
       }
     } catch {
@@ -641,12 +636,9 @@ export function EditProfileDialog({
       });
       if (res && res.item) {
         const toggleRes = await shopApi.toggleWishlist(res.item.id);
-        if (toggleRes.wishlist) {
-          setWishlistItems(toggleRes.wishlist);
-        } else {
-          const fresh = await shopApi.getWishlist();
-          setWishlistItems(fresh);
-        }
+        const nextList = toggleRes.wishlist || (await shopApi.getWishlist());
+        setWishlistItems(nextList);
+        setProfileWidgets((prev) => ({ ...prev, wishlist: nextList as any }));
         const freshCatalog = await shopApi.getItems();
         setCatalogItems(freshCatalog);
         setNewCustomWishlistInput('');
@@ -659,23 +651,15 @@ export function EditProfileDialog({
 
   const handlePreviewShopItem = (item: ShopItem) => {
     if (item.category === 'avatar_decoration' || (item.itemTypes && item.itemTypes.includes('avatar_decoration'))) {
-      setProfileAvatarDecoration('cyber_crown');
-    }
-    if (item.category === 'nameplate' || (item.itemTypes && item.itemTypes.includes('nameplate'))) {
-      setProfileNameplate('Pixel Hive');
-    }
-    if (item.category === 'profile_effect' || (item.itemTypes && item.itemTypes.includes('profile_effect'))) {
-      setProfileEffect('aurora_glow');
-    }
-    if (item.id.includes('sakura')) {
-      setProfileFrame('sakura_blossom');
-      setProfileAvatarDecoration('sakura');
-    } else if (item.id.includes('cyber')) {
-      setProfileNameplate('Cyber Teal');
-      setProfileEffect('teal_sparkles');
-    } else if (item.id.includes('cosmic') || item.id.includes('aurora')) {
-      setProfileEffect('aurora_glow');
-      setProfileNameplate('Midnight Void');
+      setProfileAvatarDecoration(item.id);
+    } else if (item.category === 'nameplate' || (item.itemTypes && item.itemTypes.includes('nameplate'))) {
+      setProfileNameplate(item.id);
+    } else if (item.category === 'profile_effect' || (item.itemTypes && item.itemTypes.includes('profile_effect'))) {
+      setProfileEffect(item.id);
+    } else if (item.category === 'profile_banner' || (item.itemTypes && item.itemTypes.includes('profile_banner'))) {
+      setProfileBannerUrl(item.gifUrl || item.bannerUrl || item.previewIcon || null);
+    } else if (item.category === 'theme' || (item.itemTypes && item.itemTypes.includes('theme'))) {
+      setProfileTheme(item.id);
     }
     toast.success(t(`Preview "${item.name}" ditampilkan di kartu profil!`));
   };
