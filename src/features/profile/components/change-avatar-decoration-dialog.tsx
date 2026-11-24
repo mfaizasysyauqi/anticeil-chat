@@ -135,65 +135,77 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
       <div className="flex items-center justify-center gap-4">
         {/* Big Avatar Preview */}
         <div className="size-[170px] rounded-xl bg-background/80 flex items-center justify-center relative shadow-inner border border-border/60">
-          <div className="relative size-24 rounded-full overflow-hidden border-2 border-border/80 bg-muted/60 flex items-center justify-center shadow-lg">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="size-full object-cover" />
-            ) : (
-              <div className="size-full flex items-center justify-center bg-muted text-foreground font-bold text-xl select-none">
-                {userName.slice(0, 2).toUpperCase()}
-              </div>
-            )}
+          <div className="relative size-24 flex items-center justify-center">
+            {/* Inner avatar container with overflow-hidden for image */}
+            <div className="size-full rounded-full overflow-hidden border-2 border-border/80 bg-muted/60 flex items-center justify-center shadow-lg">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="size-full object-cover" />
+              ) : (
+                <div className="size-full flex items-center justify-center bg-muted text-foreground font-bold text-xl select-none">
+                  {userName.slice(0, 2).toUpperCase()}
+                </div>
+              )}
+            </div>
+            {/* Decoration rendered outside overflow-hidden with high z-index */}
             <AvatarDecorationRenderer decorationId={selectedDecoration} />
           </div>
         </div>
 
         {/* Vertical Column of 4 small avatars showing real scaling */}
         <div className="flex flex-col items-center justify-between h-[170px] py-1">
-          {/* 48px */}
-          <div className="relative size-11 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="size-full object-cover" />
-            ) : (
-              <span className="text-[10px] font-bold text-muted-foreground">
-                {userName.slice(0, 1).toUpperCase()}
-              </span>
-            )}
+          {/* 44px */}
+          <div className="relative size-11 flex items-center justify-center shrink-0">
+            <div className="size-full rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="size-full object-cover" />
+              ) : (
+                <span className="text-[10px] font-bold text-muted-foreground">
+                  {userName.slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </div>
             <AvatarDecorationRenderer decorationId={selectedDecoration} />
           </div>
 
-          {/* 36px */}
-          <div className="relative size-8 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="size-full object-cover" />
-            ) : (
-              <span className="text-[8px] font-bold text-muted-foreground">
-                {userName.slice(0, 1).toUpperCase()}
-              </span>
-            )}
+          {/* 32px */}
+          <div className="relative size-8 flex items-center justify-center shrink-0">
+            <div className="size-full rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="size-full object-cover" />
+              ) : (
+                <span className="text-[8px] font-bold text-muted-foreground">
+                  {userName.slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </div>
             <AvatarDecorationRenderer decorationId={selectedDecoration} />
           </div>
 
-          {/* 28px */}
-          <div className="relative size-6 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="size-full object-cover" />
-            ) : (
-              <span className="text-[7px] font-bold text-muted-foreground">
-                {userName.slice(0, 1).toUpperCase()}
-              </span>
-            )}
+          {/* 24px */}
+          <div className="relative size-6 flex items-center justify-center shrink-0">
+            <div className="size-full rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="size-full object-cover" />
+              ) : (
+                <span className="text-[7px] font-bold text-muted-foreground">
+                  {userName.slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </div>
             <AvatarDecorationRenderer decorationId={selectedDecoration} />
           </div>
 
           {/* 20px */}
-          <div className="relative size-5 rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center shrink-0">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="size-full object-cover" />
-            ) : (
-              <span className="text-[6px] font-bold text-muted-foreground">
-                {userName.slice(0, 1).toUpperCase()}
-              </span>
-            )}
+          <div className="relative size-5 flex items-center justify-center shrink-0">
+            <div className="size-full rounded-full overflow-hidden border border-border/60 bg-muted flex items-center justify-center">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="size-full object-cover" />
+              ) : (
+                <span className="text-[6px] font-bold text-muted-foreground">
+                  {userName.slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </div>
             <AvatarDecorationRenderer decorationId={selectedDecoration} />
           </div>
         </div>
@@ -319,8 +331,8 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
                 )}
                 title={owned.name}
               >
-                <div className="relative size-10 rounded-full bg-muted/60 flex items-center justify-center">
-                  <div className="size-full rounded-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-bold">
+                <div className="relative size-10 flex items-center justify-center">
+                  <div className="size-full rounded-full overflow-hidden bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-bold">
                     {userName.slice(0, 1).toUpperCase()}
                   </div>
                   <AvatarDecorationRenderer decorationId={owned.id} />
@@ -351,7 +363,7 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
                 type="button"
                 onClick={() => setSelectedDecoration(item.id)}
                 className={cn(
-                  'aspect-square rounded-xl bg-card hover:bg-muted/70 border flex items-center justify-center relative cursor-pointer group transition-all p-2',
+                  'aspect-square rounded-xl bg-card hover:bg-muted/70 border flex items-center justify-center relative cursor-pointer group transition-all p-2 overflow-hidden',
                   isSelected
                     ? 'border-primary bg-primary/15 shadow-[0_0_12px_rgba(var(--primary),0.35)]'
                     : 'border-border/70'
@@ -363,8 +375,8 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
                   <Sparkles className="w-2.5 h-2.5 text-white" />
                 </span>
 
-                <div className="relative size-11 rounded-full bg-muted/60 flex items-center justify-center">
-                  <div className="size-full rounded-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-bold">
+                <div className="relative size-11 flex items-center justify-center">
+                  <div className="size-full rounded-full overflow-hidden bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-bold">
                     {userName.slice(0, 1).toUpperCase()}
                   </div>
                   <AvatarDecorationRenderer decorationId={item.id} />
@@ -407,7 +419,7 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
                 type="button"
                 onClick={() => setSelectedDecoration(item.id)}
                 className={cn(
-                  'aspect-square rounded-xl bg-card hover:bg-muted/70 border flex items-center justify-center relative cursor-pointer group transition-all p-2',
+                  'aspect-square rounded-xl bg-card hover:bg-muted/70 border flex items-center justify-center relative cursor-pointer group transition-all p-2 overflow-hidden',
                   isSelected
                     ? 'border-primary bg-primary/15 shadow-[0_0_12px_rgba(var(--primary),0.35)]'
                     : 'border-border/70'
@@ -421,8 +433,8 @@ export const ChangeAvatarDecorationDialog: React.FC<ChangeAvatarDecorationDialog
                   </span>
                 )}
 
-                <div className="relative size-11 rounded-full bg-muted/60 flex items-center justify-center">
-                  <div className="size-full rounded-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-bold">
+                <div className="relative size-11 flex items-center justify-center">
+                  <div className="size-full rounded-full overflow-hidden bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-bold">
                     {userName.slice(0, 1).toUpperCase()}
                   </div>
                   <AvatarDecorationRenderer decorationId={item.id} />

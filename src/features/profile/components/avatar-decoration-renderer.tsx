@@ -18,7 +18,7 @@ export const AvatarDecorationRenderer: React.FC<AvatarDecorationRendererProps> =
   // If it's a direct image URL (from remote or upload)
   if (decorationId.startsWith('http') || decorationId.startsWith('data:image')) {
     return (
-      <div className={cn('absolute -inset-[18%] size-[136%] pointer-events-none select-none z-20', className)}>
+      <div className={cn('absolute -inset-[12%] size-[124%] pointer-events-none select-none z-30', className)}>
         <img
           src={decorationId}
           alt="Avatar Decoration"
@@ -32,7 +32,7 @@ export const AvatarDecorationRenderer: React.FC<AvatarDecorationRendererProps> =
   return (
     <div
       className={cn(
-        'absolute -inset-[18%] size-[136%] pointer-events-none select-none z-20 flex items-center justify-center',
+        'absolute -inset-[12%] size-[124%] pointer-events-none select-none z-30 flex items-center justify-center',
         className
       )}
     >
@@ -41,6 +41,7 @@ export const AvatarDecorationRenderer: React.FC<AvatarDecorationRendererProps> =
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="size-full overflow-visible"
+        style={{ overflow: 'visible' }}
       >
         {/* CYBER HEADSET */}
         {decorationId === 'cyber_headset' && (
@@ -178,7 +179,7 @@ export const AvatarDecorationRenderer: React.FC<AvatarDecorationRendererProps> =
               strokeLinecap="round"
               filter="drop-shadow(0 0 10px #84cc16)"
               className="animate-spin"
-              style={{ animationDuration: '8s' }}
+              style={{ animationDuration: '8s', transformOrigin: '60px 60px' }}
             />
             {/* Glowing skull emblem on bottom-left */}
             <g transform="translate(14, 72) scale(0.7)" filter="drop-shadow(0 0 8px #a3e635)">
@@ -213,7 +214,7 @@ export const AvatarDecorationRenderer: React.FC<AvatarDecorationRendererProps> =
               strokeLinecap="round"
               filter="drop-shadow(0 0 8px #f472b6)"
               className="animate-spin"
-              style={{ animationDuration: '20s' }}
+              style={{ animationDuration: '20s', transformOrigin: '60px 60px' }}
             />
             {/* Cherry Blossom Flowers */}
             {/* Top-Right Flower */}
@@ -335,7 +336,7 @@ export const AvatarDecorationRenderer: React.FC<AvatarDecorationRendererProps> =
               strokeLinecap="round"
               filter="drop-shadow(0 0 10px #ffffff)"
               className="animate-spin"
-              style={{ animationDuration: '14s' }}
+              style={{ animationDuration: '14s', transformOrigin: '60px 60px' }}
             />
             <path
               d="M 28 88 Q 14 60 30 40 Q 20 20 46 22 Q 80 12 92 34 Q 108 58 88 84 Q 60 102 28 88 Z"
@@ -398,7 +399,7 @@ export const AvatarDecorationRenderer: React.FC<AvatarDecorationRendererProps> =
               strokeLinecap="round"
               filter="drop-shadow(0 0 10px #c084fc)"
               className="animate-spin"
-              style={{ animationDuration: '10s' }}
+              style={{ animationDuration: '10s', transformOrigin: '60px 60px' }}
             />
             <circle
               cx="60"
