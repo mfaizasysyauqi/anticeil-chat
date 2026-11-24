@@ -27,6 +27,10 @@ export function AtlasAgentProvider({ children }: { children: React.ReactNode }) 
   );
 }
 
+export function useOptionalAtlasAgentContext(): AtlasAgentContextValue | null {
+  return useContext(AtlasAgentContext);
+}
+
 export function useAtlasAgentContext(): AtlasAgentContextValue {
   const ctx = useContext(AtlasAgentContext);
   if (!ctx) {

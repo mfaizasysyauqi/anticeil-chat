@@ -18,7 +18,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
 import type { AiSession } from '../types';
-import { useAtlasAgentContext } from '../context/atlas-agent-context';
+import { useOptionalAtlasAgentContext } from '../context/atlas-agent-context';
 
 export interface AtlasAgentSidebarProps {
   sessions?: AiSession[];
@@ -36,10 +36,7 @@ export interface AtlasAgentSidebarProps {
 }
 
 export function AtlasAgentSidebar(props: AtlasAgentSidebarProps) {
-  let contextValue: any = null;
-  try {
-    contextValue = useAtlasAgentContext();
-  } catch {}
+  const contextValue = useOptionalAtlasAgentContext();
 
   const sessions = props.sessions || contextValue?.sessions || [];
   const activeSessionId = props.activeSessionId ?? contextValue?.activeSessionId ?? null;

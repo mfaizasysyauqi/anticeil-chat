@@ -69,7 +69,7 @@ import { AiMarkdown } from './ai-markdown';
 import { ArtifactViewer } from './artifact-viewer';
 import { AiPromptCard, AI_COMMAND_PROMPTS } from './ai-prompt-card';
 import { parseArtifactsFromMessage } from '../utils/artifact-parser';
-import { useAtlasAgentContext } from '../context/atlas-agent-context';
+import { useOptionalAtlasAgentContext } from '../context/atlas-agent-context';
 import { useResponsive } from '@/core/hooks/use-responsive';
 
 export interface AtlasAgentViewProps {
@@ -104,10 +104,7 @@ function formatFileSize(bytes: number): string {
 
 export function AtlasAgentView(props: AtlasAgentViewProps) {
   const { t } = useTranslation();
-  let contextValue: any = null;
-  try {
-    contextValue = useAtlasAgentContext();
-  } catch {}
+  const contextValue = useOptionalAtlasAgentContext();
 
   const sessions = props.sessions || contextValue?.sessions || [];
   const activeSessionId = props.activeSessionId ?? contextValue?.activeSessionId ?? null;

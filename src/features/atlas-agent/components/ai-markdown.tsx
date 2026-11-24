@@ -284,11 +284,9 @@ export function AiMarkdown({
   onOpenArtifact,
   activeArtifactId,
 }: AiMarkdownProps) {
-  if (!content) return null;
-
   // Automatically parse artifacts if embedded in content
   const { cleanContent, artifacts: parsedArtifacts } = useMemo(() => {
-    return parseArtifactsFromMessage(content);
+    return content ? parseArtifactsFromMessage(content) : { cleanContent: '', artifacts: [] };
   }, [content]);
 
   const allArtifacts = useMemo(() => {
@@ -298,6 +296,8 @@ export function AiMarkdown({
     });
     return list;
   }, [providedArtifacts, parsedArtifacts]);
+
+  if (!content) return null;
 
   const blocks: React.ReactNode[] = [];
   const lines = cleanContent.split('\n');
