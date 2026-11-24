@@ -57,7 +57,14 @@ export function FriendsList({
 
       {filteredFriends.length === 0 ? (
         <EmptyState
-          icon={<Users className="w-8 h-8 stroke-[1.8]" />}
+          media={
+            <img
+              src="/atlas-friends-empty.png"
+              alt={friendsTab === 'online' ? t('Tidak ada teman online') : t('Belum ada teman')}
+              className="h-36 sm:h-44 md:h-48 w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)] select-none pointer-events-none mb-1 animate-in fade-in zoom-in-95 duration-300"
+              loading="lazy"
+            />
+          }
           title={
             friendsTab === 'online'
               ? t('Tidak ada teman online')

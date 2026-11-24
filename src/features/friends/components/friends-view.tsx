@@ -134,12 +134,14 @@ export function FriendsView({
         </ScrollArea>
 
         {/* Right Column: Discord Desktop "Sedang Aktif" (Active Now) */}
-        <ActiveNowSidebar
-          onlineFriends={safeOnlineFriends}
-          onStartDM={onStartDM}
-          horizontalPadding={horizontalPadding}
-          verticalPadding={verticalPadding}
-        />
+        {safeOnlineFriends.length > 0 && (
+          <ActiveNowSidebar
+            onlineFriends={safeOnlineFriends}
+            onStartDM={onStartDM}
+            horizontalPadding={horizontalPadding}
+            verticalPadding={verticalPadding}
+          />
+        )}
       </div>
 
       {/* Add Friend Modal Dialog */}
