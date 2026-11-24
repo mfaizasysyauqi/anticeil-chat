@@ -79,6 +79,8 @@ export interface AtlasAgentViewProps {
   onUpdateSessionMessages?: (sessionId: string, messages: AiMessage[]) => void;
   onClearSessionMessages?: (sessionId: string) => void;
   onDeleteSession?: (sessionId: string) => void;
+  onRenameSession?: (sessionId: string, newTitle: string) => void | Promise<void>;
+  onTogglePinSession?: (sessionId: string) => void | Promise<void>;
   colonies: any[];
   channels: any[];
   members: any[];
@@ -112,6 +114,8 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
   const onUpdateSessionMessages = props.onUpdateSessionMessages || contextValue?.handleUpdateSessionMessages || (() => {});
   const onClearSessionMessages = props.onClearSessionMessages || contextValue?.handleClearSessionMessages || (() => {});
   const onDeleteSession = props.onDeleteSession || contextValue?.handleDeleteSession || (() => {});
+  const onRenameSession = props.onRenameSession || contextValue?.handleRenameSession || (() => {});
+  const onTogglePinSession = props.onTogglePinSession || contextValue?.handleTogglePinSession || (() => {});
 
   const {
     colonies,
@@ -574,11 +578,16 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
         onOpenSidebar={onOpenSidebar}
         horizontalPadding={horizontalPadding}
         activeSessionTitle={activeSession?.title}
+        isPinned={activeSession?.isPinned}
+        onTogglePin={activeSession ? () => onTogglePinSession(activeSession.id) : undefined}
+        onRename={activeSession ? (newTitle) => onRenameSession(activeSession.id, newTitle) : undefined}
         onDeleteSession={activeSession ? () => onDeleteSession(activeSession.id) : undefined}
         onClearSessionMessages={activeSession ? () => onClearSessionMessages(activeSession.id) : undefined}
         hasMessages={messages.length > 0}
         hasActiveArtifact={Boolean(activeArtifact || latestArtifact)}
         onToggleArtifactPanel={() => setActiveArtifact((prev) => (prev ? null : latestArtifact))}
+        creditsStatus={creditsStatus}
+        onOpenCreditsDialog={() => setIsCreditsDialogOpen(true)}
       />
 
       {/* Main Workspace Area (Split view when activeArtifact is open) */}
@@ -818,40 +827,8 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
                 rows={1}
               />
 
-              {/* Right Controls: Credits Badge + Model Selector + Send Button */}
+              {/* Right Controls: Model Selector + Send Button */}
               <div className="flex items-center gap-1.5 shrink-0 pr-0.5 mb-0.5">
-                {/* AI Credits Badge (Click to open upgrade plan) */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!creditsStatus.isUnlimited && creditsStatus.remainingToday <= 5) {
-                      setIsCreditsDialogOpen(true);
-                    } else {
-                      openUpgradeSubscription();
-                    }
-                  }}
-                  className={cn(
-                    "flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full border transition-colors cursor-pointer select-none",
-                    creditsStatus.isUnlimited
-                      ? "bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20"
-                      : creditsStatus.remainingToday === 0
-                      ? "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 animate-pulse"
-                      : creditsStatus.remainingToday <= 5
-                      ? "bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20"
-                      : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
-                  )}
-                  title={
-                    creditsStatus.isUnlimited
-                      ? t('Kredit AI Tanpa Batas (Royal Enterprise)')
-                      : `${t('Sisa Kredit AI Hari Ini')}: ${creditsStatus.remainingToday}/${creditsStatus.dailyLimit} (${creditsStatus.planName}) - ${t('Klik untuk upgrade paket')}`
-                  }
-                >
-                  <Zap className="w-3 h-3 shrink-0" />
-                  <span className="font-mono text-[10px] sm:text-[11px]">
-                    {creditsStatus.isUnlimited ? 'Unlimited' : `${creditsStatus.remainingToday}/${creditsStatus.dailyLimit}`}
-                  </span>
-                </button>
-
                 {/* Gemini-style Model Selector Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
