@@ -20,6 +20,8 @@ export interface ShopEmptyStateProps {
   selectedApp?: string;
   hasActiveFilters?: boolean;
   isAdmin?: boolean;
+  isGuest?: boolean;
+  onRequireAuth?: () => void;
   onResetSearch?: () => void;
   onResetFilters?: () => void;
   onOpenAddProduct?: () => void;
@@ -38,6 +40,8 @@ export function ShopEmptyState({
   selectedApp,
   hasActiveFilters,
   isAdmin,
+  isGuest,
+  onRequireAuth,
   onResetSearch,
   onResetFilters,
   onOpenAddProduct,
@@ -50,8 +54,23 @@ export function ShopEmptyState({
     return (
       <EmptyState
         icon={<Heart className="w-8 h-8 text-pink-500/80 stroke-[1.8]" />}
-        title={t('Wishlist Masih Kosong')}
-        description={t('Belum ada item di wishlist Anda. Klik ikon hati pada item untuk menyimpannya di sini.')}
+        title={isGuest ? t('Masuk untuk Melihat Wishlist') : t('Wishlist Masih Kosong')}
+        description={
+          isGuest
+            ? t('Masuk ke akun Anticeil Anda untuk menyimpan dan melihat item impian di wishlist.')
+            : t('Belum ada item di wishlist Anda. Klik ikon hati pada item untuk menyimpannya di sini.')
+        }
+        action={
+          isGuest && onRequireAuth ? (
+            <Button
+              size="sm"
+              onClick={onRequireAuth}
+              className="h-8 px-4 text-xs font-semibold cursor-pointer"
+            >
+              {t('Masuk ke Akun')}
+            </Button>
+          ) : undefined
+        }
         compact={compact}
         className={className}
       />

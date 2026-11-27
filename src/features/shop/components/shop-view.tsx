@@ -349,12 +349,13 @@ export function ShopView({
   const fetchShopData = async () => {
     setIsLoading(true);
     try {
+      const isAuth = Boolean(currentUser && (currentUser.id || currentUser.email));
       const [allItems, featuredRes, userBal, userInv, userWish] = await Promise.all([
         shopApi.getItems(),
         shopApi.getFeatured(),
-        shopApi.getBalance(),
-        shopApi.getInventory(),
-        shopApi.getWishlist(),
+        isAuth ? shopApi.getBalance() : Promise.resolve({ dew: 0, currencyCode: 'IDR' }),
+        isAuth ? shopApi.getInventory() : Promise.resolve([]),
+        isAuth ? shopApi.getWishlist() : Promise.resolve([]),
       ]);
       if (Array.isArray(allItems)) {
         setItems(allItems);
@@ -363,14 +364,18 @@ export function ShopView({
         setHeroCollection(featuredRes.heroCollection);
         setCollections(featuredRes.collections || []);
       }
-      if (userBal && (typeof userBal.dew === 'number' || typeof userBal.orbs === 'number')) {
-        setBalance(userBal);
+      if (userBal && typeof (userBal as any).dew === 'number') {
+        setBalance(userBal as any);
+      } else if (!isAuth) {
+        setBalance({ dew: 0, currencyCode: 'IDR' });
       }
       if (Array.isArray(userInv)) {
-        setInventory(userInv);
+        setInventory(isAuth ? userInv : []);
       }
       if (Array.isArray(userWish)) {
-        setWishlist(userWish);
+        setWishlist(isAuth ? userWish : []);
+      } else if (!isAuth) {
+        setWishlist([]);
       }
     } catch (err) {
       console.warn('Failed to fetch shop data from API', err);
@@ -384,16 +389,19 @@ export function ShopView({
     const handleBalanceChanged = (e: any) => {
       if (e.detail) {
         setBalance(e.detail);
-      } else {
+      } else if (currentUser) {
         shopApi.getBalance().then((b) => b && setBalance(b));
       }
     };
     window.addEventListener('anticeil_balance_changed', handleBalanceChanged);
     return () => window.removeEventListener('anticeil_balance_changed', handleBalanceChanged);
-  }, []);
+  }, [currentUser?.id, Boolean(currentUser)]);
 
   const ownedItemIds = useMemo(() => new Set(inventory.map((i) => i.id)), [inventory]);
-  const wishlistedItemIds = useMemo(() => new Set(wishlist.map((i) => i.id)), [wishlist]);
+  const wishlistedItemIds = useMemo(() => {
+    if (!currentUser) return new Set<string>();
+    return new Set(wishlist.map((i) => i.id));
+  }, [currentUser, wishlist]);
 
   // Unified reusable category tabs matching Apps & Colonies pattern
   const CATEGORY_TABS = useMemo(() => [
@@ -590,12 +598,16 @@ export function ShopView({
   // Wishlist toggle action
   const handleToggleWishlist = async (e: React.MouseEvent, item: ShopItem) => {
     e.stopPropagation();
-    if (!currentUser && requireAuth) {
-      requireAuth(
-        () => handleToggleWishlist(e, item),
-        t('Wishlist Shop'),
-        t('Masuk ke Anticeil untuk menambahkan item ke wishlist Anda.'),
-      );
+    if (!currentUser) {
+      if (requireAuth) {
+        requireAuth(
+          () => handleToggleWishlist(e, item),
+          t('Wishlist Shop'),
+          t('Masuk ke Anticeil untuk menambahkan item ke wishlist Anda.'),
+        );
+      } else {
+        toast.info(t('Masuk ke Anticeil untuk menambahkan item ke wishlist Anda.'));
+      }
       return;
     }
     try {
@@ -1617,8 +1629,8 @@ export function ShopView({
             className="relative h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent/50 cursor-pointer shrink-0"
             title={t('Wishlist Anda')}
           >
-            <Heart className={cn('w-4 h-4', wishlist.length > 0 && 'text-pink-500 fill-pink-500')} />
-            {wishlist.length > 0 && (
+            <Heart className={cn('w-4 h-4', currentUser && wishlist.length > 0 && 'text-pink-500 fill-pink-500')} />
+            {Boolean(currentUser && wishlist.length > 0) && (
               <span className="absolute -top-1 -right-1 size-3.5 rounded-full bg-pink-500 text-white text-[8px] font-black flex items-center justify-center">
                 {wishlist.length}
               </span>
@@ -2028,8 +2040,18 @@ export function ShopView({
         open={isWishlistDrawerOpen}
         onOpenChange={setIsWishlistDrawerOpen}
         wishlist={wishlist}
+        currentUser={currentUser}
         onSelectItem={(item) => handleOpenItemDetail(item)}
         onToggleWishlist={handleToggleWishlist}
+        onRequireAuth={() => {
+          if (requireAuth) {
+            requireAuth(
+              () => setIsWishlistDrawerOpen(true),
+              t('Wishlist Shop'),
+              t('Masuk ke Anticeil untuk melihat wishlist Anda.'),
+            );
+          }
+        }}
       />
 
       {/* ── 5. Reusable Dialog: Add or Edit Product (Fullstack CRUD) ── */}

@@ -11,8 +11,10 @@ export interface ShopWishlistModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   wishlist: ShopItem[];
+  currentUser?: any;
   onSelectItem: (item: ShopItem) => void;
   onToggleWishlist: (e: React.MouseEvent, item: ShopItem) => void;
+  onRequireAuth?: () => void;
 }
 
 function renderModalItemVisual(item: ShopItem) {
@@ -44,8 +46,10 @@ export function ShopWishlistModal({
   open,
   onOpenChange,
   wishlist,
+  currentUser,
   onSelectItem,
   onToggleWishlist,
+  onRequireAuth,
 }: ShopWishlistModalProps) {
   const { t } = useTranslation();
 
@@ -59,7 +63,15 @@ export function ShopWishlistModal({
       bodyClassName="p-3 sm:p-4 space-y-2 max-h-[420px]"
     >
       {wishlist.length === 0 ? (
-        <ShopEmptyState variant="wishlist" compact />
+        <ShopEmptyState
+          variant="wishlist"
+          compact
+          isGuest={!currentUser}
+          onRequireAuth={() => {
+            onOpenChange(false);
+            onRequireAuth?.();
+          }}
+        />
       ) : (
         wishlist.map((item) => (
           <div
