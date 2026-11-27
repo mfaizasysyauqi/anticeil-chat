@@ -52,20 +52,20 @@ const PRESENCE_OPTIONS: Array<{
   },
   {
     id: 'idle',
-    label: 'Tidak Aktif (Idle)',
-    desc: 'Sedang jauh dari perangkat',
+    label: 'AFK',
+    desc: 'Sedang jauh dari perangkat (AFK)',
     dotColor: 'bg-amber-500',
   },
   {
     id: 'dnd',
-    label: 'Jangan Ganggu (DND)',
-    desc: 'Bungkam semua notifikasi desktop & suara',
+    label: 'Jangan Ganggu',
+    desc: 'Sibuk / Jangan Ganggu (Bungkam semua notifikasi)',
     dotColor: 'bg-rose-500',
   },
   {
     id: 'offline',
-    label: 'Tidak Terlihat (Invisible)',
-    desc: 'Tampil offline bagi kawan, tapi tetap bisa chat',
+    label: 'Offline',
+    desc: 'Tidak terlihat (Tampil offline bagi kawan)',
     dotColor: 'bg-zinc-500',
   },
 ];
@@ -181,10 +181,10 @@ export function UserProfileDialog({
         newPresence === 'online'
           ? 'Online'
           : newPresence === 'idle'
-          ? 'Tidak Aktif'
+          ? 'AFK'
           : newPresence === 'dnd'
           ? 'Jangan Ganggu'
-          : 'Tidak Terlihat'
+          : 'Offline'
       }`
     );
   };
@@ -495,15 +495,16 @@ export function UserProfileDialog({
                       key={opt.id}
                       type="button"
                       onClick={() => handleSelectPresence(opt.id)}
+                      title={opt.desc}
                       className={cn(
-                        'flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer text-left',
+                        'flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer text-left',
                         isSelected
                           ? 'bg-card border-primary/60 text-foreground shadow-xs ring-1 ring-primary/40'
                           : 'bg-card/30 border-border/40 text-muted-foreground hover:text-foreground hover:bg-card/70'
                       )}
                     >
                       <span className={cn('w-2 h-2 rounded-full shrink-0', opt.dotColor)} />
-                      <span className="truncate">{opt.label.split(' ')[0]}</span>
+                      <span className="truncate">{opt.label}</span>
                     </button>
                   );
                 })}
