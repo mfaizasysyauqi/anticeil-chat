@@ -28,9 +28,6 @@ import {
   Palette,
   User,
 } from 'lucide-react';
-import { AvatarDecorationRenderer } from '@/features/profile/components/avatar-decoration-renderer';
-import { NameplateRenderer } from '@/features/profile/components/nameplate-renderer';
-import { AnticeilAvatarMannequin } from '@/components/ui/anticeil-avatar-mannequin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -94,6 +91,8 @@ import {
 import { ShopItemModal } from './shop-item-modal';
 import { ShopWishlistModal } from './shop-wishlist-modal';
 import { ShopAddProductModal } from './shop-add-product-modal';
+import { ShopItemCard } from './shop-item-card';
+import { ShopFilterContent } from './shop-filter-content';
 
 export {
   ITEM_TYPE_OPTIONS,
@@ -847,391 +846,6 @@ export function ShopView({
     setActiveModalItem(item);
   };
 
-  // Discord-style 1:1 Right Filter Panel Renderer
-  const renderFilterContent = () => {
-    return (
-      <div className="space-y-6">
-        {/* 1. Item Type */}
-        <div className="space-y-2.5">
-          <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-            {t('Item Type')}
-          </h4>
-          <div className="space-y-1.5">
-            {ITEM_TYPE_OPTIONS.map((opt) => {
-              const isSelected = selectedTypes.includes(opt.id);
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => toggleType(opt.id)}
-                  className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
-                >
-                  <div
-                    className={cn(
-                      'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
-                      isSelected
-                        ? 'bg-primary border-primary text-primary-foreground'
-                        : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
-                    )}
-                  >
-                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                  <span className="truncate">{opt.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 2. Show Only */}
-        <div className="space-y-2.5">
-          <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-            {t('Show Only')}
-          </h4>
-          <div className="space-y-1.5">
-            {/* Dew Eligible */}
-            <button
-              type="button"
-              onClick={() => setShowOnlyDew(!showOnlyDew)}
-              className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
-            >
-              <div
-                className={cn(
-                  'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
-                  showOnlyDew
-                    ? 'bg-primary border-primary text-primary-foreground'
-                    : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
-                )}
-              >
-                {showOnlyDew && <Check className="w-3 h-3 stroke-[3]" />}
-              </div>
-              <span className="truncate flex items-center gap-1.5">
-                <span>{t('Dew Eligible')}</span>
-                <span className="text-[11px]">💧</span>
-              </span>
-            </button>
-
-            {/* Featured / Collabs */}
-            <button
-              type="button"
-              onClick={() => setShowOnlyFeatured(!showOnlyFeatured)}
-              className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
-            >
-              <div
-                className={cn(
-                  'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
-                  showOnlyFeatured
-                    ? 'bg-primary border-primary text-primary-foreground'
-                    : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
-                )}
-              >
-                {showOnlyFeatured && <Check className="w-3 h-3 stroke-[3]" />}
-              </div>
-              <span className="truncate">{t('Featured / Unggulan')}</span>
-            </button>
-
-            {/* Discount / Promo */}
-            <button
-              type="button"
-              onClick={() => setShowOnlyDiscount(!showOnlyDiscount)}
-              className="flex items-center gap-2.5 text-xs font-medium text-foreground/90 hover:text-foreground cursor-pointer group select-none text-left w-full py-0.5"
-            >
-              <div
-                className={cn(
-                  'size-4 rounded-[4px] border flex items-center justify-center transition-colors shrink-0',
-                  showOnlyDiscount
-                    ? 'bg-primary border-primary text-primary-foreground'
-                    : 'border-muted-foreground/40 bg-muted/20 group-hover:border-foreground/60'
-                )}
-              >
-                {showOnlyDiscount && <Check className="w-3 h-3 stroke-[3]" />}
-              </div>
-              <span className="truncate">{t('Diskon / Promo')}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 3. Color Swatches (2 rows of 5) */}
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-              {t('Color')}
-            </h4>
-            {selectedColor && (
-              <button
-                type="button"
-                onClick={() => setSelectedColor(null)}
-                className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                {t('Clear')}
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-5 gap-2">
-            {COLOR_OPTIONS.map((col) => {
-              const isSelected = selectedColor === col.id;
-              const isLight = col.id === 'white' || col.id === 'yellow';
-              return (
-                <button
-                  key={col.id}
-                  type="button"
-                  onClick={() => toggleColor(col.id)}
-                  title={t(col.label)}
-                  className={cn(
-                    'size-7 rounded-full flex items-center justify-center transition-all cursor-pointer relative',
-                    isSelected
-                      ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 shadow-md'
-                      : 'hover:scale-105 opacity-90 hover:opacity-100'
-                  )}
-                  style={{
-                    backgroundColor: col.hex,
-                    border: col.id === 'dark' || col.id === 'white' ? '1px solid rgba(255,255,255,0.2)' : undefined,
-                  }}
-                >
-                  {isSelected && (
-                    <Check
-                      className={cn(
-                        'w-3.5 h-3.5 stroke-[3]',
-                        isLight ? 'text-black' : 'text-white'
-                      )}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 4. Theme Grid (2 columns) */}
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-              {t('Theme')}
-            </h4>
-            {selectedThemes.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setSelectedThemes([])}
-                className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                {t('Clear')}
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-1.5">
-            {THEME_OPTIONS.map((th) => {
-              const isSelected = selectedThemes.includes(th.id);
-              return (
-                <button
-                  key={th.id}
-                  type="button"
-                  onClick={() => toggleTheme(th.id)}
-                  className={cn(
-                    'h-8 px-2 rounded-md border text-[11px] font-medium flex items-center gap-1.5 truncate transition-all cursor-pointer select-none text-left',
-                    isSelected
-                      ? 'bg-primary/20 border-primary text-primary font-bold shadow-xs'
-                      : 'bg-muted/30 border-border/60 text-foreground/80 hover:bg-muted/70 hover:text-foreground'
-                  )}
-                >
-                  <span className="text-xs shrink-0">{th.icon}</span>
-                  <span className="truncate">{t(th.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Render Discord-grade animated cosmetic card preview (Frame, Namecard, Overlay)
-  const renderCardArtwork = (item: ShopItem) => {
-    const gifUrl = item.gifUrl || item.previewIcon;
-
-    if (item.category === 'avatar_decoration') {
-      return (
-        <div className="h-32 sm:h-36 p-3 relative flex items-center justify-center bg-muted/40 border-b border-border/40 overflow-hidden">
-          <div className="absolute inset-0 bg-radial from-primary/10 via-transparent to-transparent pointer-events-none" />
-
-          {/* Avatar Base Silhouette with Live Avatar Decoration */}
-          <div className="relative size-16 sm:size-18 rounded-full bg-secondary border-2 border-border/70 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
-            {currentUser?.avatarUrl ? (
-              <img src={currentUser.avatarUrl} alt="" className="size-full rounded-full object-cover" />
-            ) : (
-              <User className="size-8 text-muted-foreground/40" />
-            )}
-
-            {/* Layered Animated Frame GIF or Vector/SVG Renderer */}
-            {gifUrl ? (
-              <img
-                src={gifUrl}
-                alt={item.name}
-                className="absolute -inset-3.5 size-[calc(100%+28px)] object-contain pointer-events-none select-none z-10 drop-shadow-[0_0_12px_rgba(0,0,0,0.8)]"
-                loading="lazy"
-              />
-            ) : (
-              <AvatarDecorationRenderer decorationId={item.id} />
-            )}
-          </div>
-
-          <span className="absolute bottom-2 left-2 text-[8px] font-bold text-muted-foreground/60 tracking-wider">
-            DECORATION
-          </span>
-        </div>
-      );
-    }
-
-    if (item.category === 'nameplate') {
-      return (
-        <div className="h-32 sm:h-36 p-3 relative flex items-center justify-center bg-muted/40 border-b border-border/40 overflow-hidden">
-          <div className="absolute inset-0 bg-radial from-cyan-500/10 via-transparent to-transparent pointer-events-none" />
-
-          {/* Discord/Anticeil Chat Row Preview */}
-          <div className="w-[92%] h-13 rounded-xl bg-card border border-border/60 p-2 flex items-center gap-2.5 relative overflow-hidden shadow-lg group-hover:border-primary/50 transition-colors">
-            {gifUrl ? (
-              <img
-                src={gifUrl}
-                alt={item.name}
-                className="absolute inset-0 size-full object-cover opacity-80 mix-blend-screen pointer-events-none select-none group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-              />
-            ) : (
-              <NameplateRenderer nameplateId={item.id} imageUrl={item.previewIcon} />
-            )}
-
-            <AnticeilAvatarMannequin
-              size="sm"
-              avatarUrl={currentUser?.avatarUrl}
-              statusDot
-              statusColor="#23a55a"
-            />
-
-            <div className="min-w-0 z-10 space-y-0.5">
-              <div className="text-[11px] font-bold text-foreground drop-shadow-sm flex items-center gap-1.5 leading-none">
-                <span className="truncate">{currentUser?.username || 'Username'}</span>
-                {item.badge && (
-                  <span className="text-[8px] px-1 py-0.5 rounded bg-primary/40 text-primary-foreground font-bold">
-                    {item.badge}
-                  </span>
-                )}
-              </div>
-              <div className="w-16 h-1 rounded-full bg-muted-foreground/30" />
-            </div>
-          </div>
-
-          <span className="absolute bottom-2 left-2 text-[8px] font-bold text-muted-foreground/60 tracking-wider">
-            NAMEPLATE
-          </span>
-        </div>
-      );
-    }
-
-    if (item.category === 'profile_banner') {
-      const bannerUrl = (item as any).bannerUrl || gifUrl;
-      return (
-        <div className="h-32 sm:h-36 relative overflow-hidden bg-muted/40 border-b border-border/40">
-          {bannerUrl ? (
-            <img
-              src={bannerUrl}
-              alt={item.name}
-              className="absolute inset-0 size-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-60" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent pointer-events-none" />
-          <span className="absolute bottom-2 left-2 text-[8px] font-bold text-foreground/80 bg-background/70 px-1.5 py-0.5 rounded backdrop-blur-xs tracking-wider z-10 border border-border/40">
-            BANNER
-          </span>
-        </div>
-      );
-    }
-
-    if (item.category === 'animated_avatar') {
-      return (
-        <div className="h-32 sm:h-36 p-3 relative flex items-center justify-center bg-muted/40 border-b border-border/40 overflow-hidden">
-          <div className="absolute inset-0 bg-radial from-violet-500/10 via-transparent to-transparent pointer-events-none" />
-          <div className="relative size-16 sm:size-18 rounded-full bg-secondary border-2 border-border/70 overflow-hidden flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
-            {gifUrl ? (
-              <img
-                src={gifUrl}
-                alt={item.name}
-                className="size-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <User className="size-8 text-muted-foreground/40" />
-            )}
-          </div>
-          <span className="absolute bottom-2 left-2 text-[8px] font-bold text-muted-foreground/60 tracking-wider">
-            ANIMATED AVATAR
-          </span>
-        </div>
-      );
-    }
-
-    if (item.category === 'profile_effect') {
-      return (
-        <div className="h-32 sm:h-36 relative overflow-hidden bg-muted/40 border-b border-border/40">
-          {gifUrl && (
-            <img
-              src={gifUrl}
-              alt={item.name}
-              className="absolute inset-0 size-full object-cover opacity-85 pointer-events-none select-none group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-          )}
-
-          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent pointer-events-none" />
-
-          <div className="absolute bottom-2.5 left-3 right-3 flex items-center gap-2 z-10 opacity-75">
-            <div className="size-7 rounded-full bg-muted border border-border backdrop-blur-xs shrink-0" />
-            <div className="space-y-1 min-w-0">
-              <div className="w-16 h-2 rounded bg-muted-foreground/40" />
-              <div className="w-10 h-1.5 rounded bg-muted-foreground/20" />
-            </div>
-          </div>
-
-          <span className="absolute bottom-2.5 left-3 text-[8px] font-bold text-foreground/80 bg-background/70 px-1.5 py-0.5 rounded backdrop-blur-xs tracking-wider z-10 border border-border/40">
-            OVERLAY .GIF
-          </span>
-        </div>
-      );
-    }
-
-    // Bundle
-    return (
-      <div className="h-32 sm:h-36 relative overflow-hidden bg-muted/40 border-b border-border/40 flex items-center justify-center p-3">
-        {gifUrl && (
-          <img
-            src={gifUrl}
-            alt={item.name}
-            className="absolute inset-0 size-full object-cover opacity-40 mix-blend-screen pointer-events-none select-none"
-            loading="lazy"
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent pointer-events-none" />
-
-        <div className="relative size-14 rounded-full bg-card border border-border/60 flex items-center justify-center z-10 shadow-lg">
-          <span className="text-muted-foreground/50 text-sm font-bold">❄</span>
-          {gifUrl && (
-            <img
-              src={gifUrl}
-              alt={item.name}
-              className="absolute -inset-3 size-[calc(100%+24px)] object-contain pointer-events-none select-none z-10 drop-shadow-md group-hover:scale-110 transition-transform duration-300"
-              loading="lazy"
-            />
-          )}
-        </div>
-
-        <span className="absolute bottom-2 left-2 text-[8px] font-bold text-muted-foreground/60 tracking-wider">
-          3PC BUNDLE .GIF
-        </span>
-      </div>
-    );
-  };
-
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-hidden select-none">
       {/* ── 1. Reusable Top App Bar (h-12) 100% Consistent with Apps & Colonies ── */}
@@ -1853,120 +1467,20 @@ export function ShopView({
 
             {/* Reusable Cards Grid: Matching ActivityCard Layout (4 desktop, 3 tablet, 2 mobile) */}
             <div className={SURFACE_STYLES.CARD_GRID}>
-              {filteredItems.map((item) => {
-                const isOwned = ownedItemIds.has(item.id);
-                const isWishlisted = wishlistedItemIds.has(item.id);
-
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => handleOpenItemDetail(item)}
-                    className="rounded-xl border border-border bg-card hover:border-primary/50 transition-all flex flex-col justify-between overflow-hidden shadow-xs group cursor-pointer"
-                  >
-                    {/* Card Header / Artwork Area with Real Animated Cosmetic Preview */}
-                    <div className="relative overflow-hidden">
-                      {/* Badge on top-left */}
-                      {item.badge && (
-                        <span className="absolute top-2.5 left-2.5 z-20 text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 backdrop-blur-md">
-                          {item.badge}
-                        </span>
-                      )}
-
-                      {/* Wishlist button on top-right */}
-                      <button
-                        type="button"
-                        onClick={(e) => handleToggleWishlist(e, item)}
-                        className="absolute top-2.5 right-2.5 z-20 size-7 rounded-md bg-background/80 hover:bg-background border border-border/60 flex items-center justify-center text-muted-foreground hover:text-pink-500 transition-colors cursor-pointer shadow-xs"
-                        title={isWishlisted ? t('Hapus dari Wishlist') : t('Tambah ke Wishlist')}
-                      >
-                        <Heart className={cn('w-3.5 h-3.5', isWishlisted && 'text-pink-500 fill-pink-500')} />
-                      </button>
-
-                      {/* Edit & Delete buttons on card hover */}
-                      {isAdmin && (
-                        <div className="absolute bottom-2.5 right-2.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenEditProduct(item);
-                            }}
-                            className="size-6 rounded-md bg-background/80 hover:bg-background border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shadow-xs"
-                            title={t('Edit Item ini')}
-                          >
-                            <Pencil className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleDeleteProduct(e, item.id)}
-                            className="size-6 rounded-md bg-background/90 hover:bg-red-600 border border-border/80 hover:border-red-600 text-red-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs backdrop-blur-md"
-                            title={t('Hapus Item ini dari Database Shop')}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Dedicated Cosmetic Artwork Renderer */}
-                      {renderCardArtwork(item)}
-                    </div>
-
-                    {/* Card Body */}
-                    <div className="p-2.5 sm:p-3.5 flex-1 flex flex-col justify-between gap-2.5 sm:gap-3">
-                      <div>
-                        <span className="text-[9px] sm:text-[10px] font-semibold text-primary block uppercase tracking-wider truncate mb-0.5">
-                          {item.collection || 'ANTICEIL NATIVE'}
-                        </span>
-                        <h4 className="text-xs font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                          {item.name}
-                        </h4>
-                        <p className="text-[10px] sm:text-[11px] text-muted-foreground line-clamp-2 mt-0.5 sm:mt-1 leading-relaxed">
-                          {item.description}
-                        </p>
-                      </div>
-
-                      {/* Card Footer */}
-                      <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-1.5 sm:gap-2">
-                        <div className="min-w-0">
-                          <div className="text-[11px] sm:text-xs font-bold text-foreground truncate">
-                            IDR {(item.priceIdr ?? 0).toLocaleString('id-ID')}
-                          </div>
-                          {item.allowDew !== false && (item.priceDew ?? item.priceOrbs ?? 0) > 0 ? (
-                            <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold text-cyan-400">
-                              <span>💧</span>
-                              <span>{item.priceDew ?? item.priceOrbs ?? 0} Dew</span>
-                            </div>
-                          ) : (
-                            <div className="text-[9px] sm:text-[10px] font-semibold text-amber-400/90 flex items-center gap-1">
-                              <span>💵</span>
-                              <span>{t('Hanya Uang Asli')}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {isOwned ? (
-                          <span className="h-7 px-2 sm:px-2.5 rounded-[4px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shrink-0">
-                            <Check className="w-3 h-3 stroke-[3]" />
-                            <span>{t('Dimiliki')}</span>
-                          </span>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenItemDetail(item);
-                            }}
-                            className="h-7 px-2.5 sm:px-3 text-xs font-semibold cursor-pointer shadow-xs shrink-0"
-                          >
-                            <span>{t('Buka')}</span>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {filteredItems.map((item) => (
+                <ShopItemCard
+                  key={item.id}
+                  item={item}
+                  currentUser={currentUser}
+                  isOwned={ownedItemIds.has(item.id)}
+                  isWishlisted={wishlistedItemIds.has(item.id)}
+                  isAdmin={isAdmin}
+                  onToggleWishlist={handleToggleWishlist}
+                  onOpenItemDetail={handleOpenItemDetail}
+                  onOpenEditProduct={handleOpenEditProduct}
+                  onDeleteProduct={handleDeleteProduct}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -2013,7 +1527,22 @@ export function ShopView({
         activeFilterCount={activeFilterCount}
         onReset={handleResetFilters}
       >
-        {renderFilterContent()}
+        <ShopFilterContent
+          selectedTypes={selectedTypes}
+          toggleType={toggleType}
+          showOnlyDew={showOnlyDew}
+          setShowOnlyDew={setShowOnlyDew}
+          showOnlyFeatured={showOnlyFeatured}
+          setShowOnlyFeatured={setShowOnlyFeatured}
+          showOnlyDiscount={showOnlyDiscount}
+          setShowOnlyDiscount={setShowOnlyDiscount}
+          selectedColor={selectedColor}
+          toggleColor={toggleColor}
+          setSelectedColor={setSelectedColor}
+          selectedThemes={selectedThemes}
+          toggleTheme={toggleTheme}
+          setSelectedThemes={setSelectedThemes}
+        />
       </AppFilterDrawer>
 
       {/* ── 3. Reusable Dialog: Item Detail & Purchase Modal ── */}
