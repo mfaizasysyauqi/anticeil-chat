@@ -131,13 +131,13 @@ export function DiscordPollCard({
   const showResultsActive = isShowingResults || isExpired;
 
   return (
-    <div className="my-2 max-w-md w-full rounded-2xl bg-[#1e1f22]/95 dark:bg-[#1e1f22] border border-white/5 p-4 space-y-3.5 shadow-lg select-none">
+    <div className="my-2 max-w-md w-full rounded-2xl bg-card border border-border p-4 space-y-3.5 shadow-lg select-none">
       {/* Question Header */}
       <div>
-        <h4 className="text-base font-bold text-white tracking-normal leading-snug break-words">
+        <h4 className="text-base font-bold text-foreground tracking-normal leading-snug break-words">
           {poll.question}
         </h4>
-        <p className="text-xs text-[#949ba4] font-medium mt-1">
+        <p className="text-xs text-muted-foreground font-medium mt-1">
           {poll.allowMultiselect
             ? t('Select one or more answers')
             : t('Select one answer')}
@@ -164,8 +164,8 @@ export function DiscordPollCard({
               className={cn(
                 'group relative overflow-hidden w-full p-3 rounded-xl border transition-all text-xs font-semibold flex items-center justify-between',
                 showResultsActive
-                  ? 'cursor-default border-white/5 bg-[#2b2d31]/50'
-                  : 'cursor-pointer border-white/5 bg-[#2b2d31]/80 hover:bg-[#35373c] hover:border-white/10'
+                  ? 'cursor-default border-border/40 bg-accent/30'
+                  : 'cursor-pointer border-border/40 bg-accent/50 hover:bg-accent hover:border-border/80'
               )}
             >
               {/* Progress Bar Background */}
@@ -174,8 +174,8 @@ export function DiscordPollCard({
                   className={cn(
                     'absolute left-0 top-0 bottom-0 transition-all duration-500 rounded-l-xl',
                     isWinner
-                      ? 'bg-[#5865f2]/30 dark:bg-[#5865f2]/35'
-                      : 'bg-white/10 dark:bg-white/10'
+                      ? 'bg-primary/25 dark:bg-primary/30'
+                      : 'bg-muted/40'
                   )}
                   style={{ width: `${percentage}%` }}
                 />
@@ -187,13 +187,13 @@ export function DiscordPollCard({
                   <span className="text-base leading-none shrink-0">{ans.emoji}</span>
                 )}
                 <span className={cn(
-                  'truncate text-white font-medium',
+                  'truncate text-foreground font-medium',
                   isWinner && showResultsActive && 'font-bold'
                 )}>
                   {ans.text}
                 </span>
                 {showResultsActive && isUserVote && (
-                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#5865f2] text-white shrink-0" title={t('Pilihan Anda')}>
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-primary-foreground shrink-0" title={t('Pilihan Anda')}>
                     <Check className="w-2.5 h-2.5 stroke-[3]" />
                   </span>
                 )}
@@ -202,7 +202,7 @@ export function DiscordPollCard({
               {/* Answer Right: Radio/Checkbox or Vote Count */}
               <div className="relative z-10 flex items-center gap-2 shrink-0 ml-2">
                 {showResultsActive ? (
-                  <span className="text-xs text-[#949ba4] font-medium font-mono">
+                  <span className="text-xs text-muted-foreground font-medium font-mono">
                     {voteCount} {voteCount === 1 ? 'vote' : 'votes'} • {percentage}%
                   </span>
                 ) : (
@@ -213,8 +213,8 @@ export function DiscordPollCard({
                         className={cn(
                           'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all',
                           isSelected
-                            ? 'border-[#5865f2] bg-[#5865f2] text-white'
-                            : 'border-[#949ba4] group-hover:border-white'
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-muted-foreground/60 group-hover:border-foreground'
                         )}
                       >
                         {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -225,11 +225,11 @@ export function DiscordPollCard({
                         className={cn(
                           'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
                           isSelected
-                            ? 'border-[#5865f2] bg-[#5865f2]'
-                            : 'border-[#949ba4] group-hover:border-white'
+                            ? 'border-primary bg-primary'
+                            : 'border-muted-foreground/60 group-hover:border-foreground'
                         )}
                       >
-                        {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                        {isSelected && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
                       </div>
                     )}
                   </>
@@ -241,9 +241,9 @@ export function DiscordPollCard({
       </div>
 
       {/* Footer Info & Actions */}
-      <div className="pt-1 flex items-center justify-between text-xs text-[#949ba4]">
+      <div className="pt-1 flex items-center justify-between text-xs text-muted-foreground">
         {/* Left Stats */}
-        <span className="font-medium text-[11px] text-[#949ba4]">
+        <span className="font-medium text-[11px] text-muted-foreground">
           {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'} • {timeLeftText}
         </span>
 
@@ -253,7 +253,7 @@ export function DiscordPollCard({
           <button
             type="button"
             onClick={() => setIsShowingResults(!isShowingResults)}
-            className="text-xs font-semibold text-[#949ba4] hover:text-white transition-colors cursor-pointer px-1 py-1"
+            className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer px-1 py-1"
           >
             {isShowingResults ? t('Hide results') : t('Show results')}
           </button>
@@ -264,7 +264,7 @@ export function DiscordPollCard({
               type="button"
               disabled={isSubmitting || isExpired}
               onClick={handleRemoveVote}
-              className="px-3.5 py-1.5 rounded-md text-xs font-semibold text-white/90 hover:text-white hover:bg-white/10 border border-white/20 transition-all cursor-pointer disabled:opacity-40"
+              className="px-3.5 py-1.5 rounded-md text-xs font-semibold text-foreground hover:bg-accent border border-border transition-all cursor-pointer disabled:opacity-40"
             >
               {t('Remove vote')}
             </button>
@@ -273,7 +273,7 @@ export function DiscordPollCard({
               type="button"
               disabled={isSubmitting || selectedIds.length === 0 || isExpired}
               onClick={handleVote}
-              className="px-4 py-1.5 rounded-md text-xs font-semibold text-white bg-[#5865f2] hover:bg-[#4752c4] transition-all shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-1.5 rounded-md text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-all shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t('Vote')}
             </button>

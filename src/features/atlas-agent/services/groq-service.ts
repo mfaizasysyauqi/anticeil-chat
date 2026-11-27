@@ -4,6 +4,7 @@ import type {
   GroqConfig,
   AiToolCall,
 } from '../types';
+import { ENDPOINTS } from '@/core/config/endpoints';
 
 export const GROQ_TOOLS = [
   {
@@ -754,7 +755,7 @@ export async function executeGroqCommand({
       activeModel = 'openai/gpt-oss-120b';
     }
 
-    let response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    let response = await fetch(ENDPOINTS.GROQ_CHAT_COMPLETIONS, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -771,7 +772,7 @@ export async function executeGroqCommand({
 
     // If model returned 404, retry with default reliable model
     if (response.status === 404 && activeModel !== 'openai/gpt-oss-120b') {
-      response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      response = await fetch(ENDPOINTS.GROQ_CHAT_COMPLETIONS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -78,10 +78,10 @@ export function useThreadManager({
       setIsThreadDrawerOpen(true);
       setIsCreateThreadModalOpen(false);
       setIsThreadsPopoverOpen(false);
-      toast.success(`Thread #${created.name} berhasil dibuat! 🧵`);
+      toast.success(t(`Thread #${created.name} berhasil dibuat! 🧵`));
     } catch (err) {
       console.error('Failed to create thread', err);
-      toast.error('Gagal membuat thread');
+      toast.error(t('Gagal membuat thread'));
       throw err;
     }
   };

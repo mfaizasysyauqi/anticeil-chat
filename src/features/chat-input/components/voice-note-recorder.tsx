@@ -3,6 +3,7 @@ import { Mic, Trash2, Send, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useTranslation } from '@/core/i18n';
 
 interface VoiceNoteRecorderProps {
   onSendVoiceNote: (blob: Blob, durationSeconds: number) => void;
@@ -11,6 +12,7 @@ interface VoiceNoteRecorderProps {
 }
 
 export function VoiceNoteRecorder({ onSendVoiceNote, onCancel, className }: VoiceNoteRecorderProps) {
+  const { t } = useTranslation();
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -23,7 +25,7 @@ export function VoiceNoteRecorder({ onSendVoiceNote, onCancel, className }: Voic
     async function startRecording() {
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          toast.error('Browser Anda tidak mendukung perekaman mikrofon.');
+          toast.error(t('Browser Anda tidak mendukung perekaman mikrofon.'));
           onCancel();
           return;
         }
@@ -154,10 +156,10 @@ export function VoiceNoteRecorder({ onSendVoiceNote, onCancel, className }: Voic
           variant="ghost"
           onClick={handleCancel}
           className="h-8 px-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg cursor-pointer text-xs flex items-center gap-1.5"
-          title="Batal merekam"
+          title={t('Batal merekam')}
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Batal</span>
+          <span className="hidden sm:inline">{t('Batal')}</span>
         </Button>
 
         <Button
@@ -165,10 +167,10 @@ export function VoiceNoteRecorder({ onSendVoiceNote, onCancel, className }: Voic
           size="sm"
           onClick={handleStopAndSend}
           className="h-8 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
-          title="Kirim pesan suara"
+          title={t('Kirim pesan suara')}
         >
           <Send className="w-3.5 h-3.5" />
-          <span>Kirim</span>
+          <span>{t('Kirim')}</span>
         </Button>
       </div>
     </div>

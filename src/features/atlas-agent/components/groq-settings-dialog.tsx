@@ -16,6 +16,7 @@ import {
   getStoredGroqConfig,
   saveStoredGroqConfig,
 } from '../services/ai-storage';
+import { ENDPOINTS } from '@/core/config/endpoints';
 
 interface GroqSettingsDialogProps {
   isOpen: boolean;
@@ -43,7 +44,7 @@ export function GroqSettingsDialog({
     setTestResult(null);
 
     try {
-      const res = await fetch('https://api.groq.com/openai/v1/models', {
+      const res = await fetch(ENDPOINTS.GROQ_MODELS, {
         headers: {
           Authorization: `Bearer ${apiKey.trim()}`,
         },

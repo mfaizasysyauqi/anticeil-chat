@@ -399,10 +399,10 @@ export function AssignmentsView({
                         size="sm"
                         onClick={() => handleOpenEdit(item)}
                         className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer gap-1.5"
-                        title="Edit Tugas"
+                        title={t('Edit Tugas')}
                       >
                         <Pencil className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Edit</span>
+                        <span className="hidden sm:inline">{t('Edit')}</span>
                       </Button>
                     )}
 
@@ -414,10 +414,10 @@ export function AssignmentsView({
                           onDeleteAssignment(item.id);
                         }}
                         className="h-8 px-2.5 text-xs text-rose-500 hover:text-rose-400 hover:border-rose-500/50 cursor-pointer gap-1.5"
-                        title="Hapus tugas"
+                        title={t('Hapus tugas')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Hapus</span>
+                        <span className="hidden sm:inline">{t('Hapus')}</span>
                       </Button>
                     )}
                   </div>
