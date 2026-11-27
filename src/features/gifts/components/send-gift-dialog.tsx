@@ -65,9 +65,9 @@ export function SendGiftDialog({
           {/* Top Intro Banner */}
           <div className="relative p-3 sm:p-4 rounded-xl bg-gradient-to-r from-primary/10 via-accent/30 to-background border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 overflow-hidden">
             {/* Mascot decoration */}
-            <div className="hidden sm:block absolute right-44 -bottom-1 h-20 w-auto pointer-events-none drop-shadow-md opacity-90">
+            <div className="hidden sm:block absolute right-44 -bottom-1 h-20 w-auto pointer-events-none drop-shadow-md opacity-95 z-20">
               <img
-                src="/atlas-full.png"
+                src="/atlas-nectar.png"
                 alt="Atlas Mascot"
                 className="h-full w-auto object-contain select-none"
               />

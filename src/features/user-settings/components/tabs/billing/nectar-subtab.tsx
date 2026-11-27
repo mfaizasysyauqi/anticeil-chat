@@ -106,9 +106,9 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-purple-500/20 rounded-full blur-2xl pointer-events-none" />
 
         {/* Mascot decoration */}
-        <div className="hidden md:block absolute right-6 -bottom-2 h-44 w-auto pointer-events-none drop-shadow-[0_12px_24px_rgba(0,0,0,0.35)]">
+        <div className="hidden md:block absolute right-6 -bottom-1 h-48 sm:h-52 w-auto pointer-events-none drop-shadow-[0_12px_24px_rgba(0,0,0,0.35)] z-20">
           <img
-            src="/atlas-full.png"
+            src="/atlas-nectar.png"
             alt="Atlas Mascot"
             className="h-full w-auto object-contain select-none"
           />
@@ -118,7 +118,7 @@ export function NectarSubtab({ theme }: NectarSubtabProps) {
         <button
           type="button"
           onClick={() => toast.success(t('Disimpan ke daftar favorit!'))}
-          className="absolute top-4 right-4 p-2 rounded-xl bg-black/20 hover:bg-black/35 backdrop-blur-md transition-colors cursor-pointer text-white/90 hover:text-white"
+          className="absolute top-4 right-4 p-2 rounded-xl bg-black/20 hover:bg-black/35 backdrop-blur-md transition-colors cursor-pointer text-white/90 hover:text-white z-30"
           title={t('Simpan')}
         >
           <Heart className="w-4 h-4" />
