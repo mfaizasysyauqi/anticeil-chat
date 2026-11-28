@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   HelpCircle,
   Hash,
@@ -14,6 +14,9 @@ import {
   Rocket,
   Volume2,
   Columns3,
+  Minus,
+  Square,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -53,6 +56,44 @@ export function AppTopTitleBar({
   className,
 }: AppTopTitleBarProps) {
   const { t } = useTranslation();
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      const hasTauri = Boolean(
+        (window as any).__TAURI_INTERNALS__ ||
+        (window as any).__TAURI__ ||
+        (window as any).__anticeil_window_action ||
+        navigator.userAgent.includes('Tauri')
+      );
+      if (hasTauri) {
+        setIsDesktop(true);
+      }
+    };
+    checkDesktop();
+    const timer = setTimeout(checkDesktop, 400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleWinAction = async (action: 'minimize' | 'toggle_maximize' | 'close') => {
+    if (typeof (window as any).__anticeil_window_action === 'function') {
+      return (window as any).__anticeil_window_action(action);
+    }
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      const win = getCurrentWindow();
+      if (action === 'minimize') return await win.minimize();
+      if (action === 'toggle_maximize') return await win.toggleMaximize();
+      if (action === 'close') return await win.close();
+    } catch (_) {
+      const invoke = (window as any).__TAURI_INTERNALS__?.invoke || (window as any).__TAURI__?.core?.invoke;
+      if (invoke) {
+        if (action === 'minimize') return invoke('plugin:window|minimize', { label: 'main' });
+        if (action === 'toggle_maximize') return invoke('plugin:window|toggle_maximize', { label: 'main' });
+        if (action === 'close') return invoke('plugin:window|close', { label: 'main' });
+      }
+    }
+  };
 
   // Determine current context title and icon (100% synchronized with sidebar navigation)
   let title = 'Anticeil';
@@ -165,8 +206,8 @@ export function AppTopTitleBar({
         </div>
       </div>
 
-      {/* Right: Global Actions (Inbox Popover & Help / Docs) */}
-      <div className="flex items-center justify-end gap-1 w-16 sm:w-48 shrink-0">
+      {/* Right: Global Actions (Inbox Popover, Help / Docs, and Desktop Window Controls) */}
+      <div className="flex items-center justify-end gap-1 min-w-16 sm:min-w-48 shrink-0">
         {/* Global Inbox Popover */}
         <InboxPopover
           triggerClassName="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded"
@@ -189,6 +230,60 @@ export function AppTopTitleBar({
             {t('Bantuan & Dokumentasi (Docs)')}
           </TooltipContent>
         </Tooltip>
+
+        {/* Desktop Frameless Window Controls (Minimize, Maximize, Close) */}
+        {isDesktop && (
+          <div
+            className="anticeil-desktop-window-controls flex items-center h-full ml-1.5 pl-1.5 border-l border-border/40 shrink-0 no-drag select-none"
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleWinAction('minimize');
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              aria-label="Minimize"
+              title="Minimize"
+              className="h-7 w-7 inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors select-none cursor-pointer"
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            >
+              <Minus className="size-3" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleWinAction('toggle_maximize');
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              aria-label="Maximize"
+              title="Maximize"
+              className="h-7 w-7 inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors select-none cursor-pointer"
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            >
+              <Square className="size-2.5" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleWinAction('close');
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              aria-label="Close"
+              title="Close"
+              className="h-7 w-7 inline-flex items-center justify-center text-muted-foreground hover:text-white hover:bg-destructive transition-colors select-none cursor-pointer"
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            >
+              <X className="size-3" />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

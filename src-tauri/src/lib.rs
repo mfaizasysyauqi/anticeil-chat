@@ -37,11 +37,15 @@ const INIT_SCRIPT: &str = r#"
       header[role="banner"] a,
       header[role="banner"] input,
       .no-drag,
-      #anticeil-titlebar-controls {
+      #anticeil-titlebar-controls,
+      #anticeil-titlebar-controls *,
+      .anticeil-desktop-window-controls,
+      .anticeil-desktop-window-controls * {
         -webkit-app-region: no-drag !important;
+        pointer-events: auto !important;
       }
       .anticeil-win-btn {
-        width: 28px;
+        width: 32px;
         height: 28px;
         display: inline-flex;
         align-items: center;
@@ -54,6 +58,10 @@ const INIT_SCRIPT: &str = r#"
         padding: 0;
         outline: none;
         -webkit-app-region: no-drag !important;
+        pointer-events: auto !important;
+      }
+      .anticeil-win-btn svg {
+        pointer-events: none !important;
       }
       .anticeil-win-btn:hover {
         background-color: rgba(255, 255, 255, 0.1);
@@ -69,16 +77,49 @@ const INIT_SCRIPT: &str = r#"
     }
   }
 
-  function invokeCmd(name) {
-    if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) {
-      window.__TAURI_INTERNALS__.invoke(name);
-    } else if (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) {
-      window.__TAURI__.core.invoke(name);
-    }
+  async function invokeAction(action) {
+    // 1. Try @tauri-apps/api/window if available
+    try {
+      if (window.__TAURI__ && window.__TAURI__.window && window.__TAURI__.window.getCurrentWindow) {
+        const win = window.__TAURI__.window.getCurrentWindow();
+        if (action === 'minimize') return await win.minimize();
+        if (action === 'toggle_maximize') return await win.toggleMaximize();
+        if (action === 'close') return await win.close();
+        if (action === 'start_dragging') return await win.startDragging();
+      }
+    } catch (_) {}
+
+    // 2. Try direct plugin:window IPC
+    try {
+      const invoke = (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) ||
+                     (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke);
+      if (invoke) {
+        if (action === 'minimize') return await invoke('plugin:window|minimize', { label: 'main' });
+        if (action === 'toggle_maximize') return await invoke('plugin:window|toggle_maximize', { label: 'main' });
+        if (action === 'close') return await invoke('plugin:window|close', { label: 'main' });
+        if (action === 'start_dragging') return await invoke('plugin:window|start_dragging', { label: 'main' });
+      }
+    } catch (_) {}
+
+    // 3. Fallback to custom rust commands
+    try {
+      const invoke = (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) ||
+                     (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke);
+      if (invoke) {
+        if (action === 'minimize') return await invoke('minimize_window');
+        if (action === 'toggle_maximize') return await invoke('toggle_maximize_window');
+        if (action === 'close') return await invoke('close_window');
+        if (action === 'start_dragging') return await invoke('start_drag_window');
+      }
+    } catch (_) {}
   }
+
+  window.__anticeil_window_action = invokeAction;
 
   function mountControls() {
     injectStyles();
+    if (document.querySelector('.anticeil-desktop-window-controls')) return;
+
     const header = document.querySelector('header[role="banner"]');
     if (!header || document.getElementById('anticeil-titlebar-controls')) return;
 
@@ -87,25 +128,34 @@ const INIT_SCRIPT: &str = r#"
     const container = document.createElement('div');
     container.id = 'anticeil-titlebar-controls';
     container.className = 'no-drag';
-    container.style.cssText = 'display:inline-flex;align-items:center;height:100%;margin-left:6px;border-left:1px solid rgba(255,255,255,0.12);padding-left:4px;-webkit-app-region:no-drag;';
+    container.style.cssText = 'display:inline-flex;align-items:center;height:100%;margin-left:6px;border-left:1px solid rgba(255,255,255,0.12);padding-left:2px;-webkit-app-region:no-drag;pointer-events:auto;z-index:9999;';
 
-    const minBtn = document.createElement('button');
-    minBtn.className = 'anticeil-win-btn';
-    minBtn.title = 'Minimize';
-    minBtn.innerHTML = '<svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>';
-    minBtn.onclick = (e) => { e.stopPropagation(); invokeCmd('minimize_window'); };
+    container.addEventListener('mousedown', (e) => e.stopPropagation());
+    container.addEventListener('pointerdown', (e) => e.stopPropagation());
 
-    const maxBtn = document.createElement('button');
-    maxBtn.className = 'anticeil-win-btn';
-    maxBtn.title = 'Maximize';
-    maxBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 10 10"><rect width="8" height="8" x="1" y="1" fill="none" stroke="currentColor" stroke-width="1"/></svg>';
-    maxBtn.onclick = (e) => { e.stopPropagation(); invokeCmd('toggle_maximize_window'); };
+    function createBtn(title, svgHtml, action, isClose) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = isClose ? 'anticeil-win-btn anticeil-win-close' : 'anticeil-win-btn';
+      btn.title = title;
+      btn.setAttribute('aria-label', title);
+      btn.innerHTML = svgHtml;
 
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'anticeil-win-btn anticeil-win-close';
-    closeBtn.title = 'Close';
-    closeBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1 L9 9 M9 1 L1 9" stroke="currentColor" stroke-width="1.2"/></svg>';
-    closeBtn.onclick = (e) => { e.stopPropagation(); invokeCmd('close_window'); };
+      const handler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        invokeAction(action);
+      };
+
+      btn.addEventListener('click', handler);
+      btn.addEventListener('mousedown', (e) => e.stopPropagation());
+      btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+      return btn;
+    }
+
+    const minBtn = createBtn('Minimize', '<svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>', 'minimize', false);
+    const maxBtn = createBtn('Maximize', '<svg width="10" height="10" viewBox="0 0 10 10"><rect width="8" height="8" x="1" y="1" fill="none" stroke="currentColor" stroke-width="1"/></svg>', 'toggle_maximize', false);
+    const closeBtn = createBtn('Close', '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1 L9 9 M9 1 L1 9" stroke="currentColor" stroke-width="1.2"/></svg>', 'close', true);
 
     container.appendChild(minBtn);
     container.appendChild(maxBtn);
@@ -119,15 +169,20 @@ const INIT_SCRIPT: &str = r#"
     }
 
     header.addEventListener('mousedown', (e) => {
-      if (e.target.closest('button, a, input, select, .no-drag, #anticeil-titlebar-controls')) return;
+      if (e.target.closest('button, a, input, select, .no-drag, #anticeil-titlebar-controls, .anticeil-desktop-window-controls')) return;
       if (e.detail === 2) {
-        invokeCmd('toggle_maximize_window');
+        invokeAction('toggle_maximize');
       } else if (e.button === 0) {
-        invokeCmd('start_drag_window');
+        invokeAction('start_dragging');
       }
     });
   }
 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountControls);
+  } else {
+    mountControls();
+  }
   setInterval(mountControls, 250);
 })();
 "#;
