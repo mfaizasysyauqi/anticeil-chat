@@ -51,8 +51,19 @@ interface UseAuthSessionOptions {
 }
 
 export function useAuthSession({ t, onResetAppState }: UseAuthSessionOptions) {
-  const [isAuthRequiredOpen, setIsAuthRequiredOpen] = useState(false);
-  const [authFeatureInfo, setAuthFeatureInfo] = useState<{ title?: string; desc?: string }>({});
+  // Auto-open login dialog immediately on arrival if unauthenticated, while keeping it closeable with 'X'
+  const [isAuthRequiredOpen, setIsAuthRequiredOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const urlToken = new URLSearchParams(window.location.search).get('token');
+    const existingToken = urlToken || localStorage.getItem('token') || localStorage.getItem('ap_token');
+    const existingUser = localStorage.getItem('anticeil_current_user');
+    return !existingToken && !existingUser;
+  });
+
+  const [authFeatureInfo, setAuthFeatureInfo] = useState<{ title?: string; desc?: string }>(() => ({
+    title: t('Login ke Anticeil'),
+    desc: t('Pilih akun atau pindai kode QR untuk melanjutkan ke percakapan, colony, dan aktivitas.'),
+  }));
 
   useEffect(() => {
     const handleOpenAuth = (e?: Event) => {
