@@ -23,6 +23,7 @@
         "fullscreen": false,
         "decorations": false,
         "shadow": true,
+        "dragDropEnabled": false,
         "url": "https://app.anticeil.com"
       }
     ],

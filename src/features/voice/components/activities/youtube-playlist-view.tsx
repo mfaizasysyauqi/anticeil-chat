@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Play, Equal, MoreHorizontal, Trash2, ListPlus } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Play, Equal, MoreHorizontal, Trash2, ListPlus, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import {
@@ -45,6 +45,67 @@ export const YouTubePlaylistView: React.FC<YouTubePlaylistViewProps> = ({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [menuOpenIndex, setMenuOpenIndex] = useState<number | null>(null);
 
+  // Pointer event tracking for desktop app & webview where HTML5 drag/drop is blocked
+  const isPointerDraggingRef = useRef(false);
+  const pointerStartIndexRef = useRef<number | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent, index: number) => {
+    if (!canEdit || e.button !== 0) return;
+    e.stopPropagation();
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch (_) {}
+    isPointerDraggingRef.current = true;
+    pointerStartIndexRef.current = index;
+    setDraggedIndex(index);
+    setDragOverIndex(index);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isPointerDraggingRef.current || pointerStartIndexRef.current === null) return;
+    const element = document.elementFromPoint(e.clientX, e.clientY);
+    const card = element?.closest('[data-playlist-index]') as HTMLElement | null;
+    if (card && card.dataset.playlistIndex !== undefined) {
+      const targetIdx = parseInt(card.dataset.playlistIndex, 10);
+      if (!isNaN(targetIdx) && targetIdx !== dragOverIndex) {
+        setDragOverIndex(targetIdx);
+      }
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!isPointerDraggingRef.current) return;
+    isPointerDraggingRef.current = false;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch (_) {}
+
+    const fromIdx = pointerStartIndexRef.current;
+    const toIdx = dragOverIndex;
+    if (fromIdx !== null && toIdx !== null && fromIdx !== toIdx) {
+      const updated = [...playlist];
+      const [moved] = updated.splice(fromIdx, 1);
+      updated.splice(toIdx, 0, moved);
+      onReorderPlaylist?.(updated);
+    }
+
+    pointerStartIndexRef.current = null;
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent) => {
+    if (!isPointerDraggingRef.current) return;
+    isPointerDraggingRef.current = false;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch (_) {}
+    pointerStartIndexRef.current = null;
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  // HTML5 Drag & Drop handlers (with fallback)
   const handleDragStart = (e: React.DragEvent, index: number) => {
     if (!canEdit) return;
     setDraggedIndex(index);
@@ -52,8 +113,17 @@ export const YouTubePlaylistView: React.FC<YouTubePlaylistViewProps> = ({
     e.dataTransfer.setData('text/plain', String(index));
   };
 
+  const handleDragEnter = (e: React.DragEvent, index: number) => {
+    if (!canEdit) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent, index: number) => {
-    if (!canEdit || draggedIndex === null) return;
+    if (!canEdit) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     if (dragOverIndex !== index) {
@@ -63,14 +133,17 @@ export const YouTubePlaylistView: React.FC<YouTubePlaylistViewProps> = ({
 
   const handleDrop = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
-    if (draggedIndex === null || draggedIndex === targetIndex) {
+    e.stopPropagation();
+    const fromIndexStr = e.dataTransfer.getData('text/plain');
+    const fromIndex = draggedIndex !== null ? draggedIndex : parseInt(fromIndexStr, 10);
+    if (isNaN(fromIndex) || fromIndex === targetIndex) {
       setDraggedIndex(null);
       setDragOverIndex(null);
       return;
     }
 
     const updated = [...playlist];
-    const [moved] = updated.splice(draggedIndex, 1);
+    const [moved] = updated.splice(fromIndex, 1);
     updated.splice(targetIndex, 0, moved);
 
     setDraggedIndex(null);
@@ -81,6 +154,15 @@ export const YouTubePlaylistView: React.FC<YouTubePlaylistViewProps> = ({
   const handleDragEnd = () => {
     setDraggedIndex(null);
     setDragOverIndex(null);
+  };
+
+  const handleMoveItem = (fromIndex: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
+    if (targetIndex < 0 || targetIndex >= playlist.length) return;
+    const updated = [...playlist];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(targetIndex, 0, moved);
+    onReorderPlaylist?.(updated);
   };
 
   if (playlist.length === 0) {
@@ -138,8 +220,10 @@ export const YouTubePlaylistView: React.FC<YouTubePlaylistViewProps> = ({
         return (
           <div
             key={`${item.id}-${idx}`}
+            data-playlist-index={idx}
             draggable={canEdit}
             onDragStart={(e) => handleDragStart(e, idx)}
+            onDragEnter={(e) => handleDragEnter(e, idx)}
             onDragOver={(e) => handleDragOver(e, idx)}
             onDrop={(e) => handleDrop(e, idx)}
             onDragEnd={handleDragEnd}
@@ -167,7 +251,11 @@ export const YouTubePlaylistView: React.FC<YouTubePlaylistViewProps> = ({
                     )}
                   </span>
                   <span
-                    className="hidden group-hover:flex items-center justify-center text-muted-foreground group-hover:text-foreground cursor-grab active:cursor-grabbing"
+                    onPointerDown={(e) => handlePointerDown(e, idx)}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerCancel}
+                    className="hidden group-hover:flex items-center justify-center text-muted-foreground group-hover:text-foreground cursor-grab active:cursor-grabbing p-1 -m-1 touch-none"
                     title={t('Tarik untuk atur urutan')}
                   >
                     <Equal className="w-4 h-4 stroke-[2.5]" />
@@ -187,11 +275,12 @@ export const YouTubePlaylistView: React.FC<YouTubePlaylistViewProps> = ({
             </div>
 
             {/* Thumbnail */}
-            <div className="relative w-24 aspect-video rounded-lg overflow-hidden shrink-0 bg-black">
+            <div className="relative w-24 aspect-video rounded-lg overflow-hidden shrink-0 bg-black pointer-events-none select-none">
               <img
                 src={item.thumbnail || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`}
                 alt={item.title}
-                className="w-full h-full object-cover"
+                draggable={false}
+                className="w-full h-full object-cover pointer-events-none select-none"
                 onError={(e) => {
                   const target = e.currentTarget;
                   if (!target.dataset.triedFallback) {
@@ -260,19 +349,33 @@ export const YouTubePlaylistView: React.FC<YouTubePlaylistViewProps> = ({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="w-40 bg-card/95 backdrop-blur-md border-border text-foreground p-1 space-y-0.5 shadow-xl z-[200]"
+                    className="w-44 bg-card/95 backdrop-blur-md border-border text-foreground p-1 space-y-0.5 shadow-xl z-[200]"
                   >
-                    {/* Delete Option (Red styled like Discord) */}
-                    {canDeleteThisItem && (
+                    {/* Move Up */}
+                    {canEdit && idx > 0 && (
                       <DropdownMenuItem
                         onClick={() => {
                           setMenuOpenIndex(null);
-                          onRemoveItem?.(idx, item);
+                          handleMoveItem(idx, 'up');
                         }}
-                        className="flex items-center gap-2 text-xs font-semibold text-red-500 hover:text-white hover:bg-red-600 focus:text-white focus:bg-red-600 rounded-md py-1.5 px-2.5 cursor-pointer transition-colors"
+                        className="flex items-center gap-2 text-xs font-medium text-foreground hover:bg-muted rounded-md py-1.5 px-2.5 cursor-pointer transition-colors"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>{t('Delete')}</span>
+                        <ArrowUp className="w-3.5 h-3.5" />
+                        <span>{t('Pindahkan ke atas')}</span>
+                      </DropdownMenuItem>
+                    )}
+
+                    {/* Move Down */}
+                    {canEdit && idx < playlist.length - 1 && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setMenuOpenIndex(null);
+                          handleMoveItem(idx, 'down');
+                        }}
+                        className="flex items-center gap-2 text-xs font-medium text-foreground hover:bg-muted rounded-md py-1.5 px-2.5 cursor-pointer transition-colors"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                        <span>{t('Pindahkan ke bawah')}</span>
                       </DropdownMenuItem>
                     )}
 
@@ -287,6 +390,20 @@ export const YouTubePlaylistView: React.FC<YouTubePlaylistViewProps> = ({
                       >
                         <ListPlus className="w-3.5 h-3.5" />
                         <span>{t('Play next')}</span>
+                      </DropdownMenuItem>
+                    )}
+
+                    {/* Delete Option (Red styled like Discord) */}
+                    {canDeleteThisItem && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setMenuOpenIndex(null);
+                          onRemoveItem?.(idx, item);
+                        }}
+                        className="flex items-center gap-2 text-xs font-semibold text-red-500 hover:text-white hover:bg-red-600 focus:text-white focus:bg-red-600 rounded-md py-1.5 px-2.5 cursor-pointer transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{t('Delete')}</span>
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
