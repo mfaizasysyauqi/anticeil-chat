@@ -15,14 +15,14 @@ export const isDevLoginEnabled =
 
 export const MOCK_DEV_USERS = [
   {
-    id: 'usr_dev_agent_1',
-    email: 'agent-1@anticeil.dev',
-    firstName: 'AI Agent',
-    lastName: 'Alpha',
-    name: 'AI Agent Alpha 🤖',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=agent1',
-    imageUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=agent1',
-    role: 'TESTER',
+    id: 'usr_fathur',
+    email: 'fathur@anticeil.com',
+    firstName: 'Fathur',
+    lastName: '',
+    name: 'Fathur',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=128&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=128&q=80',
+    role: 'DEVELOPER',
   },
   {
     id: 'usr_dev_agent_2',

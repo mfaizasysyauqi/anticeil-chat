@@ -220,7 +220,7 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
           <div className="ml-5 pl-2 border-l border-border/30 space-y-1 my-1">
             <div className="flex items-center gap-2 py-0.5 px-1.5 rounded hover:bg-sidebar-accent/50 text-[11px] text-foreground font-medium">
               <span className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded-full ring-2 ring-emerald-500">
-                <img className="aspect-square h-full w-full object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&q=80" alt="Faiz" />
+                <img className="aspect-square h-full w-full object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=64&q=80" alt="Faiz" />
               </span>
               <span className="truncate flex-1">Faiz</span>
               <span className="text-[9px] text-emerald-400 font-medium">Berbicara</span>

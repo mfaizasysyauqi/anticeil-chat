@@ -137,7 +137,7 @@ export const INITIAL_MESSAGES: Record<string, ColonyMessage[]> = {
       senderId: 'usr_faiz',
       senderName: 'Muhammad Faiz',
       senderEmail: 'faiz@anticeil.com',
-      senderAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80',
+      senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&q=80',
       senderRole: 'admin',
       content: 'Just merged the WebRTC mesh audio update! Sound quality is crystal clear with under 40ms latency 🚀',
       createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
