@@ -1,5 +1,3 @@
-use tauri::Manager;
-
 #[tauri::command]
 fn minimize_window(window: tauri::WebviewWindow) {
   let _ = window.minimize();
@@ -34,7 +32,6 @@ const INIT_SCRIPT: &str = r#"
       header[role="banner"] {
         -webkit-app-region: drag !important;
         user-select: none !important;
-        padding-right: 0 !important;
       }
       header[role="banner"] button,
       header[role="banner"] a,
@@ -90,7 +87,7 @@ const INIT_SCRIPT: &str = r#"
     const container = document.createElement('div');
     container.id = 'anticeil-titlebar-controls';
     container.className = 'no-drag';
-    container.style.cssText = 'display:inline-flex;align-items:center;height:100%;margin-left:4px;-webkit-app-region:no-drag;';
+    container.style.cssText = 'display:inline-flex;align-items:center;height:100%;margin-left:6px;border-left:1px solid rgba(255,255,255,0.12);padding-left:4px;-webkit-app-region:no-drag;';
 
     const minBtn = document.createElement('button');
     minBtn.className = 'anticeil-win-btn';
@@ -113,7 +110,13 @@ const INIT_SCRIPT: &str = r#"
     container.appendChild(minBtn);
     container.appendChild(maxBtn);
     container.appendChild(closeBtn);
-    header.appendChild(container);
+
+    const rightActions = header.lastElementChild;
+    if (rightActions) {
+      rightActions.appendChild(container);
+    } else {
+      header.appendChild(container);
+    }
 
     header.addEventListener('mousedown', (e) => {
       if (e.target.closest('button, a, input, select, .no-drag, #anticeil-titlebar-controls')) return;
@@ -141,8 +144,11 @@ pub fn run() {
     .setup(|app| {
       let window_config = app.config().app.windows[0].clone();
       let window = tauri::WebviewWindowBuilder::from_config(app.handle(), &window_config)?
+        .decorations(false)
+        .shadow(true)
         .initialization_script(INIT_SCRIPT)
         .build()?;
+      let _ = window.set_decorations(false);
       let _ = window.navigate("https://app.anticeil.com".parse().unwrap());
 
       if cfg!(debug_assertions) {
