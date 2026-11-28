@@ -58,6 +58,53 @@ export function AppTopTitleBar({
   const { t } = useTranslation();
   const [showReactControls, setShowReactControls] = useState(false);
 
+  const handleWinAction = async (action: 'minimize' | 'toggle_maximize' | 'close') => {
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      const win = getCurrentWindow();
+      if (action === 'minimize') return await win.minimize();
+      if (action === 'toggle_maximize') {
+        try {
+          return await win.toggleMaximize();
+        } catch {
+          const isMax = await win.isMaximized();
+          return isMax ? await win.unmaximize() : await win.maximize();
+        }
+      }
+      if (action === 'close') return await win.close();
+    } catch (err) {
+      console.warn(`[Desktop] @tauri-apps/api/window ${action} error:`, err);
+    }
+
+    try {
+      const invoke =
+        (window as any).__TAURI_INTERNALS__?.invoke ||
+        (window as any).__TAURI__?.core?.invoke;
+      if (invoke) {
+        if (action === 'minimize') return await invoke('plugin:window|minimize', { label: 'main' });
+        if (action === 'toggle_maximize') return await invoke('plugin:window|toggle_maximize', { label: 'main' });
+        if (action === 'close') return await invoke('plugin:window|close', { label: 'main' });
+      }
+    } catch (_) {}
+
+    try {
+      const invoke =
+        (window as any).__TAURI_INTERNALS__?.invoke ||
+        (window as any).__TAURI__?.core?.invoke;
+      if (invoke) {
+        if (action === 'minimize') return await invoke('minimize_window');
+        if (action === 'toggle_maximize') return await invoke('toggle_maximize_window');
+        if (action === 'close') return await invoke('close_window');
+      }
+    } catch (_) {}
+
+    if (typeof (window as any).__anticeil_window_action === 'function') {
+      try {
+        await (window as any).__anticeil_window_action(action);
+      } catch (_) {}
+    }
+  };
+
   useEffect(() => {
     const bindInjectedControls = () => {
       const container = document.getElementById('anticeil-titlebar-controls');
@@ -66,12 +113,11 @@ export function AppTopTitleBar({
         setShowReactControls(false);
 
         const bindBtn = (
-          selector: string,
+          btn: Element | null,
           action: 'minimize' | 'toggle_maximize' | 'close'
         ) => {
-          const btn = container.querySelector(selector) as HTMLElement | null;
-          if (!btn || btn.dataset.anticeilBound === 'true') return;
-          btn.dataset.anticeilBound = 'true';
+          if (!btn || (btn as HTMLElement).dataset.anticeilBound === 'true') return;
+          (btn as HTMLElement).dataset.anticeilBound = 'true';
 
           btn.addEventListener(
             'click',
@@ -79,31 +125,31 @@ export function AppTopTitleBar({
               e.preventDefault();
               e.stopPropagation();
               e.stopImmediatePropagation();
-              try {
-                const { getCurrentWindow } = await import('@tauri-apps/api/window');
-                const win = getCurrentWindow();
-                if (action === 'minimize') await win.minimize();
-                else if (action === 'toggle_maximize') await win.toggleMaximize();
-                else if (action === 'close') await win.close();
-              } catch (err) {
-                console.error(`Window ${action} error`, err);
-                const invoke =
-                  (window as any).__TAURI_INTERNALS__?.invoke ||
-                  (window as any).__TAURI__?.core?.invoke;
-                if (invoke) {
-                  if (action === 'minimize') invoke('minimize_window');
-                  else if (action === 'toggle_maximize') invoke('toggle_maximize_window');
-                  else if (action === 'close') invoke('close_window');
-                }
-              }
+              await handleWinAction(action);
             },
             { capture: true }
           );
         };
 
-        bindBtn('.anticeil-win-min', 'minimize');
-        bindBtn('.anticeil-win-max', 'toggle_maximize');
-        bindBtn('.anticeil-win-close', 'close');
+        const buttons = Array.from(container.querySelectorAll('button'));
+        if (buttons.length >= 3) {
+          bindBtn(buttons[0], 'minimize');
+          bindBtn(buttons[1], 'toggle_maximize');
+          bindBtn(buttons[2], 'close');
+        } else {
+          bindBtn(
+            container.querySelector('button[title*="Min" i], button[aria-label*="Min" i], .anticeil-win-min'),
+            'minimize'
+          );
+          bindBtn(
+            container.querySelector('button[title*="Max" i], button[aria-label*="Max" i], .anticeil-win-max'),
+            'toggle_maximize'
+          );
+          bindBtn(
+            container.querySelector('button[title*="Close" i], button[aria-label*="Close" i], .anticeil-win-close'),
+            'close'
+          );
+        }
         return true;
       }
       return false;
@@ -134,38 +180,6 @@ export function AppTopTitleBar({
       return () => clearInterval(interval);
     }
   }, []);
-
-  const handleWinAction = async (action: 'minimize' | 'toggle_maximize' | 'close') => {
-    if (typeof (window as any).__anticeil_window_action === 'function') {
-      try {
-        await (window as any).__anticeil_window_action(action);
-        return;
-      } catch (_) {}
-    }
-    try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      const win = getCurrentWindow();
-      if (action === 'minimize') return await win.minimize();
-      if (action === 'toggle_maximize') return await win.toggleMaximize();
-      if (action === 'close') return await win.close();
-    } catch (_) {}
-    try {
-      const invoke = (window as any).__TAURI_INTERNALS__?.invoke || (window as any).__TAURI__?.core?.invoke;
-      if (invoke) {
-        if (action === 'minimize') return await invoke('plugin:window|minimize', { label: 'main' });
-        if (action === 'toggle_maximize') return await invoke('plugin:window|toggle_maximize', { label: 'main' });
-        if (action === 'close') return await invoke('plugin:window|close', { label: 'main' });
-      }
-    } catch (_) {}
-    try {
-      const invoke = (window as any).__TAURI_INTERNALS__?.invoke || (window as any).__TAURI__?.core?.invoke;
-      if (invoke) {
-        if (action === 'minimize') return await invoke('minimize_window');
-        if (action === 'toggle_maximize') return await invoke('toggle_maximize_window');
-        if (action === 'close') return await invoke('close_window');
-      }
-    } catch (_) {}
-  };
 
   // Determine current context title and icon (100% synchronized with sidebar navigation)
   let title = 'Anticeil';
@@ -255,6 +269,10 @@ export function AppTopTitleBar({
     <header
       role="banner"
       aria-label={t('Top Window Bar')}
+      onDoubleClick={(e) => {
+        if ((e.target as HTMLElement).closest('button, a, input, select, .no-drag')) return;
+        handleWinAction('toggle_maximize');
+      }}
       className={cn(
         'h-7 min-h-[28px] max-h-[28px] w-full shrink-0 bg-background border-b border-sidebar-border border-t-0 border-x-0 flex items-center justify-between select-none z-30 transition-colors',
         LAYOUT_PAGE_SPACING.HORIZONTAL,
