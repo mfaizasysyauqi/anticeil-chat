@@ -118,8 +118,7 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
   };
 
   if (ch.type === 'voice') {
-    const isMockLounge = ch.id === 'ch_cp_voice_lounge';
-    const callCount = activeCallCounts[ch.id] || (isMockLounge ? 3 : 0);
+    const callCount = activeCallCounts[ch.id] || 0;
     const isLimitSet = typeof ch.userLimit === 'number' && ch.userLimit > 0;
     const isFull = isLimitSet && callCount >= (ch.userLimit || 0);
 
@@ -214,32 +213,6 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
 
           {renderActionButtons()}
         </div>
-
-        {/* Active Voice Participants Preview for lively community */}
-        {isMockLounge && (
-          <div className="ml-5 pl-2 border-l border-border/30 space-y-1 my-1">
-            <div className="flex items-center gap-2 py-0.5 px-1.5 rounded hover:bg-sidebar-accent/50 text-[11px] text-foreground font-medium">
-              <span className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded-full ring-2 ring-emerald-500">
-                <img className="aspect-square h-full w-full object-cover" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=64&q=80" alt="Husein" />
-              </span>
-              <span className="truncate flex-1">Husein</span>
-              <span className="text-[9px] text-emerald-400 font-medium">Berbicara</span>
-            </div>
-            <div className="flex items-center gap-2 py-0.5 px-1.5 rounded hover:bg-sidebar-accent/50 text-[11px] text-muted-foreground">
-              <span className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded-full">
-                <img className="aspect-square h-full w-full object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&q=80" alt="Sarah" />
-              </span>
-              <span className="truncate flex-1">Sarah Jenkins</span>
-            </div>
-            <div className="flex items-center gap-2 py-0.5 px-1.5 rounded hover:bg-sidebar-accent/50 text-[11px] text-muted-foreground">
-              <span className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded-full">
-                <img className="aspect-square h-full w-full object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=64&q=80" alt="Alex" />
-              </span>
-              <span className="truncate flex-1">Alex Chen</span>
-              <span className="text-[9px] text-muted-foreground/60">Muted</span>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
@@ -276,9 +249,6 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
             </span>
           )}
           {renderActivityBadge()}
-          {ch.id === 'ch_cp_forum_feedback' && (
-            <span className="text-[10px] text-muted-foreground/70 font-mono px-1.5 py-0.2 rounded bg-muted/50 font-bold mr-1">18</span>
-          )}
           {renderActionButtons()}
         </div>
 
@@ -386,11 +356,6 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 truncate">
             <span className="truncate">{ch.name}</span>
-            {ch.id === 'ch_cp_general' && (
-              <span className="px-1.5 py-0.2 rounded bg-primary/20 text-primary text-[9px] font-bold shrink-0">
-                LIVE
-              </span>
-            )}
             {ch.type === 'stage' && isActiveCh && (
               <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-400 text-[9px] font-bold shrink-0 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -399,19 +364,6 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
             )}
           </div>
         </div>
-        {ch.id === 'ch_cp_announcement' && (
-          <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mr-1" title="Pesan baru" />
-        )}
-        {ch.id === 'ch_cp_dev' && (
-          <span className="px-1.5 py-0.2 rounded-full bg-primary/20 text-primary text-[10px] font-bold font-mono shrink-0 mr-1">
-            3
-          </span>
-        )}
-        {ch.id === 'ch_cp_act_ai' && (
-          <span className="px-1.5 py-0.2 rounded bg-primary/20 text-primary text-[9px] font-bold shrink-0 mr-1">
-            AI
-          </span>
-        )}
         {ch.isPrivate && (
           <span title="Private Channel">
             <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />

@@ -204,15 +204,7 @@ export function MiniRail({
   };
 
   const mainServer = serverList.find((s) => s.id === 'anticeil') || serverList[0];
-  const rawOtherServers = serverList.filter((s) => s.id !== 'anticeil');
-  const seenColonyIds = new Set(rawOtherServers.map((s) => s.id));
-  const otherServers = [...rawOtherServers];
-  for (const def of DEFAULT_COLONIES.slice(1)) {
-    if (!seenColonyIds.has(def.id)) {
-      otherServers.push(def);
-      seenColonyIds.add(def.id);
-    }
-  }
+  const otherServers = serverList.filter((s) => s.id !== 'anticeil');
 
   // Derive friends: use friends prop, or if empty, extract active DM contacts from dmChannels / stored DMs / members
   const friendList = useMemo(() => {

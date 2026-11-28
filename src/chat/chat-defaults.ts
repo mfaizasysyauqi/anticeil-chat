@@ -1,200 +1,9 @@
 import { ColonyChannel, Colony, ColonyMember, ColonyMessage } from './chat-types';
-export { DEFAULT_COLONIES, loadStoredColonies, saveStoredColonies } from '@/lib/colony';
+export { DEFAULT_COLONIES, DUMMY_COLONY_IDS, loadStoredColonies, saveStoredColonies } from '@/lib/colony';
 
-export const DEFAULT_CHANNELS: ColonyChannel[] = [
-  // ── Colony: Cyberpunk DAO ──
-  {
-    id: 'ch_cp_general',
-    colonyId: 'colony_cyberpunk',
-    name: 'general',
-    type: 'text',
-    category: 'CHANNELS',
-    categoryId: 'cat_text_colony_cyberpunk',
-    categoryName: 'SALURAN TEKS',
-    description: 'Kanal diskusi resmi & pengujian real-time Anticeil',
-    topic: 'Kanal diskusi resmi & pengujian real-time Anticeil',
-  },
-  {
-    id: 'ch_cp_announcement',
-    colonyId: 'colony_cyberpunk',
-    name: 'pengumuman-resmi',
-    type: 'announcement',
-    isAnnouncement: true,
-    category: 'CHANNELS',
-    categoryId: 'cat_announcements_colony_cyberpunk',
-    categoryName: 'PENGUMUMAN RESMI',
-    description: 'Pengumuman resmi dan info penting Cyberpunk DAO',
-    topic: 'Pengumuman resmi dan pembaruan ekosistem Anticeil',
-  },
-  {
-    id: 'ch_cp_rules',
-    colonyId: 'colony_cyberpunk',
-    name: 'aturan-komunitas',
-    type: 'text',
-    category: 'CHANNELS',
-    categoryId: 'cat_announcements_colony_cyberpunk',
-    categoryName: 'PENGUMUMAN RESMI',
-    description: 'Pedoman, etika, dan tata tertib komunitas',
-    topic: 'Pedoman & etika komunitas Cyberpunk DAO',
-  },
-  {
-    id: 'ch_cp_dev',
-    colonyId: 'colony_cyberpunk',
-    name: 'dev-chat',
-    type: 'text',
-    category: 'CHANNELS',
-    categoryId: 'cat_text_colony_cyberpunk',
-    categoryName: 'SALURAN TEKS',
-    description: 'Diskusi arsitektur microservices, WebRTC, dan SDK',
-    topic: 'Diskusi engineering, coding, dan arsitektur',
-  },
-  {
-    id: 'ch_cp_showcase',
-    colonyId: 'colony_cyberpunk',
-    name: 'showcase-karya',
-    type: 'text',
-    category: 'CHANNELS',
-    categoryId: 'cat_text_colony_cyberpunk',
-    categoryName: 'SALURAN TEKS',
-    description: 'Pameran karya web, mini-app, dan desain',
-    topic: 'Pamerkan kreasi dan karya terbaik Anda',
-  },
-  {
-    id: 'ch_cp_voice_lounge',
-    colonyId: 'colony_cyberpunk',
-    name: 'Lounge Umum',
-    type: 'voice',
-    category: 'CHANNELS',
-    categoryId: 'cat_voice_colony_cyberpunk',
-    categoryName: 'RUANG SUARA & VIDEO',
-    description: 'Ruang obrolan santai WebRTC mesh audio',
-    topic: 'Ruang suara santai dengan WebRTC mesh audio jernih',
-    userLimit: 25,
-  },
-  {
-    id: 'ch_cp_voice_gaming',
-    colonyId: 'colony_cyberpunk',
-    name: 'Gaming Squad 1',
-    type: 'voice',
-    category: 'CHANNELS',
-    categoryId: 'cat_voice_colony_cyberpunk',
-    categoryName: 'RUANG SUARA & VIDEO',
-    description: 'Saluran suara untuk mabar dan live stream game',
-    topic: 'Mabar & gaming voice lounge',
-    userLimit: 8,
-  },
-  {
-    id: 'ch_cp_act_watch',
-    colonyId: 'colony_cyberpunk',
-    name: 'Nobar YouTube Sync',
-    type: 'voice',
-    category: 'CHANNELS',
-    categoryId: 'cat_activities_colony_cyberpunk',
-    categoryName: 'AKTIVITAS & MINI-APPS',
-    description: 'Aktivitas nobar video tersinkronisasi bersama kawan',
-    topic: 'Nonton bareng YouTube 24/7 tersinkronisasi',
-  },
-  {
-    id: 'ch_cp_act_chess',
-    colonyId: 'colony_cyberpunk',
-    name: 'Anticeil Catur Arena',
-    type: 'voice',
-    category: 'CHANNELS',
-    categoryId: 'cat_activities_colony_cyberpunk',
-    categoryName: 'AKTIVITAS & MINI-APPS',
-    description: 'Bermain catur real-time atau uji kecerdasan lawan Bot AI',
-    topic: 'Anticeil Multiplayer Chess Arena',
-  },
-  {
-    id: 'ch_cp_act_ai',
-    colonyId: 'colony_cyberpunk',
-    name: 'Atlas AI Copilot',
-    type: 'text',
-    category: 'CHANNELS',
-    categoryId: 'cat_activities_colony_cyberpunk',
-    categoryName: 'AKTIVITAS & MINI-APPS',
-    description: 'Asisten AI otomatis untuk bantuan kode dan otomatisasi',
-    topic: 'Atlas AI Agent terintegrasi',
-  },
-  {
-    id: 'ch_cp_forum_feedback',
-    colonyId: 'colony_cyberpunk',
-    name: 'Saran Fitur 2026',
-    type: 'forum',
-    category: 'CHANNELS',
-    categoryId: 'cat_forum_colony_cyberpunk',
-    categoryName: 'FORUM & DISKUSI',
-    description: 'Forum ide dan request fitur Anticeil',
-    topic: 'Forum diskusi dan voting fitur baru Anticeil',
-  },
-];
+export const DEFAULT_CHANNELS: ColonyChannel[] = [];
 export const DEFAULT_MEMBERS: ColonyMember[] = [];
-export const INITIAL_MESSAGES: Record<string, ColonyMessage[]> = {
-  ch_cp_general: [
-    {
-      id: 'msg_cp_1',
-      channelId: 'ch_cp_general',
-      senderId: 'usr_husein',
-      senderName: 'Husein',
-      senderEmail: 'husein@anticeil.com',
-      senderAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=128&q=80',
-      senderRole: 'admin',
-      content: 'Just merged the WebRTC mesh audio update! Sound quality is crystal clear with under 40ms latency 🚀',
-      createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-      reactions: {
-        '👍': ['usr_husein', 'usr_sarah', 'usr_alex', 'usr_4', 'usr_5', 'usr_6', 'usr_7', 'usr_8', 'usr_9', 'usr_10', 'usr_11', 'usr_12'],
-        '🚀': ['usr_husein', 'usr_sarah', 'usr_alex', 'usr_4', 'usr_5', 'usr_6', 'usr_7', 'usr_8'],
-      },
-    },
-    {
-      id: 'msg_cp_2',
-      channelId: 'ch_cp_general',
-      senderId: 'usr_sarah',
-      senderName: 'Sarah Jenkins',
-      senderEmail: 'sarah@anticeil.com',
-      senderAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&q=80',
-      senderRole: 'moderator',
-      content: "Awesome! Let's spin up Watch Together in the call room to test synchronized video playback.",
-      createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'msg_cp_3',
-      channelId: 'ch_cp_general',
-      senderId: 'usr_watch_bot',
-      senderName: 'Watch Together',
-      senderEmail: 'watch@anticeil.app',
-      senderAvatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=youtube',
-      senderRole: 'member',
-      content: '',
-      createdAt: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
-      attachments: [
-        {
-          type: 'activity',
-          url: '',
-          name: 'Watch Together',
-          activityData: {
-            appId: 'watch-together',
-            name: 'Watch Together',
-            developer: 'Anticeil Activity',
-            description: 'Playing: Synthwave Radio 24/7 (3 viewers)',
-            icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=youtube',
-          },
-        },
-      ],
-    },
-    {
-      id: 'msg_cp_4',
-      channelId: 'ch_cp_general',
-      senderId: 'usr_alex',
-      senderName: 'Alex Chen',
-      senderEmail: 'alex@anticeil.com',
-      senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&q=80',
-      senderRole: 'member',
-      content: "Here is the quick Node SDK snippet to trigger real-time colony webhooks:\n\n```typescript\nimport { Anticeil } from '@anticeil/sdk';\n\nconst client = new Anticeil({ apiKey: 'atc_live_...' });\nawait client.channels.send({ channelId: 'general', content: 'Ping!' });\n```",
-      createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    },
-  ],
-};
+export const INITIAL_MESSAGES: Record<string, ColonyMessage[]> = {};
 
 // Domain aliases
 export const INITIAL_CHAT_MESSAGES = INITIAL_MESSAGES;
@@ -205,10 +14,9 @@ const STORAGE_KEY_CHANNELS = 'anticeil_colony_channels_v3';
 export function loadStoredMessages(): Record<string, ColonyMessage[]> {
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_MESSAGES) : null;
-    const stored = raw ? JSON.parse(raw) : {};
-    return { ...INITIAL_MESSAGES, ...stored };
+    return raw ? JSON.parse(raw) : {};
   } catch {
-    return { ...INITIAL_MESSAGES };
+    return {};
   }
 }
 
@@ -227,17 +35,17 @@ export function loadStoredChannels(): ColonyChannel[] {
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_CHANNELS) : null;
     const parsed = raw ? JSON.parse(raw) : [];
-    const list = Array.isArray(parsed) && parsed.length > 0 ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
     const seen = new Set<string>();
-    const merged: ColonyChannel[] = [];
-    for (const c of [...list, ...DEFAULT_CHANNELS]) {
-      if (!c || !c.id || seen.has(c.id)) continue;
-      seen.add(c.id);
-      merged.push((c.type === 'text' || !c.type) && c.name === 'General' ? { ...c, name: 'general' } : c);
-    }
-    return merged;
+    return parsed
+      .filter((c) => {
+        if (!c || !c.id || seen.has(c.id) || c.id.startsWith('ch_cp_')) return false;
+        seen.add(c.id);
+        return true;
+      })
+      .map((c) => ((c.type === 'text' || !c.type) && c.name === 'General' ? { ...c, name: 'general' } : c));
   } catch {
-    return DEFAULT_CHANNELS;
+    return [];
   }
 }
 

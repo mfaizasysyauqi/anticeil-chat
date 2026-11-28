@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { loadStoredMessages, saveStoredMessages, INITIAL_MESSAGES } from '@/chat/chat-defaults';
+import { loadStoredMessages, saveStoredMessages } from '@/chat/chat-defaults';
 import type { ColonyMessage, DiscordPollData } from '@/chat/chat-types';
 import type { DiscordGifItem } from '@/chat/anticeil-media-data';
 import { ANTICEIL_GIF_ITEMS } from '@/chat/anticeil-media-data';
@@ -45,9 +45,7 @@ export const messagesApi = {
       }
     } catch {}
     const stored = loadStoredMessages();
-    return (stored[channelId] && stored[channelId].length > 0)
-      ? stored[channelId]
-      : (INITIAL_MESSAGES[channelId] || []);
+    return stored[channelId] || [];
   },
 
   async sendMessage(
