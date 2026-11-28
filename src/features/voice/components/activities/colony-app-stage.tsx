@@ -51,6 +51,15 @@ export function ColonyAppStage({
   const installedApp = activeColony?.installedApps?.find((a) => a.id === appId);
   const appTitle = installedApp?.name || (appId === 'farm-merge' ? 'Farm Merge Valley' : appId);
 
+  const customApp = (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('anticeil_my_custom_apps') || '[]');
+      return saved.find((a: any) => a.id === appId);
+    } catch {
+      return null;
+    }
+  })();
+
   useEffect(() => {
     if (!socket) return;
 
@@ -104,6 +113,20 @@ export function ColonyAppStage({
       },
     });
   };
+
+  if (customApp?.launchUrl) {
+    return (
+      <div className="w-full h-full flex flex-col bg-background text-foreground select-none overflow-hidden relative rounded-none border-0">
+        <iframe
+          src={customApp.launchUrl}
+          title={customApp.title || appTitle}
+          className="w-full h-full border-0 bg-background"
+          allow="camera; microphone; display-capture; autoplay; clipboard-write; encrypted-media; fullscreen"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full flex flex-col bg-background text-foreground select-none overflow-y-auto custom-scrollbar p-4 sm:p-6 rounded-none border-0">

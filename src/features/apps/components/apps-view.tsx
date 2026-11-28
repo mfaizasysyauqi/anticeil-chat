@@ -10,6 +10,15 @@ import {
   Radio,
   Clock,
   X,
+  Plus,
+  Lock,
+  Globe,
+  Trash2,
+  ExternalLink,
+  ShieldCheck,
+  Code2,
+  CheckCircle2,
+  HelpCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -18,6 +27,17 @@ import { ResponsiveSearchBar } from '@/components/ui/responsive-search-bar';
 import { TopBarTabButton } from '@/components/ui/top-bar-tab-button';
 import { EmptyState } from '@/components/ui/empty';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import {
   CHANNEL_HORIZONTAL_PADDING,
   CHANNEL_VERTICAL_PADDING,
@@ -94,7 +114,10 @@ const CATEGORY_TABS = [
   { id: 'productivity', label: 'Utilitas' },
   { id: 'game', label: 'Game' },
   { id: 'entertainment', label: 'Hiburan' },
+  { id: 'my-apps', label: 'Aplikasi Saya' },
 ] as const;
+
+const MY_APPS_STORAGE_KEY = 'anticeil_my_custom_apps';
 
 const RECENT_APPS_STORAGE_KEY = 'anticeil_recent_apps';
 const MAX_RECENT_APPS = 10;
@@ -205,8 +228,101 @@ export function AppsView({
 }: AppsViewProps) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<'all' | 'entertainment' | 'game' | 'productivity'>('all');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'entertainment' | 'game' | 'productivity' | 'my-apps'>('all');
   const [appList, setAppList] = useState<VoiceAppDefinition[]>(ANTICEIL_APPS);
+
+  // My Custom Apps State (Persisted in localStorage & developer-ready)
+  const [myApps, setMyApps] = useState<VoiceAppDefinition[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(MY_APPS_STORAGE_KEY);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
+
+  const saveMyApps = (apps: VoiceAppDefinition[]) => {
+    setMyApps(apps);
+    try {
+      localStorage.setItem(MY_APPS_STORAGE_KEY, JSON.stringify(apps));
+    } catch {}
+  };
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: '',
+    description: '',
+    category: 'productivity' as 'productivity' | 'game' | 'entertainment',
+    launchUrl: '',
+    visibility: 'private' as 'private' | 'public',
+  });
+
+  const handleCreateApp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.title.trim()) {
+      toast.error(t('Nama aplikasi harus diisi'));
+      return;
+    }
+
+    const newAppId = `custom-app-${Date.now()}`;
+    const newApp: any = {
+      id: newAppId,
+      title: createForm.title.trim(),
+      developer: currentUser?.name || currentUser?.username || 'Anda',
+      category: createForm.category,
+      bannerGradient: 'from-blue-600 via-indigo-800 to-zinc-950',
+      iconBg: 'bg-primary/10 border border-primary/20',
+      iconColor: 'text-primary',
+      icon: createForm.category === 'game' ? Gamepad2 : createForm.category === 'entertainment' ? Tv : Sparkles,
+      tagline: createForm.description.trim() || 'Aplikasi kustom buatan Anda',
+      description: createForm.description.trim() || 'Aplikasi kustom buatan Anda',
+      accentColor: '#026fe4',
+      badge: createForm.visibility === 'public' ? 'KOMUNITAS' : 'PRIVATE',
+      serverCount: 'In 1 colony',
+      supportedLanguages: ['Bahasa Indonesia', 'English (US)'],
+      screenshots: [],
+      overviewLong: createForm.description.trim(),
+      visibility: createForm.visibility,
+      isVerified: false,
+      isCustom: true,
+      launchUrl: createForm.launchUrl.trim() || undefined,
+    };
+
+    const updated = [newApp, ...myApps];
+    saveMyApps(updated);
+    setIsCreateModalOpen(false);
+    setCreateForm({
+      title: '',
+      description: '',
+      category: 'productivity',
+      launchUrl: '',
+      visibility: 'private',
+    });
+    toast.success(t('Aplikasi berhasil dibuat!'));
+  };
+
+  const handleToggleVisibility = (appId: string) => {
+    const updated = myApps.map((a: any) => {
+      if (a.id === appId) {
+        const nextVis = a.visibility === 'public' ? 'private' : 'public';
+        return {
+          ...a,
+          visibility: nextVis,
+          badge: nextVis === 'public' ? (a.isVerified ? 'VERIFIED' : 'KOMUNITAS') : 'PRIVATE',
+        };
+      }
+      return a;
+    });
+    saveMyApps(updated);
+    toast.info(t('Visibilitas aplikasi berhasil diperbarui'));
+  };
+
+  const handleDeleteCustomApp = (appId: string) => {
+    const updated = myApps.filter((a) => a.id !== appId);
+    saveMyApps(updated);
+    toast.success(t('Aplikasi berhasil dihapus'));
+  };
 
   // Standalone App State: When opened directly from the main AppsView
   const [standaloneApp, setStandaloneApp] = useState<VoiceAppDefinition | null>(() => {
@@ -373,17 +489,55 @@ export function AppsView({
     return appList.find((a) => a.id === 'watch-together') || appList[0] || ANTICEIL_APPS[0];
   }, [appList]);
 
+  const allCombinedApps = useMemo(() => {
+    const customPublicOrOwned = myApps.map((a: any) => ({
+      ...a,
+      isCustom: true,
+    }));
+    const existingIds = new Set(appList.map((a) => a.id));
+    const newCustom = customPublicOrOwned.filter((a) => !existingIds.has(a.id));
+    return [...appList, ...newCustom];
+  }, [appList, myApps]);
+
   const filteredApps = useMemo(() => {
-    return appList.filter((app) => {
-      const matchesSearch =
-        app.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.developer.toLowerCase().includes(searchQuery.toLowerCase());
+    if (activeCategory === 'my-apps') {
+      return myApps.filter((app) => {
+        if (!searchQuery.trim()) return true;
+        return (
+          app.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          app.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      });
+    }
+
+    return allCombinedApps.filter((app: any) => {
+      const isMyCustom = myApps.some((m) => m.id === app.id);
+      const isPublic = app.visibility === 'public' || (!app.visibility && !isMyCustom);
+
+      // Search mode: searches across all public apps & user's own apps
+      if (searchQuery.trim()) {
+        const matchesSearch =
+          app.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          app.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          app.developer?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCat = activeCategory === 'all' || app.category === activeCategory;
+        return matchesSearch && matchesCat && (isPublic || isMyCustom);
+      }
+
+      // Default browse mode (no search query):
+      // STRICT CURATION: Only show Official Anticeil apps OR Verified community apps!
+      // Unverified community apps do not appear in the main explore tab without a search query.
+      const isOfficial = !app.isCustom || app.developer?.toLowerCase().includes('anticeil');
+      const isVerified = Boolean(app.isVerified || app.isPromoted);
+
+      if (!isOfficial && !isVerified) {
+        return false;
+      }
 
       const matchesCat = activeCategory === 'all' || app.category === activeCategory;
-      return matchesSearch && matchesCat;
+      return matchesCat;
     });
-  }, [appList, searchQuery, activeCategory]);
+  }, [allCombinedApps, myApps, searchQuery, activeCategory]);
 
   const handleLaunchStandalone = (appOrId: VoiceAppDefinition | string) => {
     if (!currentUser && requireAuth) {
@@ -711,62 +865,331 @@ export function AppsView({
           </div>
         )}
 
-        {/* Content by Sections */}
-        {filteredApps.length === 0 ? (
-          <EmptyState
-            icon={<Rocket className="w-8 h-8 stroke-[1.8] text-primary/80" />}
-            title="Tidak Ada Aktivitas Ditemukan"
-            description={
-              searchQuery
-                ? `Tidak ada aktivitas yang cocok dengan "${searchQuery}". Coba kata kunci lain.`
-                : 'Belum ada aktivitas yang tersedia di kategori ini.'
-            }
-            action={
-              searchQuery ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setSearchQuery('')}
-                  className="h-8 px-4 text-xs font-semibold cursor-pointer"
-                >
-                  {t('Reset Pencarian')}
-                </Button>
-              ) : undefined
-            }
-          />
-        ) : (
-          visibleSections.map((section) => {
-            const SectionIcon = section.icon;
-            const sectionApps = filteredApps.filter((app) => app.category === section.id);
-
-            if (sectionApps.length === 0) return null;
-
-            return (
-              <div key={section.id} className="space-y-3">
-                {/* Standardized Section Header */}
-                <PageSectionHeader
-                  icon={SectionIcon}
-                  title={t(section.title)}
-                  count={sectionApps.length}
-                  description={t(section.description)}
-                />
-
-                {/* Grid: 4 columns in desktop (xl:grid-cols-4), 2 in tablet and mobile (grid-cols-2) */}
-                <div className={SURFACE_STYLES.CARD_GRID}>
-                  {sectionApps.map((app) => (
-                    <ActivityCard
-                      key={app.id}
-                      app={app}
-                      onOpenDetail={handleOpenDetail}
-                    />
-                  ))}
+        {/* ── Tab: Aplikasi Saya (Developer Portal) vs Explore ── */}
+        {activeCategory === 'my-apps' ? (
+          <div className="space-y-6">
+            {/* Header Card with Developer Info & Create Button */}
+            <div className="p-5 sm:p-6 rounded-2xl border border-border bg-card/80 backdrop-blur-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <Code2 className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-bold text-foreground">
+                    {t('Aplikasi Saya (Developer Portal)')}
+                  </h2>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {t('Kelola bot, webhook, dan mini-app buatan Anda. Aplikasi Private hanya aktif untuk pengujian Anda, sedangkan Public dapat dicari di direktori komunitas.')}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                    <Lock className="w-3 h-3" /> Private: Pengujian Mandiri
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                    <Globe className="w-3 h-3" /> Public: Tersedia via Pencarian
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    <ShieldCheck className="w-3 h-3" /> Verifikasi Gratis (0% Fee)
+                  </span>
                 </div>
               </div>
-            );
-          })
+
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shrink-0 cursor-pointer shadow-md"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{t('Buat Aplikasi Baru')}</span>
+              </Button>
+            </div>
+
+            {/* List or Empty State */}
+            {filteredApps.length === 0 ? (
+              <EmptyState
+                icon={<Code2 className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+                title={searchQuery ? t('Tidak Ada Aplikasi Cocok') : t('Belum Ada Aplikasi Kustom')}
+                description={
+                  searchQuery
+                    ? `Tidak ada aplikasi yang cocok dengan "${searchQuery}".`
+                    : t('Bangun aplikasi interaktif, bot, atau integrasi webhook Anda menggunakan @anticeil/sdk dan jalankan langsung di Anticeil.')
+                }
+                action={
+                  <Button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{t('Buat Aplikasi Pertama')}</span>
+                  </Button>
+                }
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredApps.map((app: any) => {
+                  const AppIcon = app.icon || Sparkles;
+                  const isPublic = app.visibility === 'public';
+                  const isVerified = Boolean(app.isVerified);
+
+                  return (
+                    <div
+                      key={app.id}
+                      className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 flex flex-col justify-between hover:border-primary/50 transition-all shadow-xs space-y-4"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-3">
+                            <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">
+                              <AppIcon className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-sm font-bold text-foreground truncate">{app.title}</h3>
+                              <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                                {app.category}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'text-[10px] font-semibold gap-1',
+                                isPublic
+                                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                  : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                              )}
+                            >
+                              {isPublic ? <Globe className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
+                              <span>{isPublic ? 'Public' : 'Private'}</span>
+                            </Badge>
+                            {isVerified ? (
+                              <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                                Verified
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[9px] bg-zinc-800 text-zinc-400 border-zinc-700">
+                                Menunggu Kurasi
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                          {app.description}
+                        </p>
+
+                        {app.launchUrl && (
+                          <div className="text-[11px] font-mono text-muted-foreground/80 bg-muted/40 px-2 py-1 rounded truncate flex items-center gap-1.5">
+                            <ExternalLink className="w-3 h-3 shrink-0 text-primary" />
+                            <span className="truncate">{app.launchUrl}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            size="sm"
+                            onClick={() => handleLaunchStandalone(app)}
+                            className="h-8 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 cursor-pointer"
+                          >
+                            <Play className="w-3.5 h-3.5" />
+                            <span>{t('Uji Coba')}</span>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleOpenSendToChannel(app)}
+                            className="h-8 px-3 text-xs font-medium cursor-pointer"
+                          >
+                            <span>{t('Kirim')}</span>
+                          </Button>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleToggleVisibility(app.id)}
+                            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                            title={isPublic ? 'Ubah ke Private' : 'Ubah ke Public'}
+                          >
+                            {isPublic ? <Lock className="w-3.5 h-3.5" /> : <Globe className="w-3.5 h-3.5" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteCustomApp(app.id)}
+                            className="h-8 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
+                            title={t('Hapus')}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Normal Explore Sections */
+          filteredApps.length === 0 ? (
+            <EmptyState
+              icon={<Rocket className="w-8 h-8 stroke-[1.8] text-primary/80" />}
+              title="Tidak Ada Aktivitas Ditemukan"
+              description={
+                searchQuery
+                  ? `Tidak ada aktivitas yang cocok dengan "${searchQuery}". Coba kata kunci lain.`
+                  : 'Belum ada aktivitas yang tersedia di kategori ini.'
+              }
+              action={
+                searchQuery ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSearchQuery('')}
+                    className="h-8 px-4 text-xs font-semibold cursor-pointer"
+                  >
+                    {t('Reset Pencarian')}
+                  </Button>
+                ) : undefined
+              }
+            />
+          ) : (
+            visibleSections.map((section) => {
+              const SectionIcon = section.icon;
+              const sectionApps = filteredApps.filter((app) => app.category === section.id);
+
+              if (sectionApps.length === 0) return null;
+
+              return (
+                <div key={section.id} className="space-y-3">
+                  {/* Standardized Section Header */}
+                  <PageSectionHeader
+                    icon={SectionIcon}
+                    title={t(section.title)}
+                    count={sectionApps.length}
+                    description={t(section.description)}
+                  />
+
+                  {/* Grid: 4 columns in desktop (xl:grid-cols-4), 2 in tablet and mobile (grid-cols-2) */}
+                  <div className={SURFACE_STYLES.CARD_GRID}>
+                    {sectionApps.map((app) => (
+                      <ActivityCard
+                        key={app.id}
+                        app={app}
+                        onOpenDetail={handleOpenDetail}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          )
         )}
         </div>
       </ScrollArea>
+
+      {/* ── Modal Dialog: Buat Aplikasi Baru ────────────────────────── */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="max-w-md bg-card border-border p-6 rounded-2xl shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Code2 className="w-5 h-5 text-primary" />
+              <span>{t('Daftarkan Aplikasi Baru')}</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {t('Aplikasi yang Anda buat akan tersedia di Anticeil untuk diuji coba langsung atau dibagikan ke komunitas.')}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleCreateApp} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">{t('Nama Aplikasi')}</label>
+              <Input
+                value={createForm.title}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, title: e.target.value }))}
+                placeholder="Contoh: Kuis Komunitas, Bot Musik..."
+                required
+                className="bg-background"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">{t('Deskripsi Singkat')}</label>
+              <Input
+                value={createForm.description}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, description: e.target.value }))}
+                placeholder="Apa fungsi atau tujuan aplikasi ini?"
+                className="bg-background"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">{t('Kategori')}</label>
+                <select
+                  value={createForm.category}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, category: e.target.value as any }))}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs text-foreground focus:outline-none cursor-pointer"
+                >
+                  <option value="productivity">{t('Utilitas')}</option>
+                  <option value="game">{t('Game')}</option>
+                  <option value="entertainment">{t('Hiburan')}</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">{t('Visibilitas Awal')}</label>
+                <select
+                  value={createForm.visibility}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, visibility: e.target.value as any }))}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs text-foreground focus:outline-none cursor-pointer"
+                >
+                  <option value="private">{t('Private (Hanya Anda)')}</option>
+                  <option value="public">{t('Public (Bisa Dicari)')}</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">
+                {t('URL Web App / Embed (Opsional)')}
+              </label>
+              <Input
+                value={createForm.launchUrl}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, launchUrl: e.target.value }))}
+                placeholder="https://aplikasi-anda.vercel.app"
+                type="url"
+                className="bg-background font-mono text-xs"
+              />
+              <span className="text-[10px] text-muted-foreground block">
+                {t('Dapat berupa URL web app yang akan dijalankan langsung di layar panggung Anticeil.')}
+              </span>
+            </div>
+
+            <DialogFooter className="pt-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsCreateModalOpen(false)}
+                className="cursor-pointer"
+              >
+                {t('Batal')}
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold cursor-pointer"
+              >
+                {t('Simpan & Daftarkan')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Modal Dialog: Pilih Tujuan Luncurkan (DM vs Server) ─────── */}
       <ActivityDestinationDialog
