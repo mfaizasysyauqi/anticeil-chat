@@ -56,37 +56,83 @@ export function AppTopTitleBar({
   className,
 }: AppTopTitleBarProps) {
   const { t } = useTranslation();
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [showReactControls, setShowReactControls] = useState(false);
 
   useEffect(() => {
-    // 1. Remove any legacy or duplicate window control DOM elements injected outside React
-    const cleanupDuplicateControls = () => {
-      const duplicate = document.getElementById('anticeil-titlebar-controls');
-      if (duplicate) {
-        duplicate.remove();
-      }
-    };
-    cleanupDuplicateControls();
-    const cleanupInterval = setInterval(cleanupDuplicateControls, 400);
+    const bindInjectedControls = () => {
+      const container = document.getElementById('anticeil-titlebar-controls');
+      if (container) {
+        // Native controls injected at right edge: suppress React duplicate
+        setShowReactControls(false);
 
-    const checkDesktop = () => {
-      cleanupDuplicateControls();
-      const hasTauri = Boolean(
-        (window as any).__TAURI_INTERNALS__ ||
-        (window as any).__TAURI__ ||
-        (window as any).__anticeil_window_action ||
-        navigator.userAgent.includes('Tauri')
-      );
-      if (hasTauri) {
-        setIsDesktop(true);
+        const bindBtn = (
+          selector: string,
+          action: 'minimize' | 'toggle_maximize' | 'close'
+        ) => {
+          const btn = container.querySelector(selector) as HTMLElement | null;
+          if (!btn || btn.dataset.anticeilBound === 'true') return;
+          btn.dataset.anticeilBound = 'true';
+
+          btn.addEventListener(
+            'click',
+            async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.stopImmediatePropagation();
+              try {
+                const { getCurrentWindow } = await import('@tauri-apps/api/window');
+                const win = getCurrentWindow();
+                if (action === 'minimize') await win.minimize();
+                else if (action === 'toggle_maximize') await win.toggleMaximize();
+                else if (action === 'close') await win.close();
+              } catch (err) {
+                console.error(`Window ${action} error`, err);
+                const invoke =
+                  (window as any).__TAURI_INTERNALS__?.invoke ||
+                  (window as any).__TAURI__?.core?.invoke;
+                if (invoke) {
+                  if (action === 'minimize') invoke('minimize_window');
+                  else if (action === 'toggle_maximize') invoke('toggle_maximize_window');
+                  else if (action === 'close') invoke('close_window');
+                }
+              }
+            },
+            { capture: true }
+          );
+        };
+
+        bindBtn('.anticeil-win-min', 'minimize');
+        bindBtn('.anticeil-win-max', 'toggle_maximize');
+        bindBtn('.anticeil-win-close', 'close');
+        return true;
       }
+      return false;
     };
-    checkDesktop();
-    const timer = setTimeout(checkDesktop, 300);
-    return () => {
-      clearInterval(cleanupInterval);
-      clearTimeout(timer);
-    };
+
+    const hasTauri = Boolean(
+      (window as any).__TAURI_INTERNALS__ ||
+      (window as any).__TAURI__ ||
+      (window as any).__anticeil_window_action ||
+      navigator.userAgent.includes('Tauri')
+    );
+
+    if (hasTauri) {
+      const found = bindInjectedControls();
+      if (!found) {
+        const timer = setTimeout(() => {
+          if (!document.getElementById('anticeil-titlebar-controls')) {
+            setShowReactControls(true);
+          }
+        }, 400);
+        const interval = setInterval(bindInjectedControls, 500);
+        return () => {
+          clearTimeout(timer);
+          clearInterval(interval);
+        };
+      }
+      const interval = setInterval(bindInjectedControls, 500);
+      return () => clearInterval(interval);
+    }
   }, []);
 
   const handleWinAction = async (action: 'minimize' | 'toggle_maximize' | 'close') => {
@@ -258,7 +304,7 @@ export function AppTopTitleBar({
         </Tooltip>
 
         {/* Desktop Frameless Window Controls (Minimize, Maximize, Close) */}
-        {isDesktop && (
+        {showReactControls && (
           <div
             className="anticeil-desktop-window-controls flex items-center h-full ml-1.5 pl-1.5 border-l border-border/40 shrink-0 no-drag select-none"
             style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
