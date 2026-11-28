@@ -13,10 +13,11 @@
     "windows": [
       {
         "title": "Anticeil Chat",
-        "width": 800,
-        "height": 600,
+        "width": 1280,
+        "height": 800,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "url": "https://app.anticeil.com"
       }
     ],
     "security": {
