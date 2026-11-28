@@ -67,9 +67,8 @@ export function DecryptedMessageText({
   );
 }
 
-export function renderFormattedMessage(content: string) {
-  if (!content) return null;
-  const lines = content.split('\n');
+function renderInlineText(text: string, baseKey: string | number) {
+  const lines = text.split('\n');
 
   return lines.map((line, lineIdx) => {
     const tokens: React.ReactNode[] = [];
@@ -84,14 +83,14 @@ export function renderFormattedMessage(content: string) {
       const token = match[0];
       if (token.startsWith('**') && token.endsWith('**') && token.length > 4) {
         tokens.push(
-          <strong key={`${lineIdx}-${match.index}`} className="font-semibold text-foreground">
+          <strong key={`${baseKey}-${lineIdx}-${match.index}`} className="font-semibold text-foreground">
             {token.slice(2, -2)}
           </strong>,
         );
       } else if (token.startsWith('`') && token.endsWith('`') && token.length > 2) {
         tokens.push(
           <code
-            key={`${lineIdx}-${match.index}`}
+            key={`${baseKey}-${lineIdx}-${match.index}`}
             className="px-1.5 py-0.5 rounded bg-muted/80 font-mono text-[11px] text-primary border border-border/40 inline-block align-baseline"
           >
             {token.slice(1, -1)}
@@ -101,7 +100,7 @@ export function renderFormattedMessage(content: string) {
         const isAtlas = token.toLowerCase() === '@atlas' || token.toLowerCase() === '@atlas-agent';
         tokens.push(
           <span
-            key={`${lineIdx}-${match.index}`}
+            key={`${baseKey}-${lineIdx}-${match.index}`}
             className={cn(
               'px-1.5 py-0.5 rounded-md font-medium hover:underline cursor-pointer inline-flex items-center gap-1 align-baseline transition-all',
               isAtlas
@@ -122,7 +121,7 @@ export function renderFormattedMessage(content: string) {
       } else if (token.startsWith('http')) {
         tokens.push(
           <a
-            key={`${lineIdx}-${match.index}`}
+            key={`${baseKey}-${lineIdx}-${match.index}`}
             href={token}
             target="_blank"
             rel="noreferrer"
@@ -142,10 +141,52 @@ export function renderFormattedMessage(content: string) {
     }
 
     return (
-      <React.Fragment key={lineIdx}>
+      <React.Fragment key={`${baseKey}-${lineIdx}`}>
         {tokens}
         {lineIdx < lines.length - 1 && <br />}
       </React.Fragment>
     );
   });
+}
+
+export function renderFormattedMessage(content: string) {
+  if (!content) return null;
+
+  // Split by fenced code blocks: ```(lang)?\n(code)\n```
+  const codeBlockRegex = /```([a-zA-Z0-9_-]+)?\s*?\n([\s\S]*?)```/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = codeBlockRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(renderInlineText(content.substring(lastIndex, match.index), `text-${lastIndex}`));
+    }
+
+    const language = (match[1] || 'code').trim();
+    const code = match[2].trimEnd();
+
+    parts.push(
+      <div
+        key={`code-${match.index}`}
+        className="my-2.5 rounded-xl overflow-hidden border border-border/70 bg-[#090a0f] shadow-md max-w-2xl select-text"
+      >
+        <div className="px-3.5 py-1.5 bg-[#12131a] border-b border-border/50 flex items-center justify-between text-[11px] font-mono select-none">
+          <span className="font-bold text-[#2cfae6] tracking-wider uppercase">{language}</span>
+          <span className="text-[10px] text-muted-foreground/70 font-sans">Anticeil SDK</span>
+        </div>
+        <pre className="p-3.5 overflow-x-auto text-[12px] font-mono text-[#a5f3fc] bg-[#090a0f] leading-relaxed">
+          <code>{code}</code>
+        </pre>
+      </div>,
+    );
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < content.length) {
+    parts.push(renderInlineText(content.substring(lastIndex), `text-${lastIndex}`));
+  }
+
+  return parts;
 }

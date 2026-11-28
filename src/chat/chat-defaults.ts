@@ -134,16 +134,16 @@ export const INITIAL_MESSAGES: Record<string, ColonyMessage[]> = {
     {
       id: 'msg_cp_1',
       channelId: 'ch_cp_general',
-      senderId: 'usr_faiz',
-      senderName: 'Muhammad Faiz',
-      senderEmail: 'faiz@anticeil.com',
-      senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&q=80',
+      senderId: 'usr_husein',
+      senderName: 'Husein',
+      senderEmail: 'husein@anticeil.com',
+      senderAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=128&q=80',
       senderRole: 'admin',
       content: 'Just merged the WebRTC mesh audio update! Sound quality is crystal clear with under 40ms latency 🚀',
       createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
       reactions: {
-        '👍': ['usr_faiz', 'usr_sarah', 'usr_alex', 'usr_4', 'usr_5', 'usr_6', 'usr_7', 'usr_8', 'usr_9', 'usr_10', 'usr_11', 'usr_12'],
-        '🚀': ['usr_faiz', 'usr_sarah', 'usr_alex', 'usr_4', 'usr_5', 'usr_6', 'usr_7', 'usr_8'],
+        '👍': ['usr_husein', 'usr_sarah', 'usr_alex', 'usr_4', 'usr_5', 'usr_6', 'usr_7', 'usr_8', 'usr_9', 'usr_10', 'usr_11', 'usr_12'],
+        '🚀': ['usr_husein', 'usr_sarah', 'usr_alex', 'usr_4', 'usr_5', 'usr_6', 'usr_7', 'usr_8'],
       },
     },
     {
