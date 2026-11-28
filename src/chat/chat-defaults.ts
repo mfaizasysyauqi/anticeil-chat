@@ -4,6 +4,17 @@ export { DEFAULT_COLONIES, loadStoredColonies, saveStoredColonies } from '@/lib/
 export const DEFAULT_CHANNELS: ColonyChannel[] = [
   // ── Colony: Cyberpunk DAO ──
   {
+    id: 'ch_cp_general',
+    colonyId: 'colony_cyberpunk',
+    name: 'general',
+    type: 'text',
+    category: 'CHANNELS',
+    categoryId: 'cat_text_colony_cyberpunk',
+    categoryName: 'SALURAN TEKS',
+    description: 'Kanal diskusi resmi & pengujian real-time Anticeil',
+    topic: 'Kanal diskusi resmi & pengujian real-time Anticeil',
+  },
+  {
     id: 'ch_cp_announcement',
     colonyId: 'colony_cyberpunk',
     name: 'pengumuman-resmi',
@@ -25,17 +36,6 @@ export const DEFAULT_CHANNELS: ColonyChannel[] = [
     categoryName: 'PENGUMUMAN RESMI',
     description: 'Pedoman, etika, dan tata tertib komunitas',
     topic: 'Pedoman & etika komunitas Cyberpunk DAO',
-  },
-  {
-    id: 'ch_cp_general',
-    colonyId: 'colony_cyberpunk',
-    name: 'general',
-    type: 'text',
-    category: 'CHANNELS',
-    categoryId: 'cat_text_colony_cyberpunk',
-    categoryName: 'SALURAN TEKS',
-    description: 'Kanal diskusi resmi & pengujian real-time Anticeil',
-    topic: 'Kanal diskusi resmi & pengujian real-time Anticeil',
   },
   {
     id: 'ch_cp_dev',

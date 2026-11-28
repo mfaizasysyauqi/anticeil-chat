@@ -5,7 +5,7 @@ import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { AnticeilAppIcon } from '@/features/user-settings/utils/app-icon-definitions';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/core/i18n';
-import type { Colony } from '@/lib/colony';
+import { type Colony, DEFAULT_COLONIES } from '@/lib/colony';
 import { CommunityAvatar } from '@/chat/chat-avatar';
 import { ServerIcon } from './colony-icon';
 import { toast } from 'sonner';
@@ -204,7 +204,15 @@ export function MiniRail({
   };
 
   const mainServer = serverList.find((s) => s.id === 'anticeil') || serverList[0];
-  const otherServers = serverList.filter((s) => s.id !== 'anticeil');
+  const rawOtherServers = serverList.filter((s) => s.id !== 'anticeil');
+  const seenColonyIds = new Set(rawOtherServers.map((s) => s.id));
+  const otherServers = [...rawOtherServers];
+  for (const def of DEFAULT_COLONIES.slice(1)) {
+    if (!seenColonyIds.has(def.id)) {
+      otherServers.push(def);
+      seenColonyIds.add(def.id);
+    }
+  }
 
   // Derive friends: use friends prop, or if empty, extract active DM contacts from dmChannels / stored DMs / members
   const friendList = useMemo(() => {

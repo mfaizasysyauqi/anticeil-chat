@@ -224,18 +224,22 @@ export function useChatInitLoader({
                 }
               }
             } else if (
-              channelsRes.length > 0 &&
+              mergedAllChannels.length > 0 &&
               activeColonyId &&
               activeColonyId !== 'anticeil'
             ) {
+              const generalCh = mergedAllChannels.find(
+                (c) => (c.colonyId || 'anticeil') === activeColonyId && c.name === 'general'
+              );
               const firstTextChannel =
-                channelsRes.find(
+                generalCh ||
+                mergedAllChannels.find(
                   (c) =>
                     (c.colonyId || 'anticeil') === activeColonyId &&
                     (c.type === 'text' || !c.type) &&
                     !c.isDirectMessage,
                 ) ||
-                channelsRes.find(
+                mergedAllChannels.find(
                   (c) => (c.colonyId || 'anticeil') === activeColonyId,
                 );
               if (firstTextChannel) {
