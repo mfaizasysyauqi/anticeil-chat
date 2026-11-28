@@ -28,7 +28,7 @@ import {
 import { CreateThreadModal, ThreadDrawer } from '@/features/threads';
 import { CallStage, UserSettingsModal } from '@/features/voice';
 import { clearChannelWatchCache } from '@/features/voice/components/activities/hooks/use-youtube-player';
-import { AuthRequiredDialog } from '@/features/auth';
+import { AuthRequiredDialog, QrAuthApprovalDialog } from '@/features/auth';
 import { EditProfileDialog } from '@/features/profile';
 import { CommunityWelcomeDialog } from '@/features/onboarding/components/community-welcome-dialog';
 
@@ -592,6 +592,9 @@ export function ChatDialogsPortal({
         featureTitle={authFeatureInfo.title}
         featureDescription={authFeatureInfo.desc}
       />
+
+      {/* Global QR Code Auth Approval Dialog (for mobile/scanned device) */}
+      <QrAuthApprovalDialog />
 
       {/* Community Server Onboarding & Welcome Screen */}
       {activeColony && (

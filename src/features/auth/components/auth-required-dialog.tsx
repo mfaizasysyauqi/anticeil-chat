@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,9 +12,13 @@ import { useTranslation } from '@/core/i18n';
 import {
   Sparkles,
   Bot,
+  QrCode,
+  KeyRound,
 } from 'lucide-react';
 import { AnticeilLogo } from '@/components/ui/anticeil-logo';
 import { isDevLoginEnabled, MOCK_DEV_USERS } from '../hooks/use-auth-session';
+import { QrCodeLogin } from './qr-code-login';
+import { cn } from '@/lib/utils';
 
 export interface AuthRequiredDialogProps {
   isOpen: boolean;
@@ -25,6 +29,7 @@ export interface AuthRequiredDialogProps {
   onGuestLogin?: (nickname: string) => void;
   onDevMockLogin?: (userIndex: number) => void;
   onSsoLogin?: (email: string, provider?: string) => void;
+  onQrLoginSuccess?: (user: any, token: string) => void;
   featureTitle?: string;
   featureDescription?: string;
 }
@@ -79,10 +84,24 @@ export function AuthRequiredDialog({
   onOktaSignIn,
   onDevMockLogin,
   onSsoLogin,
+  onQrLoginSuccess,
   featureTitle,
   featureDescription,
 }: AuthRequiredDialogProps) {
   const { t } = useTranslation();
+  const [authTab, setAuthTab] = useState<'qr' | 'sso'>('qr');
+
+  const handleQrSuccess = (user: any, token: string) => {
+    if (onQrLoginSuccess) {
+      onQrLoginSuccess(user, token);
+    } else {
+      localStorage.setItem('token', token);
+      localStorage.setItem('ap_token', token);
+      localStorage.setItem('anticeil_current_user', JSON.stringify(user));
+      window.dispatchEvent(new Event('storage'));
+    }
+    onClose();
+  };
 
   const handleMicrosoftClick = () => {
     onClose();
@@ -112,14 +131,14 @@ export function AuthRequiredDialog({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent size="md" className="max-h-[92vh] overflow-y-auto custom-scrollbar p-0 bg-background border border-border shadow-2xl rounded-2xl select-none">
         {/* Banner with gradient & Anticeil branding */}
-        <div className="relative w-full h-22 sm:h-24 bg-gradient-to-br from-amber-500/15 via-primary/20 to-purple-500/15 flex flex-col items-center justify-center border-b border-border/60 shrink-0">
+        <div className="relative w-full h-20 sm:h-22 bg-gradient-to-br from-amber-500/15 via-primary/20 to-purple-500/15 flex flex-col items-center justify-center border-b border-border/60 shrink-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/15 via-transparent to-transparent pointer-events-none" />
-          <div className="size-12 rounded-2xl bg-background/95 p-2 shadow-lg border border-border/80 flex items-center justify-center relative z-10 animate-in zoom-in-95 duration-200">
+          <div className="size-11 rounded-2xl bg-background/95 p-2 shadow-lg border border-border/80 flex items-center justify-center relative z-10 animate-in zoom-in-95 duration-200">
             <AnticeilLogo className="size-full text-foreground" />
           </div>
         </div>
 
-        <div className="p-5 sm:p-6 flex flex-col items-center text-center space-y-4">
+        <div className="p-4 sm:p-5 flex flex-col items-center text-center space-y-3.5">
           <DialogHeader className="space-y-1 flex flex-col items-center text-center pr-0">
             <DialogTitle className="text-base font-bold tracking-tight text-foreground text-center">
               {featureTitle || t('Masuk ke Anticeil')}
@@ -130,54 +149,104 @@ export function AuthRequiredDialog({
             </DialogDescription>
           </DialogHeader>
 
-          {/* ── 1-Click Direct SSO Providers (Google, Microsoft, Okta) ── */}
-          <div className="w-full space-y-2">
-            {/* Google Button */}
-            <Button
+          {/* ── Mode Switcher Tab (QR Code vs SSO / Email) ── */}
+          <div className="grid grid-cols-2 p-1 bg-muted/60 border border-border/80 rounded-xl w-full max-w-xs gap-1">
+            <button
               type="button"
-              variant="outline"
-              onClick={() => {
-                onClose();
-                onGoogleSignIn();
-              }}
-              className="w-full h-10 px-3.5 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
-              title={t('Lanjutkan dengan Akun Google')}
+              onClick={() => setAuthTab('qr')}
+              className={cn(
+                'py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+                authTab === 'qr'
+                  ? 'bg-background text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
             >
-              <GoogleIcon className="size-4 shrink-0" />
-              <span className="truncate">{t('Lanjutkan dengan Google')}</span>
-            </Button>
-
-            {/* Microsoft 365 Button */}
-            <Button
+              <QrCode className="size-3.5 text-primary" />
+              <span>{t('Scan Kode QR')}</span>
+            </button>
+            <button
               type="button"
-              variant="outline"
-              onClick={handleMicrosoftClick}
-              className="w-full h-10 px-3.5 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
-              title={t('Lanjutkan dengan Microsoft 365 / Entra ID')}
+              onClick={() => setAuthTab('sso')}
+              className={cn(
+                'py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+                authTab === 'sso'
+                  ? 'bg-background text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
             >
-              <MicrosoftIcon className="size-4 shrink-0" />
-              <span className="truncate">{t('Lanjutkan dengan Microsoft')}</span>
-            </Button>
-
-            {/* Okta Button */}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleOktaClick}
-              className="w-full h-10 px-3.5 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
-              title={t('Lanjutkan dengan Okta / Auth0')}
-            >
-              <OktaIcon className="size-4 shrink-0 text-blue-400" />
-              <span className="truncate">{t('Lanjutkan dengan Okta')}</span>
-            </Button>
+              <KeyRound className="size-3.5 text-amber-500" />
+              <span>{t('Akun & SSO')}</span>
+            </button>
           </div>
+
+          {/* ── Tab Content: QR Code Login ── */}
+          {authTab === 'qr' && (
+            <div className="w-full animate-in fade-in duration-200">
+              <QrCodeLogin
+                onLoginSuccess={handleQrSuccess}
+                onSwitchToSso={() => setAuthTab('sso')}
+              />
+            </div>
+          )}
+
+          {/* ── Tab Content: 1-Click Direct SSO Providers (Google, Microsoft, Okta) ── */}
+          {authTab === 'sso' && (
+            <div className="w-full space-y-2 animate-in fade-in duration-200">
+              {/* Google Button */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  onClose();
+                  onGoogleSignIn();
+                }}
+                className="w-full h-10 px-3.5 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+                title={t('Lanjutkan dengan Akun Google')}
+              >
+                <GoogleIcon className="size-4 shrink-0" />
+                <span className="truncate">{t('Lanjutkan dengan Google')}</span>
+              </Button>
+
+              {/* Microsoft 365 Button */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleMicrosoftClick}
+                className="w-full h-10 px-3.5 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+                title={t('Lanjutkan dengan Microsoft 365 / Entra ID')}
+              >
+                <MicrosoftIcon className="size-4 shrink-0" />
+                <span className="truncate">{t('Lanjutkan dengan Microsoft')}</span>
+              </Button>
+
+              {/* Okta Button */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleOktaClick}
+                className="w-full h-10 px-3.5 text-xs font-semibold flex items-center justify-center gap-2.5 bg-card hover:bg-muted/80 border-border/80 hover:border-foreground/30 shadow-xs hover:shadow-sm rounded-xl cursor-pointer transition-all"
+                title={t('Lanjutkan dengan Okta / Auth0')}
+              >
+                <OktaIcon className="size-4 shrink-0 text-blue-400" />
+                <span className="truncate">{t('Lanjutkan dengan Okta')}</span>
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => setAuthTab('qr')}
+                className="w-full pt-1 text-center text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer underline underline-offset-4"
+              >
+                {t('← Atau masuk dengan Scan Kode QR')}
+              </button>
+            </div>
+          )}
 
           {/* Close / Later Button */}
           <Button
             type="button"
             variant="ghost"
             onClick={onClose}
-            className="w-full h-8 text-xs text-muted-foreground hover:text-foreground rounded-xl"
+            className="w-full h-7 text-xs text-muted-foreground hover:text-foreground rounded-xl"
           >
             {t('Nanti Saja')}
           </Button>
