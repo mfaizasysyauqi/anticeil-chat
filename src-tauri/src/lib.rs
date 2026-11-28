@@ -201,9 +201,11 @@ pub fn run() {
       let window = tauri::WebviewWindowBuilder::from_config(app.handle(), &window_config)?
         .decorations(false)
         .shadow(true)
+        .min_inner_size(860.0, 560.0)
         .initialization_script(INIT_SCRIPT)
         .build()?;
       let _ = window.set_decorations(false);
+      let _ = window.set_min_size(Some(tauri::LogicalSize::new(860.0, 560.0)));
       let _ = window.navigate("https://app.anticeil.com".parse().unwrap());
 
       if cfg!(debug_assertions) {

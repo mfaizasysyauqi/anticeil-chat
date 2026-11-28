@@ -17,6 +17,8 @@
         "create": false,
         "width": 1280,
         "height": 800,
+        "minWidth": 860,
+        "minHeight": 560,
         "resizable": true,
         "fullscreen": false,
         "decorations": false,
