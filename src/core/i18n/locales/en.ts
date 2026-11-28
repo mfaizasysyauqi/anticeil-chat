@@ -3209,6 +3209,7 @@ export const enTranslations: Record<string, string> = {
   'Memproses Otorisasi Mobile...': 'Processing Mobile Authorization...',
   'Atau masuk menggunakan Google / SSO Perusahaan →': 'Or log in using Google / Enterprise SSO →',
   '← Atau masuk dengan Scan Kode QR': '← Or log in by scanning QR Code',
+  'Atau masuk dengan Scan Kode QR →': 'Or log in by scanning QR Code →',
   'Otorisasi Login Desktop': 'Authorize Desktop Login',
   'Perangkat desktop meminta izin untuk masuk ke akun Anticeil Anda.': 'A desktop device is requesting permission to access your Anticeil account.',
   'Permintaan login desktop dibatalkan.': 'Desktop login request was canceled.',

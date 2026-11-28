@@ -89,7 +89,7 @@ export function AuthRequiredDialog({
   featureDescription,
 }: AuthRequiredDialogProps) {
   const { t } = useTranslation();
-  const [authTab, setAuthTab] = useState<'qr' | 'sso'>('qr');
+  const [authTab, setAuthTab] = useState<'qr' | 'sso'>('sso');
 
   const handleQrSuccess = (user: any, token: string) => {
     if (onQrLoginSuccess) {
@@ -149,21 +149,8 @@ export function AuthRequiredDialog({
             </DialogDescription>
           </DialogHeader>
 
-          {/* ── Mode Switcher Tab (QR Code vs SSO / Email) ── */}
+          {/* ── Mode Switcher Tab (Akun & SSO vs QR Code) ── */}
           <div className="grid grid-cols-2 p-1 bg-muted/60 border border-border/80 rounded-xl w-full max-w-xs gap-1">
-            <button
-              type="button"
-              onClick={() => setAuthTab('qr')}
-              className={cn(
-                'py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
-                authTab === 'qr'
-                  ? 'bg-background text-foreground shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <QrCode className="size-3.5 text-primary" />
-              <span>{t('Scan Kode QR')}</span>
-            </button>
             <button
               type="button"
               onClick={() => setAuthTab('sso')}
@@ -176,6 +163,19 @@ export function AuthRequiredDialog({
             >
               <KeyRound className="size-3.5 text-amber-500" />
               <span>{t('Akun & SSO')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthTab('qr')}
+              className={cn(
+                'py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+                authTab === 'qr'
+                  ? 'bg-background text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <QrCode className="size-3.5 text-primary" />
+              <span>{t('Scan Kode QR')}</span>
             </button>
           </div>
 
@@ -236,7 +236,7 @@ export function AuthRequiredDialog({
                 onClick={() => setAuthTab('qr')}
                 className="w-full pt-1 text-center text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer underline underline-offset-4"
               >
-                {t('← Atau masuk dengan Scan Kode QR')}
+                {t('Atau masuk dengan Scan Kode QR →')}
               </button>
             </div>
           )}

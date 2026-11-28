@@ -3217,6 +3217,7 @@ export const idTranslations: Record<string, string> = {
   'Memproses Otorisasi Mobile...': 'Memproses Otorisasi Mobile...',
   'Atau masuk menggunakan Google / SSO Perusahaan →': 'Atau masuk menggunakan Google / SSO Perusahaan →',
   '← Atau masuk dengan Scan Kode QR': '← Atau masuk dengan Scan Kode QR',
+  'Atau masuk dengan Scan Kode QR →': 'Atau masuk dengan Scan Kode QR →',
   'Otorisasi Login Desktop': 'Otorisasi Login Desktop',
   'Perangkat desktop meminta izin untuk masuk ke akun Anticeil Anda.': 'Perangkat desktop meminta izin untuk masuk ke akun Anticeil Anda.',
   'Permintaan login desktop dibatalkan.': 'Permintaan login desktop dibatalkan.',
