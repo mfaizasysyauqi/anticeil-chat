@@ -699,24 +699,33 @@ export function ChatChannelView({
             }}
             className="w-full min-h-[50%] overflow-hidden flex flex-col"
           >
-            <CallStage
-              key={`${activeChannel?.id}-${selectedActivityAppId || 'stage'}`}
-              channel={activeChannel!}
-              activeColony={activeColony}
-              currentUser={currentUser}
-              isPlusOrAbove={isPlusOrAbove}
-              socket={socket}
-              isCallActive={true}
-              isPiP={false}
-              initialAppId={selectedActivityAppId}
-              isChatOpen={isActivityChatSplitOpen}
-              onToggleChat={() => setIsActivityChatSplitOpen((prev) => !prev)}
-              onToggleActivity={(open) =>
-                setIsActivityOpen((prev) => (typeof open === 'boolean' ? open : !prev))
-              }
-              onActivityChange={(appId) => setSelectedActivityAppId(appId)}
-              onTogglePiP={() => setIsCallPiP(true)}
-              onEndCall={() => {
+            {(() => {
+              const effectiveAppId =
+                activeChannel?.id === 'ch_cp_act_chess'
+                  ? 'chess'
+                  : activeChannel?.id === 'ch_cp_act_watch'
+                  ? 'watch-together'
+                  : selectedActivityAppId;
+
+              return (
+                <CallStage
+                  key={`${activeChannel?.id}-${effectiveAppId || 'stage'}`}
+                  channel={activeChannel!}
+                  activeColony={activeColony}
+                  currentUser={currentUser}
+                  isPlusOrAbove={isPlusOrAbove}
+                  socket={socket}
+                  isCallActive={true}
+                  isPiP={false}
+                  initialAppId={effectiveAppId}
+                  isChatOpen={isActivityChatSplitOpen}
+                  onToggleChat={() => setIsActivityChatSplitOpen((prev) => !prev)}
+                  onToggleActivity={(open) =>
+                    setIsActivityOpen((prev) => (typeof open === 'boolean' ? open : !prev))
+                  }
+                  onActivityChange={(appId) => setSelectedActivityAppId(appId)}
+                  onTogglePiP={() => setIsCallPiP(true)}
+                  onEndCall={() => {
                 setIsActivityChatSplitOpen(false);
                 const channelToLeave = activeCallChannelId || activeChannel?.id;
                 if (channelToLeave && socket) {
@@ -797,6 +806,8 @@ export function ChatChannelView({
               onNavigateToBilling={() => navigate('/platform/billing')}
               onOpenMobileChannels={() => setIsMobileChannelsOpen(true)}
             />
+            );
+          })()}
           </div>
 
           {isActivityChatSplitOpen && (

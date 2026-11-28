@@ -54,9 +54,9 @@ export function useChatViewModes({
   const [railMode, setRailMode] = useState<'servers' | 'friends'>(() => {
     try {
       const saved = localStorage.getItem('anticeil_rail_mode');
-      return saved === 'servers' ? 'servers' : 'friends';
+      return saved === 'friends' ? 'friends' : 'servers';
     } catch {
-      return 'friends';
+      return 'servers';
     }
   });
 

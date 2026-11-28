@@ -15,7 +15,7 @@ export const atlasAgentApi = {
   async getSessions(): Promise<AiSession[]> {
     try {
       const res = await api.get<AiSession[]>('/v1/atlas-agent/sessions');
-      if (Array.isArray(res)) {
+      if (Array.isArray(res) && res.length > 0) {
         saveStoredSessions(res);
         return res;
       }

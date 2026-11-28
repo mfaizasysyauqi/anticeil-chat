@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { loadStoredMessages, saveStoredMessages } from '@/chat/chat-defaults';
+import { loadStoredMessages, saveStoredMessages, INITIAL_MESSAGES } from '@/chat/chat-defaults';
 import type { ColonyMessage, DiscordPollData } from '@/chat/chat-types';
 import type { DiscordGifItem } from '@/chat/anticeil-media-data';
 import { ANTICEIL_GIF_ITEMS } from '@/chat/anticeil-media-data';
@@ -37,7 +37,7 @@ export const messagesApi = {
       }
 
       const res = await api.get<ColonyMessage[]>(`/v1/colony/channels/${channelId}/messages`);
-      if (Array.isArray(res)) {
+      if (Array.isArray(res) && res.length > 0) {
         const stored = loadStoredMessages();
         stored[channelId] = res;
         saveStoredMessages(stored);
@@ -45,7 +45,9 @@ export const messagesApi = {
       }
     } catch {}
     const stored = loadStoredMessages();
-    return stored[channelId] || [];
+    return (stored[channelId] && stored[channelId].length > 0)
+      ? stored[channelId]
+      : (INITIAL_MESSAGES[channelId] || []);
   },
 
   async sendMessage(

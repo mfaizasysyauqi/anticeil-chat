@@ -140,7 +140,7 @@ export const INITIAL_MESSAGES: Record<string, ColonyMessage[]> = {
       senderAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80',
       senderRole: 'admin',
       content: 'Just merged the WebRTC mesh audio update! Sound quality is crystal clear with under 40ms latency 🚀',
-      createdAt: '14:32',
+      createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
       reactions: {
         '👍': ['usr_faiz', 'usr_sarah', 'usr_alex', 'usr_4', 'usr_5', 'usr_6', 'usr_7', 'usr_8', 'usr_9', 'usr_10', 'usr_11', 'usr_12'],
         '🚀': ['usr_faiz', 'usr_sarah', 'usr_alex', 'usr_4', 'usr_5', 'usr_6', 'usr_7', 'usr_8'],
@@ -155,7 +155,7 @@ export const INITIAL_MESSAGES: Record<string, ColonyMessage[]> = {
       senderAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&q=80',
       senderRole: 'moderator',
       content: "Awesome! Let's spin up Watch Together in the call room to test synchronized video playback.",
-      createdAt: '14:33',
+      createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
     },
     {
       id: 'msg_cp_3',
@@ -166,7 +166,7 @@ export const INITIAL_MESSAGES: Record<string, ColonyMessage[]> = {
       senderAvatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=youtube',
       senderRole: 'member',
       content: '',
-      createdAt: '14:34',
+      createdAt: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
       attachments: [
         {
           type: 'activity',
@@ -191,7 +191,7 @@ export const INITIAL_MESSAGES: Record<string, ColonyMessage[]> = {
       senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&q=80',
       senderRole: 'member',
       content: "Here is the quick Node SDK snippet to trigger real-time colony webhooks:\n\n```typescript\nimport { Anticeil } from '@anticeil/sdk';\n\nconst client = new Anticeil({ apiKey: 'atc_live_...' });\nawait client.channels.send({ channelId: 'general', content: 'Ping!' });\n```",
-      createdAt: '14:35',
+      createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     },
   ],
 };

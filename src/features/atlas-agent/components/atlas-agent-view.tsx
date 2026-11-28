@@ -250,12 +250,6 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
   const messages = activeSession?.messages || [];
 
-  const [activeArtifact, setActiveArtifact] = useState<AiArtifact | null>(null);
-
-  useEffect(() => {
-    setActiveArtifact(null);
-  }, [activeSessionId]);
-
   // Find latest artifact in current session for quick header toggle
   const latestArtifact = React.useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -270,6 +264,14 @@ export function AtlasAgentView(props: AtlasAgentViewProps) {
     }
     return null;
   }, [messages]);
+
+  const [activeArtifact, setActiveArtifact] = useState<AiArtifact | null>(null);
+
+  useEffect(() => {
+    if (latestArtifact) {
+      setActiveArtifact(latestArtifact);
+    }
+  }, [activeSessionId, latestArtifact]);
 
   const groqConfig = getStoredGroqConfig();
   const [selectedModel, setSelectedModel] = useState<string>(() => groqConfig.model || DEFAULT_GROQ_MODEL);
