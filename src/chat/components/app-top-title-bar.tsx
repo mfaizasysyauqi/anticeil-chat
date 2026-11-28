@@ -59,7 +59,18 @@ export function AppTopTitleBar({
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
+    // 1. Remove any legacy or duplicate window control DOM elements injected outside React
+    const cleanupDuplicateControls = () => {
+      const duplicate = document.getElementById('anticeil-titlebar-controls');
+      if (duplicate) {
+        duplicate.remove();
+      }
+    };
+    cleanupDuplicateControls();
+    const cleanupInterval = setInterval(cleanupDuplicateControls, 400);
+
     const checkDesktop = () => {
+      cleanupDuplicateControls();
       const hasTauri = Boolean(
         (window as any).__TAURI_INTERNALS__ ||
         (window as any).__TAURI__ ||
@@ -71,13 +82,19 @@ export function AppTopTitleBar({
       }
     };
     checkDesktop();
-    const timer = setTimeout(checkDesktop, 400);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(checkDesktop, 300);
+    return () => {
+      clearInterval(cleanupInterval);
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleWinAction = async (action: 'minimize' | 'toggle_maximize' | 'close') => {
     if (typeof (window as any).__anticeil_window_action === 'function') {
-      return (window as any).__anticeil_window_action(action);
+      try {
+        await (window as any).__anticeil_window_action(action);
+        return;
+      } catch (_) {}
     }
     try {
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
@@ -85,14 +102,23 @@ export function AppTopTitleBar({
       if (action === 'minimize') return await win.minimize();
       if (action === 'toggle_maximize') return await win.toggleMaximize();
       if (action === 'close') return await win.close();
-    } catch (_) {
+    } catch (_) {}
+    try {
       const invoke = (window as any).__TAURI_INTERNALS__?.invoke || (window as any).__TAURI__?.core?.invoke;
       if (invoke) {
-        if (action === 'minimize') return invoke('plugin:window|minimize', { label: 'main' });
-        if (action === 'toggle_maximize') return invoke('plugin:window|toggle_maximize', { label: 'main' });
-        if (action === 'close') return invoke('plugin:window|close', { label: 'main' });
+        if (action === 'minimize') return await invoke('plugin:window|minimize', { label: 'main' });
+        if (action === 'toggle_maximize') return await invoke('plugin:window|toggle_maximize', { label: 'main' });
+        if (action === 'close') return await invoke('plugin:window|close', { label: 'main' });
       }
-    }
+    } catch (_) {}
+    try {
+      const invoke = (window as any).__TAURI_INTERNALS__?.invoke || (window as any).__TAURI__?.core?.invoke;
+      if (invoke) {
+        if (action === 'minimize') return await invoke('minimize_window');
+        if (action === 'toggle_maximize') return await invoke('toggle_maximize_window');
+        if (action === 'close') return await invoke('close_window');
+      }
+    } catch (_) {}
   };
 
   // Determine current context title and icon (100% synchronized with sidebar navigation)

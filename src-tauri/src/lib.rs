@@ -116,60 +116,15 @@ const INIT_SCRIPT: &str = r#"
 
   window.__anticeil_window_action = invokeAction;
 
-  function mountControls() {
+  function initHeaderDrag() {
     injectStyles();
-    if (document.querySelector('.anticeil-desktop-window-controls')) return;
-
     const header = document.querySelector('header[role="banner"]');
-    if (!header || document.getElementById('anticeil-titlebar-controls')) return;
-
+    if (!header || header.hasAttribute('data-anticeil-drag-init')) return;
+    header.setAttribute('data-anticeil-drag-init', 'true');
     header.setAttribute('data-tauri-drag-region', '');
 
-    const container = document.createElement('div');
-    container.id = 'anticeil-titlebar-controls';
-    container.className = 'no-drag';
-    container.style.cssText = 'display:inline-flex;align-items:center;height:100%;margin-left:6px;border-left:1px solid rgba(255,255,255,0.12);padding-left:2px;-webkit-app-region:no-drag;pointer-events:auto;z-index:9999;';
-
-    container.addEventListener('mousedown', (e) => e.stopPropagation());
-    container.addEventListener('pointerdown', (e) => e.stopPropagation());
-
-    function createBtn(title, svgHtml, action, isClose) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = isClose ? 'anticeil-win-btn anticeil-win-close' : 'anticeil-win-btn';
-      btn.title = title;
-      btn.setAttribute('aria-label', title);
-      btn.innerHTML = svgHtml;
-
-      const handler = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        invokeAction(action);
-      };
-
-      btn.addEventListener('click', handler);
-      btn.addEventListener('mousedown', (e) => e.stopPropagation());
-      btn.addEventListener('pointerdown', (e) => e.stopPropagation());
-      return btn;
-    }
-
-    const minBtn = createBtn('Minimize', '<svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>', 'minimize', false);
-    const maxBtn = createBtn('Maximize', '<svg width="10" height="10" viewBox="0 0 10 10"><rect width="8" height="8" x="1" y="1" fill="none" stroke="currentColor" stroke-width="1"/></svg>', 'toggle_maximize', false);
-    const closeBtn = createBtn('Close', '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1 L9 9 M9 1 L1 9" stroke="currentColor" stroke-width="1.2"/></svg>', 'close', true);
-
-    container.appendChild(minBtn);
-    container.appendChild(maxBtn);
-    container.appendChild(closeBtn);
-
-    const rightActions = header.lastElementChild;
-    if (rightActions) {
-      rightActions.appendChild(container);
-    } else {
-      header.appendChild(container);
-    }
-
     header.addEventListener('mousedown', (e) => {
-      if (e.target.closest('button, a, input, select, .no-drag, #anticeil-titlebar-controls, .anticeil-desktop-window-controls')) return;
+      if (e.target.closest('button, a, input, select, .no-drag, .anticeil-desktop-window-controls')) return;
       if (e.detail === 2) {
         invokeAction('toggle_maximize');
       } else if (e.button === 0) {
@@ -179,11 +134,11 @@ const INIT_SCRIPT: &str = r#"
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mountControls);
+    document.addEventListener('DOMContentLoaded', initHeaderDrag);
   } else {
-    mountControls();
+    initHeaderDrag();
   }
-  setInterval(mountControls, 250);
+  setInterval(initHeaderDrag, 500);
 })();
 "#;
 
