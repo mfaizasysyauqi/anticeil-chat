@@ -118,7 +118,8 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
   };
 
   if (ch.type === 'voice') {
-    const callCount = activeCallCounts[ch.id] || 0;
+    const isMockLounge = ch.id === 'ch_cp_voice_lounge';
+    const callCount = activeCallCounts[ch.id] || (isMockLounge ? 3 : 0);
     const isLimitSet = typeof ch.userLimit === 'number' && ch.userLimit > 0;
     const isFull = isLimitSet && callCount >= (ch.userLimit || 0);
 
@@ -153,65 +154,92 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
     };
 
     return (
-      <div
-        key={ch.id}
-        onClick={handleVoiceClick}
-        className={cn(
-          'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
-          isActiveCh
-            ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
-            : isFull
-            ? 'text-muted-foreground/60 hover:bg-sidebar-accent/50 hover:text-muted-foreground'
-            : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-        )}
-      >
-        <Volume2
+      <div key={ch.id} className="space-y-0.5">
+        <div
+          onClick={handleVoiceClick}
           className={cn(
-            'w-4 h-4 shrink-0 transition-colors',
+            'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all text-left group cursor-pointer relative',
             isActiveCh
-              ? 'text-primary'
+              ? 'bg-accent text-accent-foreground font-semibold shadow-2xs'
               : isFull
-              ? 'text-muted-foreground/40'
-              : 'text-muted-foreground/70 group-hover:text-foreground',
+              ? 'text-muted-foreground/60 hover:bg-sidebar-accent/50 hover:text-muted-foreground'
+              : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
           )}
-        />
-        <span className="truncate flex-1">{ch.name}</span>
-        {ch.isPrivate && (
-          <span title="Private Channel">
-            <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
-          </span>
-        )}
-
-        {/* User Limit & Active Call Badge (Discord 1:1 Parity) */}
-        {isLimitSet ? (
-          <span
+        >
+          <Volume2
             className={cn(
-              'px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 shrink-0 font-mono transition-colors',
-              isFull
-                ? 'bg-red-500/15 text-red-400 border border-red-500/30'
-                : callCount > 0
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                : 'bg-muted text-muted-foreground/70 border border-border/40',
+              'w-4 h-4 shrink-0 transition-colors',
+              isActiveCh
+                ? 'text-primary'
+                : isFull
+                ? 'text-muted-foreground/40'
+                : 'text-muted-foreground/70 group-hover:text-foreground',
             )}
-            title={isFull ? t('Saluran suara penuh') : t('Kapasitas peserta saluran suara')}
-          >
-            {isFull ? (
-              <Lock className="w-2.5 h-2.5 text-red-400" />
-            ) : callCount > 0 ? (
-              <Radio className="w-2.5 h-2.5 animate-pulse" />
-            ) : null}
-            <span>
-              {callCount}/{ch.userLimit}
+          />
+          <span className="truncate flex-1">{ch.name}</span>
+          {ch.isPrivate && (
+            <span title="Private Channel">
+              <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />
             </span>
-          </span>
-        ) : callCount > 0 ? (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 flex items-center gap-1 shrink-0 animate-pulse">
-            <Radio className="w-2.5 h-2.5" />
-            {callCount}
-          </span>
-        ) : null}
+          )}
 
-        {renderActionButtons()}
+          {/* User Limit & Active Call Badge (Discord 1:1 Parity) */}
+          {isLimitSet ? (
+            <span
+              className={cn(
+                'px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 shrink-0 font-mono transition-colors',
+                isFull
+                  ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                  : callCount > 0
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-muted text-muted-foreground/70 border border-border/40',
+              )}
+              title={isFull ? t('Saluran suara penuh') : t('Kapasitas peserta saluran suara')}
+            >
+              {isFull ? (
+                <Lock className="w-2.5 h-2.5 text-red-400" />
+              ) : callCount > 0 ? (
+                <Radio className="w-2.5 h-2.5 animate-pulse" />
+              ) : null}
+              <span>
+                {callCount}/{ch.userLimit}
+              </span>
+            </span>
+          ) : callCount > 0 ? (
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 flex items-center gap-1 shrink-0 animate-pulse">
+              <Radio className="w-2.5 h-2.5" />
+              {callCount}
+            </span>
+          ) : null}
+
+          {renderActionButtons()}
+        </div>
+
+        {/* Active Voice Participants Preview for lively community */}
+        {isMockLounge && (
+          <div className="ml-5 pl-2 border-l border-border/30 space-y-1 my-1">
+            <div className="flex items-center gap-2 py-0.5 px-1.5 rounded hover:bg-sidebar-accent/50 text-[11px] text-foreground font-medium">
+              <span className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded-full ring-2 ring-emerald-500">
+                <img className="aspect-square h-full w-full object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&q=80" alt="Faiz" />
+              </span>
+              <span className="truncate flex-1">Faiz</span>
+              <span className="text-[9px] text-emerald-400 font-medium">Berbicara</span>
+            </div>
+            <div className="flex items-center gap-2 py-0.5 px-1.5 rounded hover:bg-sidebar-accent/50 text-[11px] text-muted-foreground">
+              <span className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded-full">
+                <img className="aspect-square h-full w-full object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&q=80" alt="Sarah" />
+              </span>
+              <span className="truncate flex-1">Sarah Jenkins</span>
+            </div>
+            <div className="flex items-center gap-2 py-0.5 px-1.5 rounded hover:bg-sidebar-accent/50 text-[11px] text-muted-foreground">
+              <span className="relative flex h-5 w-5 shrink-0 overflow-hidden rounded-full">
+                <img className="aspect-square h-full w-full object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=64&q=80" alt="Alex" />
+              </span>
+              <span className="truncate flex-1">Alex Chen</span>
+              <span className="text-[9px] text-muted-foreground/60">Muted</span>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -248,6 +276,9 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
             </span>
           )}
           {renderActivityBadge()}
+          {ch.id === 'ch_cp_forum_feedback' && (
+            <span className="text-[10px] text-muted-foreground/70 font-mono px-1.5 py-0.2 rounded bg-muted/50 font-bold mr-1">18</span>
+          )}
           {renderActionButtons()}
         </div>
 
@@ -355,6 +386,11 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 truncate">
             <span className="truncate">{ch.name}</span>
+            {ch.id === 'ch_cp_general' && (
+              <span className="px-1.5 py-0.2 rounded bg-primary/20 text-primary text-[9px] font-bold shrink-0">
+                LIVE
+              </span>
+            )}
             {ch.type === 'stage' && isActiveCh && (
               <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-400 text-[9px] font-bold shrink-0 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -363,6 +399,19 @@ export const SidebarChannelItem: React.FC<SidebarChannelItemProps> = ({
             )}
           </div>
         </div>
+        {ch.id === 'ch_cp_announcement' && (
+          <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mr-1" title="Pesan baru" />
+        )}
+        {ch.id === 'ch_cp_dev' && (
+          <span className="px-1.5 py-0.2 rounded-full bg-primary/20 text-primary text-[10px] font-bold font-mono shrink-0 mr-1">
+            3
+          </span>
+        )}
+        {ch.id === 'ch_cp_act_ai' && (
+          <span className="px-1.5 py-0.2 rounded bg-primary/20 text-primary text-[9px] font-bold shrink-0 mr-1">
+            AI
+          </span>
+        )}
         {ch.isPrivate && (
           <span title="Private Channel">
             <Lock className="w-3 h-3 text-muted-foreground/60 shrink-0" />

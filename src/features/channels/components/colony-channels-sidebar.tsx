@@ -300,16 +300,29 @@ export function ColonyChannelsSidebar({
                   );
                 })()}
 
-                <button
-                  type="button"
-                  onClick={() => onOpenServerSettings('boost')}
-                  className="w-full flex items-center justify-between px-2 py-1.5 rounded-[6px] hover:bg-sidebar-accent/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer group text-xs font-semibold"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Gem className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0" />
-                    <span className="truncate">Colony Boosts</span>
+                {activeColony?.id === 'colony_cyberpunk' ? (
+                  <div
+                    onClick={() => onOpenServerSettings('boost')}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-[6px] bg-primary/10 border border-primary/20 text-xs font-semibold text-primary transition-all cursor-pointer hover:bg-primary/15 mb-2"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Gem className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="text-[11px] font-bold">Level 3 • 14 Boosts</span>
+                    </div>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-black tracking-wider uppercase">PERKS ACTIVE</span>
                   </div>
-                </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onOpenServerSettings('boost')}
+                    className="w-full flex items-center justify-between px-2 py-1.5 rounded-[6px] hover:bg-sidebar-accent/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer group text-xs font-semibold"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Gem className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0" />
+                      <span className="truncate">Colony Boosts</span>
+                    </div>
+                  </button>
+                )}
               </div>
             )}
 

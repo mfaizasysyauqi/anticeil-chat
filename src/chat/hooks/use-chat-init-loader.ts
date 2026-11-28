@@ -3,6 +3,7 @@ import { colonyApi } from '../chat-api';
 import { friendsApi } from '@/features/friends';
 import {
   DEFAULT_COLONIES,
+  DEFAULT_CHANNELS,
   loadStoredColonies,
   saveStoredColonies,
   getDmChannelId,
@@ -185,7 +186,9 @@ export function useChatInitLoader({
               (c) =>
                 c.category !== 'DIRECT MESSAGES' && !c.id.startsWith('dm-') && !c.id.startsWith('gdm-'),
             );
-            const mergedAllChannels = [...storedDms, ...serverChannels];
+            const seenChannelIds = new Set(serverChannels.map((c) => c.id));
+            const extraDefaultChannels = DEFAULT_CHANNELS.filter((d) => !seenChannelIds.has(d.id));
+            const mergedAllChannels = [...storedDms, ...serverChannels, ...extraDefaultChannels];
             setChannels(mergedAllChannels);
 
             const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -247,9 +250,11 @@ export function useChatInitLoader({
             setColonies(() => {
               const home =
                 hubsRes.find((h) => h.id === 'anticeil') || DEFAULT_COLONIES[0];
+              const fromServer = hubsRes.filter((s) => s.id !== 'anticeil');
+              const extra = fromServer.length > 0 ? fromServer : DEFAULT_COLONIES.slice(1);
               const userColonies = [
                 home,
-                ...hubsRes.filter((s) => s.id !== 'anticeil'),
+                ...extra,
               ];
               saveStoredColonies(userColonies);
               return userColonies;
@@ -288,7 +293,9 @@ export function useChatInitLoader({
       if (mounted && Array.isArray(res) && res.length > 0) {
         setColonies(() => {
           const home = res.find((h) => h.id === 'anticeil') || DEFAULT_COLONIES[0];
-          const userColonies = [home, ...res.filter((s) => s.id !== 'anticeil')];
+          const fromServer = res.filter((s) => s.id !== 'anticeil');
+          const extra = fromServer.length > 0 ? fromServer : DEFAULT_COLONIES.slice(1);
+          const userColonies = [home, ...extra];
           saveStoredColonies(userColonies);
           return userColonies;
         });

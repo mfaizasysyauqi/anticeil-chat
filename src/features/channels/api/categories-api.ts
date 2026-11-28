@@ -35,6 +35,15 @@ export function markCategoryDeleted(categoryId: string): void {
 }
 
 export function getDefaultCategories(colonyId: string): ColonyCategory[] {
+  if (colonyId === 'colony_cyberpunk') {
+    return [
+      { id: `cat_announcements_${colonyId}`, colonyId, name: 'PENGUMUMAN RESMI', isDefault: true },
+      { id: `cat_text_${colonyId}`, colonyId, name: 'SALURAN TEKS', isDefault: true },
+      { id: `cat_voice_${colonyId}`, colonyId, name: 'RUANG SUARA & VIDEO', isDefault: true },
+      { id: `cat_activities_${colonyId}`, colonyId, name: 'AKTIVITAS & MINI-APPS', isDefault: true },
+      { id: `cat_forum_${colonyId}`, colonyId, name: 'FORUM & DISKUSI', isDefault: true },
+    ];
+  }
   return [
     { id: `cat_text_${colonyId}`, colonyId, name: 'TEXT CHANNELS', isDefault: true },
     { id: `cat_voice_${colonyId}`, colonyId, name: 'VOICE CHANNELS', isDefault: true },

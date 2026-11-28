@@ -236,6 +236,65 @@ export const DEFAULT_COLONIES: Colony[] = [
     initials: 'DM',
     description: 'Saluran pesan langsung untuk obrolan pribadi dengan rekan tim.',
   },
+  {
+    id: 'colony_cyberpunk',
+    name: 'Cyberpunk DAO',
+    iconUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=128&q=80',
+    initials: 'CP',
+    description: 'Komunitas pengembang web3, bot, dan real-time systems.',
+    membersCount: 1420,
+    onlineCount: 384,
+    unreadCount: 5,
+  },
+  {
+    id: 'colony_atlas',
+    name: 'Atlas AI Research Lab',
+    iconUrl: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=128&q=80',
+    initials: 'AI',
+    description: 'Riset AI Agent mandiri, MCP tools, dan code generation.',
+    membersCount: 890,
+    onlineCount: 215,
+    unreadCount: 12,
+  },
+  {
+    id: 'colony_gamedev',
+    name: 'Indie Game Developers',
+    iconUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=128&q=80',
+    initials: 'GD',
+    description: 'Diskusi game development, pixel art, shaders, dan WebRTC multi-play.',
+    membersCount: 2450,
+    onlineCount: 612,
+    unreadCount: 3,
+  },
+  {
+    id: 'colony_design',
+    name: 'Design & UX Syndicate',
+    iconUrl: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=128&q=80',
+    initials: 'UX',
+    description: 'Design system, Figma prototyping, micro-interactions, dan UI design.',
+    membersCount: 1780,
+    onlineCount: 430,
+  },
+  {
+    id: 'colony_lofi',
+    name: 'Lo-Fi Beats & Chill',
+    iconUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=128&q=80',
+    initials: 'LF',
+    description: 'Ruang santai, musik 24/7 bersinkronisasi, dan coworking audio room.',
+    membersCount: 3200,
+    onlineCount: 950,
+    unreadCount: 9,
+  },
+  {
+    id: 'colony_anime',
+    name: 'Anime & Creative Club',
+    iconUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=128&q=80',
+    initials: 'AC',
+    description: 'Komunitas kreatif anime, manga, dan kreasi ilustrasi digital.',
+    membersCount: 5120,
+    onlineCount: 1420,
+    unreadCount: 24,
+  },
 ];
 
 const STORAGE_KEY_COLONIES = 'anticeil_colony_colonies_v3';
@@ -307,7 +366,7 @@ export function loadStoredColonies(): Colony[] {
     const raw = localStorage.getItem(userKey);
     if (!raw) return DEFAULT_COLONIES;
     const parsed = JSON.parse(raw);
-    const list = Array.isArray(parsed) && parsed.length > 0
+    const list = Array.isArray(parsed) && parsed.length > 2
       ? parsed.filter((c) => !DUMMY_COLONY_IDS.has(c.id))
       : DEFAULT_COLONIES;
     return list.map((c) => {
